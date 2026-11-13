@@ -55,6 +55,8 @@ CONTEXT: PASS
 }
 ```
 
+Every repository path (changed files, dimension files, thread paths, chunk inspection/gaps, finding anchors) is a nonempty repository-relative Git path: `/` separators, no leading `/` or drive/UNC root, no NUL, empty, `.` or `..` component. Preserve spaces, Unicode, punctuation and literal backslashes within filenames; do not sanitize filenames into different paths.
+
 `posting_basis` is null when unavailable; otherwise exactly `viewer` (nonempty login), `history_sha256` (64 lowercase hex) and `approval_urls` (HTTPS URLs for this account at this head). Copy the helper result, never manufacture a digest.
 
 `state` is `open|closed|merged`; `history` is `complete|partial|unknown`; feedback kind is `review-summary|discussion`. Thread line is a positive integer or null; `is_resolved` is a JSON boolean. An empty thread list with incomplete history is not proof of no threads.

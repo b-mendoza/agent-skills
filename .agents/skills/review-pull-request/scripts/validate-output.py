@@ -26,6 +26,13 @@ def text(value):
 def positive(value):
     return type(value) is int and value >= 1
 
+
+def repo_path(value):
+    # Git paths use / separators; a backslash within a POSIX filename is legitimate.
+    return (isinstance(value, str) and bool(value) and not value.startswith(("/", "\\\\"))
+            and not re.match(r"^[A-Za-z]:[/\\\\]", value) and "\x00" not in value
+            and all(part not in ("", ".", "..") for part in value.split("/")))
+
 def url(value):
     try:
         parsed = urlsplit(value) if text(value) else None
@@ -96,7 +103,8 @@ def validate(mode, raw):
             array(value, "sources", path, url, "expected HTTPS URL with host")
             if value.get("anchor") is not None:
                 target = path + ".anchor"
-                anchor = record(value["anchor"], target, "path", "line side", "start_line")
+                anchor = record(value["anchor"], target, "", "path line side", "start_line")
+                fields(anchor, "path", target, repo_path, "expected repository-relative path")
                 fields(anchor, "line start_line", target, positive, "expected integer >= 1")
                 enum(anchor, "side", ("RIGHT", "LEFT"), target)
                 if positive(anchor.get("start_line")) and positive(anchor.get("line")):
@@ -161,7 +169,8 @@ def validate(mode, raw):
             fields(basis, "history_sha256", "posting_basis", lambda v: isinstance(v, str)
                    and re.fullmatch(r"[0-9a-f]{64}", v), "expected SHA-256 (64 hex)")
             array(basis, "approval_urls", "posting_basis", url, "expected HTTPS URL with host")
-        changed = array(data, "changed_files", predicate=text)
+        changed = array(data, "changed_files", predicate=repo_path,
+                        message="expected repository-relative path")
         unique(changed, "changed_files")
         dimensions = array(data, "dimensions")
         if isinstance(data.get("dimensions"), list):
@@ -170,15 +179,16 @@ def validate(mode, raw):
         for value, path in records(dimensions, "dimensions", "rationale", "name files"):
             fields(value, "name", path, lambda v: isinstance(v, str) and re.fullmatch(r"[a-z][a-z0-9-]*", v),
                    "expected dimension name matching ^[a-z][a-z0-9-]*$")
-            files = array(value, "files", path, text)
+            files = array(value, "files", path, repo_path, "expected repository-relative path")
             if isinstance(value.get("files"), list):
                 check(bool(files), path + ".files", "expected non-empty array")
             for index, name in enumerate(files):
                 check(name in changed, f"{path}.files[{index}]", "not in changed_files")
         threads = array(data, "threads")
         unique(threads, "threads", "root_comment_id")
-        for value, path in records(threads, "threads", "thread_id path summary",
-                                   "is_resolved line root_comment_id root_url"):
+        for value, path in records(threads, "threads", "thread_id summary",
+                                   "path is_resolved line root_comment_id root_url"):
+            fields(value, "path", path, repo_path, "expected repository-relative path")
             fields(value, "is_resolved", path, lambda v: type(v) is bool, "expected boolean")
             fields(value, "line", path, lambda v: v is None or positive(v), "expected integer >= 1 or null")
             fields(value, "root_comment_id", path, positive, "expected integer >= 1")
@@ -191,8 +201,10 @@ def validate(mode, raw):
         inspected, gaps = array(data, "inspected"), array(data, "gaps")
         if all(isinstance(data.get(key), list) for key in ("inspected", "gaps")):
             check(bool(inspected or gaps), "inspected/gaps", "must not both be empty")
-        records(inspected, "inspected", "path ranges")
-        for value, path in records(gaps, "gaps", "path detail", "kind"):
+        for value, path in records(inspected, "inspected", "ranges", "path"):
+            fields(value, "path", path, repo_path, "expected repository-relative path")
+        for value, path in records(gaps, "gaps", "detail", "path kind"):
+            fields(value, "path", path, repo_path, "expected repository-relative path")
             enum(value, "kind", ("unavailable", "truncated", "binary", "omitted"), path)
         findings(data)
     elif mode == "author":
