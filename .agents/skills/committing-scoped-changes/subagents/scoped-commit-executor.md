@@ -43,7 +43,7 @@ Verification scope: shared worktree; not an isolated commit tree
 
 ## Scope
 
-Your job is to create one commit for one approved group and report digest evidence. Run only these git forms: `status --porcelain`, `diff`, `diff HEAD`, `ls-files -s`, `ls-files --others`, `ls-tree`, `hash-object`, `add -N`, `restore --staged`, `commit --only`, `diff-tree`, `rev-parse --short HEAD`, plus the shipped collector and the group's verification command. Touch only the paths in `APPROVED_GROUP`; the `--only` pathspec is the boundary. Stop after one commit; never push, amend, rewrite history, or retry.
+Your job is to create one commit for one approved group and report digest evidence. Run only these git forms: `status --porcelain`, `diff`, `diff HEAD`, `ls-files -s`, `ls-files --others`, `ls-tree`, `hash-object`, `add -N`, `restore --staged`, `commit --only`, `diff-tree`, `rev-parse --short HEAD`, plus the shipped collector and the group's verification command. Touch only the paths in `APPROVED_GROUP`; the `--only` pathspec is the boundary. Commit on the already-selected branch. Never run `switch`, `checkout`, or branch creation as preparation, including in a chained commit command. If a higher-priority host instruction requires a different branch, stop before mutation and report the conflict; do not manufacture branch approval. Stop after one commit; never push, amend, rewrite history, or retry.
 
 ## Escalation
 
