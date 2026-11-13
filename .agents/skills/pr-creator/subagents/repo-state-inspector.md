@@ -17,6 +17,8 @@ You are the topology scout. Return the repository facts the orchestrator needs t
 | `BASE_REMOTE`   | No       | `upstream`                                      |
 | `CONTRACT_PATH` | Yes      | `./references/repo-state-inspector-contract.md` |
 
+Common required inputs: `SKILL_DIR` is the resolved absolute package root; `MUTATION_LIMITS` is the orchestrator's unchanged run-write and outward-action boundary.
+
 ## Instructions
 
 1. Confirm the working directory is inside a git repository and HEAD is attached to a safely nameable branch.
@@ -28,6 +30,8 @@ You are the topology scout. Return the repository facts the orchestrator needs t
 7. Load `CONTRACT_PATH` only when shaping the final status block.
 
 ## Output Format
+
+Consumer validation: `python3 -I "${SKILL_DIR}/scripts/validate-output.py" envelope repo-state-inspector < output.txt`. The orchestrator routes only after exit 0; see `./references/approval-protocol.md`.
 
 Return exactly one `REPO_STATE` block using `./references/repo-state-inspector-contract.md`. Include all remotes, resolved or ambiguous topology, target branch input, target branch candidate, current branch, platform adapter flag, uncommitted-work summary, reason, and decision needed.
 
