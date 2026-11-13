@@ -15,6 +15,7 @@ import subprocess
 import sys
 import tempfile
 from unittest.mock import patch
+from urllib.parse import quote
 
 USAGE = ("Usage: python3 -I render-review.py RUN_DIR OUTPUT_FILE [--replace <sha256>] | --self-test | -h\n"
          "Paths: workspace-relative, from the workspace root; no .. or symlinks.\nEnvironment: none.")
@@ -96,7 +97,7 @@ def render(run):
              "Dimensions reviewed: " + ", ".join(d["name"] for d in context["dimensions"]),
              f"Reviewed base: {context['base_sha']}", f"Reviewed head: {context['head_sha']}", "## Findings"]
     for finding in author["findings"]:
-        parts += [f"### [{finding['severity']}] {finding['title']}",
+        parts += [f"### {finding['title']}",
                   f"ID: {finding['id']}\nConfidence: {finding['confidence']}\n"
                   f"Placement: {finding['placement']}"]
         anchor = finding["anchor"]
@@ -104,6 +105,13 @@ def render(run):
             lines = (f"{anchor['start_line']}-{anchor['line']}" if "start_line" in anchor
                      else str(anchor["line"]))
             parts.append(f"Anchor: {anchor['path']}:{lines} {anchor['side']}")
+            sha = context["head_sha" if anchor["side"] == "RIGHT" else "base_sha"]
+            fragment = f"L{anchor.get('start_line', anchor['line'])}"
+            if "start_line" in anchor:
+                fragment += f"-L{anchor['line']}"
+            repository = context["pr"].split("/pull/", 1)[0]
+            parts.append(f"Code: [{anchor['path']}:{lines}]({repository}/blob/{sha}/"
+                         f"{quote(anchor['path'], safe='/')}#{fragment})")
         for key, label in [("evidence", "Evidence"), ("failure_scenario", "Failure scenario"),
                            ("minimal_fix", "Fix")]:
             parts += [label + ":", finding[key]]
