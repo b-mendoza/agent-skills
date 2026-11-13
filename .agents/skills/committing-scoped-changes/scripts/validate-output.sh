@@ -69,6 +69,7 @@ function checkPlan(    st, i, g, v, paths, ex, k, t, j) {
     }
     field(i + 4, "Verification")
     v = field(i + 5, "Digest"); if (v != "" && !hex40(v)) fail(i + 5, "Digest: must be 40 lowercase hex")
+    if (v == "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391") fail(i + 5, "Digest: empty-input hash is not a group digest")
   }
   v = field(N - 1, "Omissions"); if (v != "none") sortedTokens(N - 1, v, "Omissions")
   field(N, "Warnings")
