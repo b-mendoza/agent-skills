@@ -19,6 +19,7 @@ export LC_ALL
 
 mode=$1
 case "$mode" in
+  -h|--help) echo "usage: sh validate-output.sh <plan|execute> < payload"; exit 0 ;;
   plan|execute) ;;
   *) echo "usage: sh validate-output.sh <plan|execute> < payload" >&2; exit 2 ;;
 esac
