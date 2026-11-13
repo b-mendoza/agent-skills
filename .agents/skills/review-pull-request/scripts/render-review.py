@@ -138,7 +138,7 @@ def render(run):
         parts += [f"Inspected: {s['path']} {s['ranges']}" for s in chunk["inspected"]]
         parts += [f"Gap: {g['path']} ({g['kind']}): {g['detail']}" for g in chunk["gaps"]]
     parts += ["History: " + context["history"]] + context["limitations"] + ["## Residual risks"]
-    risks = [risk for chunk in chunks for risk in chunk["residual_risks"]] + author["residual_risks"]
+    risks = author["residual_risks"]
     parts += risks or ["None."]
     parts += (["## Verification notes"] + verify["observed_checks"] +
               ["CI as observed at collection:", context["ci"], "## Posting"])
