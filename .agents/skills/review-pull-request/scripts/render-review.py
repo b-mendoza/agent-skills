@@ -150,7 +150,9 @@ def fixture(run):
                    dimensions=[dict(name="correctness", files=["file.py"], rationale="Changed logic")],
                    history="complete", threads=[dict(thread_id="thread", is_resolved=False, path="file.py",
                    line=1, root_comment_id=7, root_url="https://github.com/cli/cli/pull/1#discussion_r7",
-                   summary="Existing")], feedback=[], references=[], limitations=[])
+                   summary="Existing")], feedback=[], references=[], limitations=[],
+                   posting_basis=dict(viewer="reviewer", approval_urls=[],
+                       history_sha256=digest(b'[[],[],[]]')))
     finding = dict(id="F1", severity="important", title="Fix this", confidence="high",
                    anchor=dict(path="file.py", line=2, side="RIGHT", start_line=1), evidence="Evidence  \n",
                    failure_scenario="Failure", minimal_fix="Fix", sources=[], placement="inline", body=body)

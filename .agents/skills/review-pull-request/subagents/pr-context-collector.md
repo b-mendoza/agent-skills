@@ -22,17 +22,12 @@ Collect evidence for one PR, not defect verdicts. Honor `MUTATION_LIMITS`; inspe
 1. Derive owner, repo and number from `PR_URL`. Read metadata, description and linked requirements. Record state as `open`, `closed` or `merged`; non-open PRs remain reviewable as historical assessments.
 2. Resolve the full head SHA and fixed comparison/merge-base SHA actually used for the diff, not merely the base branch tip. Read diff, changed-file metadata and base-version project guidance at those identities. Never check out or change Git state. Report unavailable, truncated, binary, generated or omitted evidence as limitations.
 3. Observe CI once, with UTC collection time and actual status or unavailability in `ci`. Inspect failed-check summaries when available; do not call collection-time results live or claim test execution from test-file presence.
-4. Run the fixed read-only collector, not a model-authored thread query:
-
-   ```sh
-   sh "${SKILL_DIR}/scripts/collect-pr-review-comments.sh" <owner> <repo> <number>
-   ```
-
-   Exit 0 establishes complete thread reads, including known-empty output. Exit 3 supplies usable but truncated inner history: record `history: "partial"`, continue with limitations, and never authorize posting. Exit 2 returns `TOOLS_MISSING`; exits 4, 1 and 64 return `ERROR`, preserving auth, API/shape or usage cause in `reason`. A dry-run is not history evidence.
-5. Digest each thread's issue and relevant replies. Preserve its paired `thread_id`, resolution, path, nullable line, root REST ID and root URL. Convert a helper-returned decimal root ID to a positive JSON integer without loss; never derive it from a URL or substitute a GraphQL ID. Missing/invalid roots cannot become invented targets. The helper buffers pages; failed reads are not an empty successful history.
-6. Separately read all paginated review summaries and ordinary PR discussion. Keep those in `feedback`, not reply targets. `history` is complete only after all three collections and sufficient inner comments were read; usable incomplete evidence is partial, no reliable read is unknown. Optional unavailable feedback may remain a disclosed limitation; it does not override the collector's failure exits.
-7. Summarize behavior changes, risk areas and test signals from actual diff/surrounding-code inspection. Propose 1 to 6 ordered dimensions, each with exact changed paths and a rationale. Dimension names match `^[a-z][a-z0-9-]*$` and are unique; file overlap is allowed. Cover every changed file or disclose why it is outside focus. Never refuse for size alone.
-8. Load [external review resources](../references/external-review-resources.md) when GitHub identity, thread or feedback mechanics need checking. Fetch the relevant official source; list only URLs actually fetched. Necessary unavailable read/shell/source-fetch capability is `TOOLS_MISSING`, not remembered facts. Basis drift or material missing evidence is `NEEDS_CONTEXT`.
+4. Run `python3 -I "${SKILL_DIR}/scripts/post-review.py" --snapshot <owner/repo> <number> <head_sha>`. It invokes the fixed thread collector (never a model-authored thread query) and separately paginates review summaries and ordinary discussion. Exit 0 returns `{posting_basis,evidence}`: copy only `posting_basis` into the payload, and derive `threads`/`feedback` from **that same** `evidence` snapshot. Evidence has `threads`, `reviews`, `discussion` arrays; inspect transient stdout, never archive it. Do not combine an earlier thread read with a later digest. A dry-run is not history evidence.
+5. Digest each snapshot thread's issue and replies. Preserve paired `thread_id`, resolution, path, nullable line, root REST ID and root URL. Convert a decimal root ID to a positive JSON integer without loss; never derive it from a URL or substitute a GraphQL ID. Summarize `reviews`/`discussion` into `feedback`, never reply targets. Empty arrays from a successful snapshot establish known-empty history.
+6. Snapshot exit 3 means no complete posting basis. Use `sh "${SKILL_DIR}/scripts/collect-pr-review-comments.sh" <owner> <repo> <number>` to distinguish limits: exit 0 has complete thread reads; 3 supplies truncated history; 2 returns TOOLS_MISSING; 4, 1 and 64 return ERROR. If threads are usable but account or other feedback is unavailable, keep a disclosed limited draft with `posting_basis: null`, partial/unknown history and no posting. Never turn a failed read into empty successful history.
+7. Surface same-account, same-head approval URLs from `posting_basis` without changing the decision. CI remains the separate collection-time observation; never re-fetch it for a history snapshot.
+8. Summarize behavior changes, risk areas and test signals from actual diff/surrounding-code inspection. Propose 1 to 6 ordered dimensions, each with exact changed paths and a rationale. Dimension names match `^[a-z][a-z0-9-]*$` and are unique; file overlap is allowed. Cover every changed file or disclose why it is outside focus. Never refuse for size alone.
+9. Load [external review resources](../references/external-review-resources.md) when GitHub identity, thread or feedback mechanics need checking. Fetch the relevant official source; list only URLs actually fetched. Necessary unavailable read/shell/source-fetch capability is `TOOLS_MISSING`, not remembered facts. Basis drift or material missing evidence is `NEEDS_CONTEXT`.
 
 ## Output
 
@@ -55,9 +50,12 @@ CONTEXT: PASS
   "history": "complete",
   "threads": [{"thread_id": "opaque-node-id", "is_resolved": false, "path": "src/example.py", "line": 4, "root_comment_id": 123, "root_url": "https://github.com/org/repo/pull/1020#discussion_r123", "summary": "Existing issue and relevant reply evidence"}],
   "feedback": [{"kind": "review-summary", "url": "https://github.com/org/repo/pull/1020#pullrequestreview-456", "summary": "Relevant feedback"}],
-  "references": [], "limitations": []
+  "references": [], "limitations": [],
+  "posting_basis": {"viewer": "reviewer", "history_sha256": "0000000000000000000000000000000000000000000000000000000000000000", "approval_urls": []}
 }
 ```
+
+`posting_basis` is null when unavailable; otherwise exactly `viewer` (nonempty login), `history_sha256` (64 lowercase hex) and `approval_urls` (HTTPS URLs for this account at this head). Copy the helper result, never manufacture a digest.
 
 `state` is `open|closed|merged`; `history` is `complete|partial|unknown`; feedback kind is `review-summary|discussion`. Thread line is a positive integer or null; `is_resolved` is a JSON boolean. An empty thread list with incomplete history is not proof of no threads.
 
