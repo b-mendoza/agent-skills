@@ -4,8 +4,19 @@
     "commit": "",
     "pr": ""
   },
-  "autoMemoryEnabled": false,
   "disableBundledSkills": true,
-  "enabledMcpjsonServers": ["context7"],
-  "workflowSizeGuideline": "medium"
+  "workflowSizeGuideline": "medium",
+  "enabledPlugins": {
+    "context7@context7-marketplace": true
+  },
+  "extraKnownMarketplaces": {
+    "context7-marketplace": {
+      "source": {
+        "source": "github",
+        "repo": "upstash/context7"
+      },
+      "autoUpdate": true
+    }
+  },
+  "autoMemoryEnabled": false
 }
