@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """Usage: python3 -I validate-identity.py < evidence.json
 
-Read-only comparison of independently extracted plan and child content.
-Exit 0: complete matching identity; 1: invalid, incomplete, or stale evidence.
+Compare independently extracted plan and child content; no arguments or env vars.
+Exit 0: matching identity; 1: invalid/incomplete/stale evidence (BLOCKED); 2: usage (ERROR).
+Side effects: none.
+Smoke: printf '%s' '{}' | python3 -I skills/creating-work-item-children/scripts/validate-identity.py  # exit 1
 """
 import json
 import sys
@@ -32,6 +34,9 @@ def main():
 
 
 if __name__ == "__main__":
+    if len(sys.argv) > 1:
+        print(__doc__)
+        sys.exit(2)
     try:
         main()
     except (ValueError, KeyError, TypeError, AttributeError) as error:
