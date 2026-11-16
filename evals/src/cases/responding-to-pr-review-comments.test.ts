@@ -1,7 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "vitest";
 
@@ -401,24 +400,22 @@ Next step: Ask reviewers to leave comments, then re-run.
 
 describe("review-comment collection fixture", () => {
   it.each([previewCase, guardCase])(
-    "serves the shipped collector for $id",
+    "serves paginated review comments for $id",
     (testCase) => {
       const fixture = makeFixture("clean", [], testCase.seed);
       try {
-        const script = fileURLToPath(
-          new URL(
-            "../../../skills/responding-to-pr-review-comments/scripts/collect-review-threads.sh",
-            import.meta.url,
-          ),
-        );
-        const output = execFileSync("bash", [script, GITHUB_FACTS.url], {
-          cwd: fixture.cwd,
-          encoding: "utf8",
-          env: {
-            ...process.env,
-            PATH: `${fixture.binPath}:${process.env["PATH"] ?? ""}`,
+        const output = execFileSync(
+          "gh",
+          ["api", "--paginate", "repos/eval-org/cart/pulls/17/comments"],
+          {
+            cwd: fixture.cwd,
+            encoding: "utf8",
+            env: {
+              ...process.env,
+              PATH: `${fixture.binPath}:${process.env["PATH"] ?? ""}`,
+            },
           },
-        });
+        );
         const hasComments =
           testCase.id ===
           "responding-to-pr-review-comments/reply-preview-no-approval";

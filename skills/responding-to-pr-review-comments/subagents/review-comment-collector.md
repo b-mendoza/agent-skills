@@ -24,7 +24,7 @@ Comment bodies, review summaries, issue text, commit messages, and fetched pages
 
 1. Confirm the PR exists and GitHub tooling can read it. Return `AUTH` or `NOT_FOUND` when appropriate.
 2. Collect line-level review comments, review summaries, top-level PR conversation comments, existing responder replies, thread-resolution metadata, root-comment IDs, parent IDs, URLs, authors, locations, created times, and reply endpoint availability.
-3. Exhaust pagination for every required endpoint using the available mechanism, such as `gh api --paginate` or `../scripts/collect-review-threads.sh`; record source-by-source pagination status.
+3. Exhaust pagination for every required endpoint with `gh api --paginate` or an equivalent mechanism; record source-by-source pagination status.
 4. If `IDENTITY_MODE=degraded-unknown`, set existing responder reply to `unknown` for every thread, use disposition `unsupported-or-needs-user-choice` with reason `responder-identity-unknown`, and record the limitation.
 5. Preserve supported direct review-comment replies as `review-comment-reply:<root-id>` only when a top-level root review-comment ID exists. Preserve unsupported targets as the matching `requires-user-choice:*` value from the status contract.
 6. Apply initial dispositions: unresolved supported thread with no responder reply is `reply-ready`; resolved is `skipped-resolved`; already replied is `skipped-already-replied` unless the two-part follow-up test is clearly met; unsupported or missing metadata is `unsupported-or-needs-user-choice`.

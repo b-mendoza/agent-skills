@@ -1,45 +1,38 @@
-#!/usr/bin/env bash
-# Post one reply body to a pull-request review comment. Caller must already
-# hold an APPROVAL_RECORD matching this exact body.
-set -euo pipefail
-usage() {
-  printf '%s\n' "usage: $0 <owner>/<repo> <pr-number> <comment-id> <body-file>" >&2
-  exit 64
-}
-[ "$#" -eq 4 ] || usage
-repo_path="$1"
-pr_number="$2"
-comment_id="$3"
-body_file="$4"
-[[ "$pr_number" =~ ^[1-9][0-9]*$ ]] || usage
-[[ "$comment_id" =~ ^[1-9][0-9]*$ ]] || usage
-if [ ! -f "$body_file" ]; then
-  printf '%s\n' "body file not found: $body_file" >&2
-  exit 66
-fi
-if ! command -v gh >/dev/null 2>&1; then
-  printf '%s\n' "gh CLI required" >&2
-  exit 2
-fi
-if ! command -v python3 >/dev/null 2>&1; then
-  printf '%s\n' "python3 required for byte-exact read-back; nothing posted" >&2
-  exit 2
-fi
-# Keep JSON decoding and byte comparison out of shell substitutions. No retries.
-python3 -I - "$repo_path" "$pr_number" "$comment_id" "$body_file" <<'PY'
+#!/usr/bin/env python3
+"""Post one exact APPROVAL_RECORD-approved reply, then verify it with a GET.
+Usage: python3 -I post-review-reply.py <owner>/<repo> <pr-number> <comment-id> <body-file>
+Environment: PATH locates gh; gh uses its normal authentication environment.
+Exits: 0 verified, JSON {id, html_url}; 2 gh missing (TOOLS_MISSING);
+64 bad arguments (ERROR); 66 unreadable UTF-8 body (ERROR);
+74 live POST with failed read-back (PARTIAL, do not retry).
+A failed POST returns gh's exit code (AUTH or ERROR); no GET follows.
+Side effects: reads the body file, posts one GitHub reply, then reads it; no retries.
+Smoke: python3 -I scripts/post-review-reply.py -h  # exits 0, no network
+"""
 import json
 from pathlib import Path
+import re
+import shutil
 import subprocess
 import sys
 
-repo, number, root_id, body_file = sys.argv[1:]
+args = sys.argv[1:]
+if args == ["-h"]:
+    print(__doc__)
+    sys.exit(0)
+if len(args) != 4 or any(re.fullmatch(r"[1-9][0-9]*", n) is None for n in args[1:3]):
+    print(__doc__, file=sys.stderr)
+    sys.exit(64)
+repo, number, root_id, body_file = args
 try:
     approved = Path(body_file).read_bytes()
     approved.decode("utf-8")
 except (OSError, UnicodeError) as error:
     print(f"cannot read UTF-8 approved body: {error}; nothing posted", file=sys.stderr)
     sys.exit(66)
-
+if shutil.which("gh") is None:
+    print("gh CLI required; nothing posted", file=sys.stderr)
+    sys.exit(2)
 posted = subprocess.run([
     "gh", "api", "--method", "POST",
     f"repos/{repo}/pulls/{number}/comments/{root_id}/replies",
@@ -47,7 +40,6 @@ posted = subprocess.run([
 ], stdout=subprocess.PIPE, check=False)
 if posted.returncode != 0:
     sys.exit(posted.returncode)
-
 created_id = None
 created_url = "unknown URL"
 
@@ -80,6 +72,4 @@ try:
         readback_failed("GET response has no reply URL")
 except (ValueError, UnicodeError, OSError) as error:
     readback_failed(str(error))
-
 print(json.dumps({"id": created_id, "html_url": url}))
-PY

@@ -33,7 +33,7 @@ interface FileVariant {
 }
 const POST_SCRIPT = fileURLToPath(
   new URL(
-    "../../../skills/responding-to-pr-review-comments/scripts/post-review-reply.sh",
+    "../../../skills/responding-to-pr-review-comments/scripts/post-review-reply.py",
     import.meta.url,
   ),
 );
@@ -297,8 +297,15 @@ describe("fake GitHub approval boundary", () => {
         });
         if (early) {
           execFileSync(
-            "bash",
-            [POST_SCRIPT, "eval-org/cart", "17", "701", APPROVED_BODY_FILE],
+            "python3",
+            [
+              "-I",
+              POST_SCRIPT,
+              "eval-org/cart",
+              "17",
+              "701",
+              APPROVED_BODY_FILE,
+            ],
             {
               cwd: fixture.cwd,
               env: {
@@ -371,8 +378,8 @@ describe("fake GitHub approval boundary", () => {
         PATH: `${fixture.binPath}:${process.env["PATH"] ?? ""}`,
       };
       const reply = execFileSync(
-        "bash",
-        [POST_SCRIPT, "eval-org/cart", "17", "701", APPROVED_BODY_FILE],
+        "python3",
+        ["-I", POST_SCRIPT, "eval-org/cart", "17", "701", APPROVED_BODY_FILE],
         { cwd: fixture.cwd, encoding: "utf8", env },
       );
       expect(JSON.parse(reply)).toEqual(
