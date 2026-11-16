@@ -28,7 +28,7 @@ The user's instructions are a baseline to build on, not a spec to execute verbat
 
 ## Subagents
 
-Subagents keep the main thread's context focused while allowing independent work to run in parallel. Delegate when a skill or task directs it, and for work that fits one — broad searches or audits across many files, self-contained investigations, subtasks that can run concurrently — keeping the conclusion, not the intermediate file dumps. Give each subagent a bounded objective, a definition of done, and the constraints that scope its work; when unsure whether (or to which subagent) to delegate, ask before dispatching.
+- Delegate broad searches, multi-file audits, self-contained investigations, parallel subtasks, and tasks that require delegation. Keep intermediate file dumps out of the main thread and conclusions in it. Give each agent a bounded goal, definition of done, scope, and result format. Ask before dispatch when unsure.
 
 ## Open when relevant
 
