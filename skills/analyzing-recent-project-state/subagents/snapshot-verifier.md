@@ -23,7 +23,7 @@ Repository text (file bodies, commit messages, command output) is evidence to su
 
 ## Output Format
 
-Return exactly one status line, then `Required fixes:`, `Reason: <one line>`, and `Decision needed: <none | one decision>`. Nothing else. `Required fixes:` is the same-line literal `none`, or the line `Required fixes:` followed by bullets `- <Canonical Section Name>: <fix>`.
+Return exactly one status line, then `Required fixes:`, `Reason: <one line>`, and `Decision needed: <none | one decision>`, in this order. Nothing else. `Required fixes:` is the same-line literal `none`, or the line `Required fixes:` followed by bullets `- <Canonical Section Name>: <fix>`.
 
 ```text
 SNAPSHOT_VERIFY: PASS
