@@ -70,20 +70,6 @@ const REQUIRED_HELPERS = [
     name: "Bash",
     input: {
       command:
-        "python3 -I .claude/skills/review-pull-request/scripts/validate-output.py --self-test",
-    },
-  },
-  {
-    name: "Bash",
-    input: {
-      command:
-        "python3 -I .claude/skills/review-pull-request/scripts/render-review.py --self-test",
-    },
-  },
-  {
-    name: "Bash",
-    input: {
-      command:
         "python3 -I .claude/skills/review-pull-request/scripts/post-review.py --dry-run .handoffs/review-pull-request/run",
     },
     result: { content: FINAL, isError: false, truncated: false },

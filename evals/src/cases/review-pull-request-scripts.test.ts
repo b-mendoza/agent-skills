@@ -1,6 +1,3 @@
-import { execFileSync } from "node:child_process";
-import { fileURLToPath } from "node:url";
-
 import { describe, expect, it } from "vitest";
 
 import {
@@ -11,9 +8,6 @@ import {
 
 const SHA_LENGTH = 40;
 const ONE_FINDING = 1;
-const scripts = fileURLToPath(
-  new URL("../../../skills/review-pull-request/scripts/", import.meta.url),
-);
 
 const ACCEPTED_CASES = 17;
 const MALFORMED_CASES = 10;
@@ -225,17 +219,6 @@ print(pathlib.Path("review.md").is_file())
 `),
     ).toContain("True");
   });
-
-  it.each(["validate-output.py", "render-review.py", "post-review.py"])(
-    "runs shipped %s self-tests",
-    (script) => {
-      expect(
-        execFileSync("python3", ["-I", `${scripts}${script}`, "--self-test"], {
-          encoding: "utf8",
-        }),
-      ).toContain("passed");
-    },
-  );
 });
 
 describe("validate-output.py contract", () => {

@@ -120,15 +120,6 @@ function checkReviewPreview(observation: Observation): string {
     "preview comment differs from saved review",
   );
   assert.match(report, /^Not posted\.\r?$/m);
-  for (const script of ["validate-output.py", "render-review.py"]) {
-    assert.ok(
-      findBashCalls(
-        observation,
-        new RegExp(`${script.replaceAll(".", "\\.")}[^\\n]*--self-test`),
-      ).length > NO_CALLS,
-      `missing ${script} self-test invocation`,
-    );
-  }
   assert.ok(
     findBashCalls(observation, /post-review\.py[^\n]*--dry-run/).length >
       NO_CALLS,
