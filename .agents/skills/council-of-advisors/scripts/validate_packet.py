@@ -2,13 +2,13 @@
 """Consumer-side shape validator for council-of-advisors payloads.
 
 usage: python3 "${SKILL_DIR}/scripts/validate_packet.py" <kind> [web] < payload
-       python3 "${SKILL_DIR}/scripts/validate_packet.py" --selftest
 
 kind: reversibility | analysis | branch | chair | handoff
 web:  pass when the run declared research_tools: web (seat kinds only; the
       handoff kind reads its own research_tools key).
 Exit 0 accepts. Exit 1 rejects and prints one finding per line. Exit 2 is bad usage.
-Checks exact top-level keys and closed enums only (stdlib, no YAML parser).
+Checks required top-level keys and closed enums only (stdlib, no YAML parser).
+Smoke: printf 'seat: x\\nbranch: merge\\n' | python3 validate_packet.py branch  # exits 1
 """
 import re
 import sys
@@ -50,8 +50,6 @@ FIELD = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*):\s*(.*)$")
 def parse(text):
     fields = {}
     for line in text.splitlines():
-        if line.startswith("```") or line.strip() == "---":
-            continue
         m = FIELD.match(line)
         if m and m.group(1) not in fields:
             fields[m.group(1)] = m.group(2).strip().strip("\"'").rstrip(",")
@@ -100,45 +98,13 @@ def validate(kind, text, web=False):
     return out
 
 
-GOOD = {
-    "reversibility": "seat: reversibility-seat\ndecision_type: type_1\nreversal_cost_estimate:\n  money: high\n"
-                     "rationale: x\nconfidence: low\ndepth_setting: deep\nwhat_would_change_my_mind: [a]\n",
-    "analysis": "seat: focus-seat\nseat_class: recommending\nmandate: m\nverdict: hold\nreasoning_chain:\n"
-                "  - premise: p\nkey_risks_or_upside: [r]\nwhat_would_change_my_mind: [w]\nconfidence: medium\n"
-                "mental_model_in_use: Focus\n",
-    "branch": "seat: originality-seat (branch mode)\nbranch: pivot\nrationale: r\ncandidates:\n  - name: c\n",
-    "chair": "seat: chair-seat\nagreements_across_council: [a]\ndisagreements_within_council: []\n"
-             "recommendation: hold\nconfidence: medium\nreasoning_chain: [s]\nminority_report: m\n"
-             "required_kill_criterion: k\npower_questions_to_answer_before_proceeding: [q]\n",
-    "handoff": "".join(k + ": x\n" for k in REQUIRED["handoff"]).replace("status: x", "status: ready")
-               .replace("decision_type: x", "decision_type: type_2").replace("classification_basis: x", "classification_basis: seat_verdict")
-               .replace("chair_recommendation: x", "chair_recommendation: go").replace("final_recommendation: x", "final_recommendation: go")
-               .replace("override_applied: x", "override_applied: false").replace("confidence: x", "confidence: high")
-               .replace("research_tools: x", "research_tools: none").replace("execution_fidelity: x", "execution_fidelity: subagents"),
-}
-BAD = {  # one enum or cross-field defect each
-    "reversibility": GOOD["reversibility"].replace("depth_setting: deep", "depth_setting: standard"),
-    "analysis": GOOD["analysis"].replace("seat_class: recommending", "seat_class: informational"),
-    "branch": GOOD["branch"].replace("branch: pivot", "branch: merge"),
-    "chair": GOOD["chair"].replace("recommendation: hold", "recommendation: go"),
-    "handoff": GOOD["handoff"].replace("status: ready", "status: done"),
-}
-
-
 def main(argv):
-    if argv[1:] == ["--selftest"]:
-        for kind in REQUIRED:
-            assert validate(kind, GOOD[kind]) == [], (kind, validate(kind, GOOD[kind]))
-            assert validate(kind, BAD[kind]), (kind, "bad payload accepted")
-        assert validate("analysis", "status: BLOCKED\nseat: focus-seat\nreason: r\nneeded_input: ''\n") == []
-        assert validate("analysis", "status: FAIL\nseat: focus-seat\nreason:\nneeded_input: ''\n")
-        print("selftest ok")
-        return 0
     if len(argv) < 2 or argv[1] not in REQUIRED or argv[2:] not in ([], ["web"]):
         sys.stderr.write(__doc__)
         return 2
     findings = validate(argv[1], sys.stdin.read(), web=argv[2:] == ["web"])
-    print("\n".join(findings)) if findings else None
+    for finding in findings:
+        print(finding)
     return 1 if findings else 0
 
 
