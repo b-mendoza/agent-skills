@@ -30,6 +30,55 @@ The user's instructions are a baseline to build on, not a spec to execute verbat
 
 - Delegate broad searches, multi-file audits, self-contained investigations, parallel subtasks, and tasks that require delegation. Keep intermediate file dumps out of the main thread and conclusions in it. Give each agent a bounded goal, definition of done, scope, and result format. Ask before dispatch when unsure.
 
+## Model topology
+
+The orchestrator selects a model and an effort level for each child task. Match the model to the task difficulty. When the difficulty is not clear, start with `gpt-6.1-sol`.
+
+|                   | `claude-haiku-5-5`                                       | `gpt-6.1-sol`                                                        | `claude-opus-5-5`                                                                                            | `claude-fable-5-2`                                                                                                              |
+| ----------------- | -------------------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------- |
+| **Use for**       | High-volume work with results that are easy to check     | Everyday work                                                        | Higher-difficulty work                                                                                       | Very complex work                                                                                                               |
+| **Typical tasks** | File searches, log reads, summaries, and data extraction | Well-scoped bug fixes, features built to a spec, and routine reviews | Hard debugging, features across many files, performance work, and refactors or migrations that follow a plan | Architecture plans, refactor and migration plans, design reviews, deep research, and tasks that `claude-opus-5-5` did not solve |
+| **Move up when**  | The task needs a code edit or a judgment call            | `high` effort does not solve the task                                | A `claude-fable-5-2` condition is true                                                                       | No model is higher. Report the block to the user.                                                                               |
+
+When the harness does not offer `claude-haiku-5-5`, use `gpt-6.1-sol` at `low` effort.
+
+### Dispatch
+
+- Run each model in the table in the Claude Code harness. Use the native `Agent` tool for these models, not `delegate_task`.
+- For `claude-haiku-5-5`, `claude-opus-5-5`, and `claude-fable-5-2`, set the `model` parameter to `haiku`, `opus`, or `fable`.
+- For `gpt-6.1-sol`, do not set the `model` parameter. The `CLAUDE_CODE_SUBAGENT_MODEL` environment variable makes `gpt-6.1-sol` the default subagent model. The `model` parameter does not accept this model.
+- For `gpt-6.1-sol`, use a `subagent_type` whose definition sets no `model`, such as `general-purpose`. A `model` in the agent definition replaces the default. Do not use `fork`, because a fork always runs on the model of the orchestrator's thread.
+
+### Effort
+
+- Set the effort level on each child task to fit the task. Use the `effort` parameter of the `Agent` tool. Do not rely on an inherited or default level.
+- Use only `low`, `medium`, and `high`. Never use a higher level.
+- Use `low` for mechanical work that has one correct result, such as a search, a read, or a rename.
+- Use `medium` for work that needs judgment. Start here when you are not sure.
+- Use `high` for work that needs long reasoning, many tool calls, or many self-checks.
+
+### Escalation
+
+When a model does not solve a task, do these steps in order.
+
+1. Give the model a way to verify its work, such as a test, a build, or a script.
+2. Raise the effort level one step. Stop at `high`.
+3. Move to the next model in the table. Start that model at `medium`.
+
+### `claude-fable-5-2` conditions
+
+For code work, use `claude-fable-5-2` only when one of these conditions is true.
+
+- **Design decision:** The brief must ask the model to make or review a design decision, and no spec, plan, or convention makes that decision. A design decision selects an architecture, a service or module boundary, a data model, or a migration strategy.
+- **Failed check:** `claude-opus-5-5` fails the same verification check two times, and the last attempt used `high` effort.
+
+The size of a task is not a condition. Send a large task that has a settled design to `claude-opus-5-5`.
+
+For a design decision, do these steps in order.
+
+1. Ask `claude-fable-5-2` for a written plan. State the scope in the brief, and ask for the simplest design that satisfies the requirements.
+2. Delegate the implementation of the plan to `claude-opus-5-5` or `gpt-6.1-sol`.
+
 ## Open when relevant
 
 Long-lived guides:
