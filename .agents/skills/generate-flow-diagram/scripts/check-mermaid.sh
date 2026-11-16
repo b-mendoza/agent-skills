@@ -1,109 +1,71 @@
-#!/usr/bin/env bash
-# Exit 0 PASS | 1,3,4 FAIL (repair) | 2 TOOLS_MISSING (inspected-only) | 64 ERROR (usage/setup) | 66 BLOCKED (input missing) | other ERROR.
-# Side effects: temporary extraction/render/error files, removed on exit.
-set -euo pipefail
-
-usage() { printf '%s\n' "usage: bash $0 [-h] <markdown-file>; environment: PATH, TMPDIR"; }
-if [ "$#" -eq 1 ] && [ "$1" = '-h' ]; then usage; exit 0; fi
-if [ "$#" -ne 1 ] || [[ "$1" = -* ]]; then
+#!/bin/sh
+# POSIX sh. Usage: sh check-mermaid.sh [-h] <markdown-file>; environment: PATH, TMPDIR.
+# Exit 0 PASS (parsed) | 1 FAIL (repair) | 2 TOOLS_MISSING (inspect manually)
+#      | 64 ERROR (usage/setup) | 66 BLOCKED (input missing) | other ERROR.
+# Side effects: scratch directory under ${TMPDIR:-/tmp}, removed on exit.
+# Check: sh check-mermaid.sh -h # expects usage and exit 0
+set -eu
+usage() {
+  printf '%s\n' "usage: sh $0 [-h] <markdown-file>; environment: PATH, TMPDIR"
+}
+if [ "$#" -eq 1 ] && [ "$1" = '-h' ]; then
+  usage
+  exit 0
+fi
+if [ "$#" -ne 1 ]; then
   usage >&2
   exit 64
 fi
-
-input_file="$1"
-if [ ! -f "$input_file" ]; then
-  printf '%s\n' "file not found: $input_file" >&2
-  usage >&2
+if [ ! -f "$1" ]; then
+  printf 'file not found: %s\n' "$1" >&2
   exit 66
 fi
-
-if ! command -v mmdc >/dev/null 2>&1; then
-  printf '%s\n' 'parser unavailable' >&2
-  exit 2
-fi
-
 tmp_dir="$(mktemp -d "${TMPDIR:-/tmp}/check-mermaid.XXXXXX")" || exit 64
 trap 'rm -rf "$tmp_dir"' EXIT
-
 awk -v dir="$tmp_dir" '
   { sub(/\r$/, "") }
-  fence != "" {
-    line = $0; sub(/^ ? ? ?/, "", line)
-    if (match(line, "^" fence fence fence "+") && RLENGTH >= width && substr(line, RLENGTH + 1) ~ /^[ \t]*$/) {
-      fence = ""
-      if (mermaid) close(file)
-    } else if (mermaid) {
-      for (j = 0; j < indent; j++) sub(/^ /, "")
-      print > file
-    }
+  $0 == "```mermaid" && !file {
+    file = sprintf("%s/block-%010d.mmd", dir, ++count)
+    printf "%s", "" > file
     next
   }
-  # Container fences and indented literals fail closed; use Markdown-aware extraction if support is needed.
-  /^[ \t]*(>[ \t]*|[-+*][ \t]+|[0-9]+[.)][ \t]+)+(```+|~~~+)[ \t]*mermaid([ \t]|$)/ {
-    print "unsupported mermaid fence in quote or list at line " NR > "/dev/stderr"
-    count++; exit 3
+  /(```|~~~).*mermaid/ {
+    error = "unsupported mermaid fence at line " NR
+    exit 1
   }
-  /^(    |\t)[ \t]*(```+|~~~+)[ \t]*mermaid([ \t]|$)/ {
-    print "unsupported indented mermaid literal at line " NR " (move the example out of the indented code block or remove it)" > "/dev/stderr"
-    count++; exit 3
+  file && $0 == "```" {
+    close(file)
+    file = ""
+    next
   }
-  match($0, /^ ? ? ?(```+|~~~+)/) {
-    marker = substr($0, 1, RLENGTH)
-    info = substr($0, RLENGTH + 1)
-    if (index(marker, "`") && index(info, "`")) next
-    indent = match(marker, /[^ ]/) - 1
-    fence = substr(marker, indent + 1, 1); width = length(marker) - indent
-    mermaid = (info ~ /^[ \t]*mermaid([ \t]|$)/)
-    if (mermaid) {
-      file = sprintf("%s/block-%03d.mmd", dir, ++count)
-      printf "%s", "" > file
-    }
-  }
+  file { print > file }
   END {
-    if (fence != "" && mermaid) {
-      print "unterminated mermaid block" > "/dev/stderr"
-      exit 3
+    if (!error && file) error = "unterminated mermaid block"
+    if (!error && !count) error = "no mermaid blocks found"
+    if (error) {
+      print error > "/dev/stderr"
+      exit 1
     }
-    if (count == 0) {
-      print "no mermaid blocks found" > "/dev/stderr"
-      exit 4
-    }
-    print count > sprintf("%s/count", dir)
   }
-' "$input_file" || {
+' "$1" || {
   status=$?
-  case "$status" in 3|4) exit "$status" ;; *) exit 64 ;; esac
+  [ "$status" -eq 1 ] && exit 1
+  exit 64
 }
-
-if ! mmdc --version >"$tmp_dir/parser.err" 2>&1; then
+printf 'flowchart TD\nA --> B\n' >"$tmp_dir/probe.mmd" || exit 64
+if ! mmdc --input "$tmp_dir/probe.mmd" --output "$tmp_dir/probe.svg" --quiet >"$tmp_dir/parser.err" 2>&1; then
   printf '%s\n' 'parser unavailable' >&2
-  cat "$tmp_dir/parser.err" >&2
+  cat "$tmp_dir/parser.err" >&2 || exit 64
   exit 2
 fi
-
-count="$(cat "$tmp_dir/count")" || exit 64
-for ((i = 1; i <= count; i++)); do
-  block_path="$(printf '%s/block-%03d' "$tmp_dir" "$i")"
-  error_file="$block_path.err"
-
-  if mmdc --input "$block_path.mmd" --output "$block_path.svg" --quiet >"$error_file" 2>&1; then continue; fi
-  if grep -qiE 'Error: (ENOSPC|EACCES|EROFS):' "$error_file"; then
-    parser_status=64
-    printf '%s\n' 'setup error: renderer filesystem failure' >&2
-  elif grep -qE 'Parse error on line|Lexical error on line|UnknownDiagramError|No diagram type detected' "$error_file"; then
-    parser_status=1
-    printf 'mermaid parse failed in block %s:\n' "$i" >&2
-  elif grep -qi 'could not find chrome\|failed to launch\|executable.*not found\|browser is already running\|browser was not found at the configured executablePath\|tried to find the browser at the configured path\|timed out after .* while waiting for the ws endpoint' "$error_file"; then
-    parser_status=2
-    printf '%s\n' 'parser unavailable' >&2
-  else
-    parser_status=1
-    printf 'mermaid parse failed in block %s:\n' "$i" >&2
+count=0
+for block in "$tmp_dir"/block-*.mmd; do
+  count=$((count + 1))
+  if ! mmdc --input "$block" --output "$block.svg" --quiet >"$tmp_dir/parser.err" 2>&1; then
+    printf 'mermaid parse failed in block %s:\n' "$count" >&2
+    cat "$tmp_dir/parser.err" >&2 || exit 64
+    exit 1
   fi
-  cat "$error_file" >&2
-  exit "$parser_status"
 done
-
-printf 'parser: mmdc\n'
-cat "$tmp_dir/parser.err" || exit 64
-printf 'parsed %s mermaid block(s)\n' "$count"
+version="$(mmdc --version)" || exit 64
+printf 'parser: mmdc\n%s\nparsed %s mermaid block(s)\n' "$version" "$count" || exit 64
