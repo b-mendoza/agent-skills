@@ -8,7 +8,7 @@
 
 ## Error Routing Table
 
-The guiding principle: surface failures immediately and let progress files handle recovery.
+The guiding principle: surface failures immediately and let the progress file handle recovery.
 
 | Error                               | Response                                                                                                                                                                               | Where to look                                               |
 | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
@@ -18,7 +18,7 @@ The guiding principle: surface failures immediately and let progress files handl
 | **Phase 1 fetch failure**           | See [Phase 1 Failure Routing](#phase-1-failure-routing)                                                                                                                                | `./data-contracts.md`                                       |
 | **Subagent failure (non-critical)** | Proceed without the result — utility subagents are advisory.                                                                                                                           | This file → critical/non-critical table                     |
 | **Subagent failure (critical)**     | Halt the phase. Critical subagents produce results required for the next step.                                                                                                         | This file → critical/non-critical table                     |
-| **User interruption**               | Progress files ensure resumability. Tell the user: "Say `resume <KEY>` (or provide the work-item URL) to continue."                                                                    | `./workflow-policy.md` → Resume Mapping                     |
+| **User interruption**               | The progress file ensures resumability. Tell the user: "Say `resume <KEY>` (or provide the work-item URL) to continue."                                                                | `./workflow-policy.md` → Resume Mapping                     |
 | **Quality gate failure**            | Owned by the playbook's Phase 7 execution skill via internal fix cycles. Escalate only after 3 attempts.                                                                               | Downstream skill output                                     |
 | **Execution kickoff blocker**       | Stop before implementation and surface the blocker (workspace, branch, platform state).                                                                                                | Downstream skill output                                     |
 | **Phase 7 capability blocker**      | Required tool, runtime, permission, or credential is unavailable. Stop the task and present as a steering decision; do not silently skip.                                              | Downstream skill output                                     |
@@ -59,10 +59,7 @@ The same subagent can be critical or non-critical depending on context. When dis
 
 ## Resumability
 
-Two levels of progress files maintain state:
-
-- `docs/<KEY>-progress.md` — workflow-level (Phases 1-4 + task summary table)
-- `docs/<KEY>-task-<N>-progress.md` — per-task (Phases 5-7)
+One progress file maintains state: `docs/<KEY>-progress.md` holds Phases 1-4 and a task table whose rows carry each task's Phase 5-7 state.
 
 ### Resume procedure
 

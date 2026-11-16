@@ -17,7 +17,7 @@ For every phase, use the standard cycle from `./workflow-policy.md`: announce, v
 3. Interpret the internal downstream 12-line fetch handoff using `./data-contracts.md`. The playbook supplies the platform-specific field labels for the identifier-bearing lines.
 4. If retrieval failed before writing an artifact, route through `./error-handling.md` instead of running postcondition validation.
 5. Dispatch `artifact-validator` with the workflow key under `TICKET_KEY`, `PLAYBOOK_PATH=<active playbook path>`, `PHASE=1`, `DIRECTION=postcondition`. The validator loads the playbook for the platform-specific snapshot section list.
-6. Dispatch `progress-tracker` with the workflow key under `TICKET_KEY`, `PLAYBOOK_PATH=<active playbook path>`, `ACTION=update`, `PHASE=1`, `STATUS=complete`, and a one-line fetch summary.
+6. Dispatch `progress-tracker` with the workflow key under `TICKET_KEY`, `ACTION=update`, `PHASE=1`, `STATUS=complete`, and a one-line fetch summary.
 
 **Gate:** Automatic. Proceed to Phase 2 when validation passes.
 
@@ -30,7 +30,7 @@ For every phase, use the standard cycle from `./workflow-policy.md`: announce, v
 3. Invoke the downstream skill with the inputs named in the playbook's Phase Skill Map row for Phase 2.
 4. Retain the task-plan path, warnings, and prose outcome; do not expect a `PLANNING` status line. When re-planning from Phase 3, also pass `RE_PLAN=true` and the accepted `DECISIONS` summary from critique.
 5. Dispatch `artifact-validator` with the workflow key under `TICKET_KEY`, `PLAYBOOK_PATH=<active playbook path>`, `PHASE=2`, `DIRECTION=postcondition`.
-6. Dispatch `progress-tracker` with the workflow key under `TICKET_KEY`, `PLAYBOOK_PATH=<active playbook path>`, `ACTION=update`, `PHASE=2`, `STATUS=complete`, and a one-line planning summary.
+6. Dispatch `progress-tracker` with the workflow key under `TICKET_KEY`, `ACTION=update`, `PHASE=2`, `STATUS=complete`, and a one-line planning summary.
 
 **Gate:** Automatic. Proceed to Phase 3 when validation passes.
 
@@ -44,7 +44,7 @@ For every phase, use the standard cycle from `./workflow-policy.md`: announce, v
 4. Let the downstream skill handle user-facing clarification and critique.
 5. Read the returned handoff flags; if either flag is missing or invalid, stop as a contract error. If `BLOCKERS_PRESENT=true`, stop before platform writes and surface blockers. If the downstream handoff has `RE_PLAN_NEEDED=true`, re-run Phase 2 with the accepted decisions, then run Phase 3 again. Maximum: 3 re-plan loops.
 6. After `RE_PLAN_NEEDED=false`, dispatch `artifact-validator` with the workflow key under `TICKET_KEY`, `PLAYBOOK_PATH=<active playbook path>`, `PHASE=3`, `DIRECTION=postcondition`.
-7. Dispatch `progress-tracker` with the workflow key under `TICKET_KEY`, `PLAYBOOK_PATH=<active playbook path>`, `ACTION=update`, `PHASE=3`, `STATUS=complete`, and a one-line clarification summary.
+7. Dispatch `progress-tracker` with the workflow key under `TICKET_KEY`, `ACTION=update`, `PHASE=3`, `STATUS=complete`, and a one-line clarification summary.
 
 **Gate:** First honor `BLOCKERS_PRESENT` from the clarification summary. If it is `true`, stop before platform writes and surface the unresolved blockers.
 
@@ -64,9 +64,9 @@ Write-model rules differ by platform; see the active playbook's `Phase 4 Child-I
 4. Invoke the downstream skill with the inputs named in the playbook's Phase Skill Map row for Phase 4.
 5. Retain the created/linked task identities, write model, warnings, and failed-create notes from the downstream prose summary and child-item table. Use the artifact/table contract for validation; do not expect a `TASK_ISSUES` or `SUBTASKS` status line.
 6. Dispatch `artifact-validator` with the workflow key under `TICKET_KEY`, `PLAYBOOK_PATH=<active playbook path>`, `PHASE=4`, `DIRECTION=postcondition`.
-7. Dispatch `progress-tracker` with the workflow key under `TICKET_KEY`, `PLAYBOOK_PATH=<active playbook path>`, `ACTION=update`, `PHASE=4`, `STATUS=complete`, `SUMMARY=<one-line result>`, and `TASKS=<rows from the downstream child-item table>`.
+7. Dispatch `progress-tracker` with the workflow key under `TICKET_KEY`, `ACTION=update`, `PHASE=4`, `STATUS=complete`, `SUMMARY=<one-line result>`, and `TASKS=<rows from the downstream child-item table>`.
 8. Surface any warnings or failed creates before task selection.
-9. Do not offer a task for Phase 5 when its inline child-item value is `Not Created`; require manual resolution or a successful Phase 4 rerun for that task first. If the playbook recognizes a degraded value, surface the degraded traceability and proceed only when the user accepts that model for the selected task.
+9. Do not offer a task for Phase 5 when its inline child-item value is `Not Created`; require manual resolution or a successful Phase 4 rerun for that task first. Before a rerun, dispatch `progress-tracker` with `ACTION=update`, `PHASE=4`, and `STATUS=active`; the rerun's completion must supply the same task numbers, and it refreshes their child items while keeping task state. If the playbook recognizes a degraded value, surface the degraded traceability and proceed only when the user accepts that model for the selected task.
 
 **Gate:** User chooses which task to execute next. Never auto-start a task.
 

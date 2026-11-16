@@ -7,7 +7,6 @@ import { fileURLToPath } from "node:url";
 import type { EvalCase } from "#/cases/case-contract.ts";
 import { behavioralDefaults } from "#/cases/case-contract.ts";
 import {
-  assertFileAbsent,
   assertFilesUnchanged,
   assertNoMutation,
   capturedFilesUnder,
@@ -26,18 +25,14 @@ import {
 import type { Observation, ToolCall } from "#/observation/agent-query.ts";
 
 export const PROGRESS_KEY = "acme-app-42";
-export const PROGRESS_SKILLS = [
-  "fetching-work-item",
-  "planning-work-item-tasks",
-  "clarifying-assumptions",
-  "creating-work-item-children",
-  "planning-task-execution",
-  "clarifying-assumptions",
-  "executing-work-item-task",
+export const PROGRESS_PHASE_NAMES = [
+  "Fetch work item",
+  "Plan tasks",
+  "Clarify and critique",
+  "Create child items",
 ];
 export const PROGRESS_ROOT = "docs";
 export const PROGRESS_PATH = `${PROGRESS_ROOT}/acme-app-42-progress.md`;
-export const TASK_PROGRESS_PATH = `${PROGRESS_ROOT}/acme-app-42-task-1-progress.md`;
 export const SKIP_REASON = "User excluded Task 2; Operations owns verification";
 const CHILDREN = 4;
 const CRITIQUE = 6;
@@ -63,44 +58,14 @@ export const ARTIFACT_RESUME_ACTIONS = [
     reason: "User excluded task",
     resume: "None (all tasks accounted for)",
   },
-  { action: "initialize", resume: "Phase 5 (task selection)" },
-  {
-    action: "update",
-    phase: CHILDREN,
-    status: "complete",
-    summary: "Children validated",
-    tasks: [{ number: 1, title: "Code", child_item: "acme/app#101" }],
-    resume: "Phase 5 (task selection)",
-  },
 ];
 export const TASK_ARTIFACT_RESUME_ACTIONS = [
-  {
-    critique: false,
-    action: "initialize_task",
-    resume: "Phase 6, Task 1",
-    continuation: [],
-  },
-  {
-    critique: false,
-    action: "initialize",
-    resume: "Phase 6, Task 1",
-    continuation: [
-      {
-        action: "update_task",
-        task_number: 1,
-        phase: CRITIQUE,
-        status: "active",
-        summary: "Resumed",
-      },
-    ],
-  },
   {
     critique: false,
     action: "update_task",
     phase: CRITIQUE,
     status: "complete",
     resume: "Phase 7, Task 1",
-    continuation: [],
   },
   {
     critique: true,
@@ -108,27 +73,6 @@ export const TASK_ARTIFACT_RESUME_ACTIONS = [
     phase: EXECUTE,
     status: "active",
     resume: "Phase 7, Task 1",
-    continuation: [],
-  },
-  {
-    critique: true,
-    action: "initialize_task",
-    resume: "Phase 7, Task 1",
-    continuation: [],
-  },
-  {
-    critique: true,
-    action: "initialize",
-    resume: "Phase 7, Task 1",
-    continuation: [
-      {
-        action: "update_task",
-        task_number: 1,
-        phase: EXECUTE,
-        status: "active",
-        summary: "Resumed",
-      },
-    ],
   },
 ];
 
@@ -161,8 +105,6 @@ export function makeProgressFixture() {
       encoding: "utf8",
     });
   const main = () => readFileSync(join(fixture.cwd, PROGRESS_PATH), "utf8");
-  const task = () =>
-    readFileSync(join(fixture.cwd, TASK_PROGRESS_PATH), "utf8");
   const populated = () => {
     for (const phase of [FETCH, PLAN, CLARIFY, CHILDREN]) {
       const result = run({
@@ -170,7 +112,6 @@ export function makeProgressFixture() {
         phase,
         status: "complete",
         summary: `phase ${phase}`,
-        phase_skills: PROGRESS_SKILLS,
         tasks: [
           {
             number: 1,
@@ -191,7 +132,7 @@ export function makeProgressFixture() {
       assert.equal(result.status, SUCCESS, result.stdout);
     }
   };
-  return { ...fixture, run, main, task, populated };
+  return { ...fixture, run, main, populated };
 }
 
 export function taskRows(
@@ -226,19 +167,14 @@ function allowedProgressWrite(
   if (!new Set(["Write", "Edit"]).has(call.name)) return false;
   const path = call.input["file_path"];
   if (typeof path !== "string") return false;
-  return [PROGRESS_PATH, TASK_PROGRESS_PATH].includes(
-    fixtureRelativePath(observation, path) ?? "",
-  );
+  return fixtureRelativePath(observation, path) === PROGRESS_PATH;
 }
 
 export function checkProgressProjection(observation: Observation): string {
   assertFilesUnchanged(observation, seedFiles, "fixture changed");
   assert.deepEqual(observation.gitStatusAfter, {
     kind: "worktree",
-    entries: [PROGRESS_PATH, TASK_PROGRESS_PATH]
-      .map((path) => `?? ${path}`)
-      .sort((first, second) => first.localeCompare(second))
-      .join("\n"),
+    entries: `?? ${PROGRESS_PATH}`,
   });
   assert.equal(
     capturedText(observation, HEAD_LOG),
@@ -250,12 +186,8 @@ export function checkProgressProjection(observation: Observation): string {
     ),
   );
   assert.deepEqual(
-    Object.keys(capturedFilesUnder(observation, `${PROGRESS_ROOT}/`)).sort(
-      (first, second) => first.localeCompare(second),
-    ),
-    [PROGRESS_PATH, TASK_PROGRESS_PATH].sort((first, second) =>
-      first.localeCompare(second),
-    ),
+    Object.keys(capturedFilesUnder(observation, `${PROGRESS_ROOT}/`)),
+    [PROGRESS_PATH],
   );
   const main = capturedText(observation, PROGRESS_PATH);
   for (const phase of [FETCH, PLAN, CLARIFY, CHILDREN]) {
@@ -277,14 +209,6 @@ export function checkProgressProjection(observation: Observation): string {
   assert.equal(second["Dependencies"], "1");
   assert.match(second["Status"] ?? "", /Skipped/);
   assert.ok(main.includes(SKIP_REASON));
-  assertFileAbsent(
-    observation,
-    `${PROGRESS_ROOT}/acme-app-42-task-2-progress.md`,
-  );
-  const detail = capturedText(observation, TASK_PROGRESS_PATH);
-  assert.match(detail, /\| 5 \|[^\n]+Complete/);
-  assert.match(detail, /\| 6 \|[^\n]+Complete/);
-  assert.match(detail, /\| 7 \|[^\n]+Pending/);
   assert.match(
     observation.finalText,
     /0\/2 complete\s*\|\s*1 skipped\s*\|\s*1 remaining/,
@@ -314,7 +238,6 @@ export const progressCases = [
       HEAD_LOG,
       BASELINE_REFLOG,
       `${PROGRESS_ROOT}/`,
-      `${PROGRESS_ROOT}/acme-app-42-task-2-progress.md`,
       "docs/",
       ...Object.keys(seedFiles),
     ],

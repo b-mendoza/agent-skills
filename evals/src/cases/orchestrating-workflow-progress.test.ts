@@ -1,19 +1,16 @@
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { describe, expect, test } from "vitest";
 
-import {
-  RESUME_ARTIFACTS,
-  RESUME_FACTS,
-} from "#/cases/orchestrating-workflow-fixtures.ts";
+import { RESUME_ARTIFACTS } from "#/cases/orchestrating-workflow-fixtures.ts";
 import {
   ARTIFACT_PLANNING_FILES,
   ARTIFACT_RESUME_ACTIONS,
   makeProgressFixture as setup,
   PROGRESS_KEY as key,
+  PROGRESS_PHASE_NAMES as phases,
   PROGRESS_ROOT as root,
-  PROGRESS_SKILLS as phases,
   TASK_ARTIFACT_RESUME_ACTIONS,
   TASK_PLANNING_FILES,
 } from "#/cases/orchestrating-workflow-progress-cases.ts";
@@ -21,7 +18,6 @@ import { writeRepoFiles } from "#/fixtures/fixtures.ts";
 
 const SUCCESS = 0;
 const BLOCKED = 1;
-const FIRST_INDEX = 0;
 
 const FETCH = 1;
 const PLAN_TASKS = 2;
@@ -35,18 +31,17 @@ describe("shipped progress helper", () => {
     const fixture = setup();
     try {
       fixture.populated();
-      const result = fixture.run({
-        action: "initialize_task",
-        task_number: 1,
-        phase_skills: phases,
-      });
+      const result = fixture.run({ action: "initialize_task", task_number: 1 });
       expect(result.status).toBe(SUCCESS);
       expect(fixture.main()).toContain("acme/app#101");
       expect(fixture.main()).toContain("OPS-202");
-      expect(fixture.main()).toMatch(/\| 1 \| fetching-work-item \|.*Complete/);
-      expect(fixture.main()).toMatch(
-        /\| 2 \| planning-work-item-tasks \|.*Complete/,
-      );
+      expect(fixture.main()).toMatch(/\| 1 \| Fetch work item \|.*Complete/);
+      expect(fixture.main()).toMatch(/\| 2 \| Plan tasks \|.*Complete/);
+      const before = fixture.main();
+      const again = fixture.run({ action: "initialize_task", task_number: 1 });
+      expect(again.status).toBe(BLOCKED);
+      expect(again.stdout).toContain("task already initialized");
+      expect(fixture.main()).toBe(before);
     } finally {
       fixture.cleanup();
     }
@@ -63,11 +58,7 @@ describe("shipped progress helper", () => {
       try {
         fixture.populated();
         expect(
-          fixture.run({
-            action: "initialize_task",
-            task_number: 1,
-            phase_skills: phases,
-          }).status,
+          fixture.run({ action: "initialize_task", task_number: 1 }).status,
         ).toBe(SUCCESS);
         let result = fixture.run({ action: "read" });
         for (const completed of [PLAN, CRITIQUE, EXECUTE].filter(
@@ -82,9 +73,6 @@ describe("shipped progress helper", () => {
           });
           expect(result.status).toBe(SUCCESS);
         }
-        expect(fixture.task()).toMatch(
-          new RegExp(`\\| ${phase} \\| [^|]+ \\|.*Complete`),
-        );
         expect(fixture.main()).toContain(label);
         const row = fixture
           .main()
@@ -114,9 +102,6 @@ describe("shipped progress helper", () => {
       expect(fixture.main()).toContain(
         "User excluded manual verification; owned by Operations",
       );
-      expect(
-        existsSync(join(fixture.cwd, root, `${key}-task-2-progress.md`)),
-      ).toBe(false);
       expect(result.stdout).toContain("0/2 complete | 1 skipped | 1 remaining");
       expect(result.stdout).not.toMatch(/Resume from:.*Task 2/);
       expect(result.stdout).not.toMatch(/- Task 2 \|/);
@@ -161,7 +146,12 @@ describe("shipped progress helper", () => {
     const fixture = setup();
     try {
       expect(
-        fixture.run({ action: "initialize", phase_skills: phases }).status,
+        fixture.run({
+          action: "update",
+          phase: FETCH,
+          status: "complete",
+          summary: "fetched",
+        }).status,
       ).toBe(SUCCESS);
       const path = join(fixture.cwd, root, `${key}-progress.md`);
       writeFileSync(
@@ -186,7 +176,7 @@ describe("shipped progress helper", () => {
       fixture.cleanup();
     }
   });
-  test("reads and updates legacy progress without treating Phase 5 as task completion", () => {
+  test("reads and updates resumed progress without treating Phase 5 as task completion", () => {
     const fixture = setup();
     try {
       writeRepoFiles(fixture.cwd, RESUME_ARTIFACTS);
@@ -203,11 +193,36 @@ describe("shipped progress helper", () => {
       });
       expect(updated.status).toBe(SUCCESS);
       expect(updated.stdout).toContain("Resume from: Phase 7, Task 1");
-      expect(fixture.main()).toContain("Unknown (legacy)");
-      expect(fixture.main()).toMatch(/\| 1 \|[^\n]+Active/);
-      expect(
-        readFileSync(join(fixture.cwd, RESUME_FACTS.taskProgressPath), "utf8"),
-      ).toContain("Critique done");
+      expect(fixture.main()).toMatch(
+        /\| 1 \|[^\n]+7\/7 Execute \|[^\n]+Active/,
+      );
+      expect(fixture.main()).toContain("Critique done");
+    } finally {
+      fixture.cleanup();
+    }
+  });
+  test("rejects a phase past the current one and a Complete row before Phase 7", () => {
+    const fixture = setup();
+    try {
+      writeRepoFiles(fixture.cwd, RESUME_ARTIFACTS);
+      const before = fixture.main();
+      const skipped = fixture.run({
+        action: "update_task",
+        task_number: 1,
+        phase: EXECUTE,
+        status: "complete",
+        summary: "skipped critique",
+      });
+      expect(skipped.status).toBe(BLOCKED);
+      expect(skipped.stdout).toContain("earlier task phases are not complete");
+      expect(fixture.main()).toBe(before);
+      writeFileSync(
+        join(fixture.cwd, root, `${key}-progress.md`),
+        before.replace("| 🔄 Active |", "| ✅ Complete |"),
+      );
+      const read = fixture.run({ action: "read" });
+      expect(read.status).toBe(BLOCKED);
+      expect(read.stdout).toContain("Task 1 completion lacks Phase 7 evidence");
     } finally {
       fixture.cleanup();
     }
@@ -262,10 +277,9 @@ describe("shipped progress helper", () => {
         phase: PLAN_TASKS,
         status: "complete",
         summary: "Tasks validated",
-        phase_skills: phases,
       });
       expect(updated.status).toBe(SUCCESS);
-      expect(fixture.main()).toMatch(/\| 1 \| fetching-work-item \|.*Complete/);
+      expect(fixture.main()).toMatch(/\| 1 \| Fetch work item \|.*Complete/);
       expect(fixture.run({ action: "read" }).stdout).toContain(
         "Resume from: Phase 3",
       );
@@ -286,22 +300,16 @@ describe("shipped progress helper", () => {
         expect(existsSync(join(fixture.cwd, root, `${key}-progress.md`))).toBe(
           false,
         );
-        const result = fixture.run({ ...action, phase_skills: phases });
+        const result = fixture.run(action);
         expect(result.status).toBe(SUCCESS);
-        for (const [index, skill] of phases
-          .slice(FIRST_INDEX, CHILDREN)
-          .entries()) {
+        for (const [index, name] of phases.entries()) {
           expect(fixture.main()).toMatch(
-            new RegExp(`\\| ${index + FETCH} \\| ${skill} \\|.*Complete`),
+            new RegExp(`\\| ${index + FETCH} \\| ${name} \\|.*Complete`),
           );
         }
-        expect(fixture.main()).toContain("phase validation still required");
         expect(fixture.run({ action: "read" }).stdout).toContain(
           `Resume from: ${resume}`,
         );
-        expect(
-          existsSync(join(fixture.cwd, root, `${key}-task-1-progress.md`)),
-        ).toBe(action.action === "initialize_task");
         expect(fixture.main().includes("User excluded task")).toBe(
           action.action === "skip_task",
         );
@@ -313,7 +321,7 @@ describe("shipped progress helper", () => {
 
   test.each(TASK_ARTIFACT_RESUME_ACTIONS)(
     "retains inferred task planning for $action with critique=$critique",
-    ({ critique, resume, continuation, ...action }) => {
+    ({ critique, resume, ...action }) => {
       const fixture = setup();
       try {
         writeRepoFiles(fixture.cwd, {
@@ -330,33 +338,16 @@ describe("shipped progress helper", () => {
         expect(before.stdout).toContain(
           `Resume from: Phase ${critique ? EXECUTE : CRITIQUE}, Task 1`,
         );
-        expect(
-          existsSync(join(fixture.cwd, root, `${key}-task-1-progress.md`)),
-        ).toBe(false);
         const result = fixture.run({
           ...action,
           task_number: 1,
           summary: "Validated continuation",
-          phase_skills: phases,
         });
         expect(result.status).toBe(SUCCESS);
         expect(fixture.main()).toMatch(
-          /\| 4 \| creating-work-item-children \|.*Complete/,
+          /\| 4 \| Create child items \|.*Complete/,
         );
         expect(fixture.main()).toMatch(/\| 1 \| Code \|[^\n]+Active/);
-        expect(fixture.run({ action: "read" }).stdout).toContain(
-          `Resume from: ${resume}`,
-        );
-        for (const next of continuation) {
-          expect(fixture.run({ ...next, phase_skills: phases }).status).toBe(
-            SUCCESS,
-          );
-        }
-        expect(fixture.task()).toMatch(
-          /\| 5 \| planning-task-execution \|.*Complete/,
-        );
-        expect(fixture.task()).not.toMatch(/\| 7 \|[^\n]+Complete/);
-        expect(fixture.task()).toContain("phase validation still required");
         expect(fixture.run({ action: "read" }).stdout).toContain(
           `Resume from: ${resume}`,
         );
@@ -375,19 +366,18 @@ describe("shipped progress helper", () => {
         phase: FETCH,
         status: "complete",
         summary: "fetched",
-        phase_skills: phases,
       });
       expect(result.status).toBe(SUCCESS);
       expect(
         fixture.main().replace(/\d{4}-\d{2}-\d{2} \d{2}:\d{2} UTC/g, "<ts>"),
       ).toBe(
         "# acme-app-42 — Workflow Progress\n\n" +
-          "| Phase | Skill | Status | Completed at | Notes |\n" +
+          "| Phase | Name | Status | Completed at | Notes |\n" +
           "| --- | --- | --- | --- | --- |\n" +
-          "| 1 | fetching-work-item | ✅ Complete | <ts> | fetched |\n" +
-          "| 2 | planning-work-item-tasks | ⬜ Pending | — | — |\n" +
-          "| 3 | clarifying-assumptions | ⬜ Pending | — | — |\n" +
-          "| 4 | creating-work-item-children | ⬜ Pending | — | — |\n\n" +
+          "| 1 | Fetch work item | ✅ Complete | <ts> | fetched |\n" +
+          "| 2 | Plan tasks | ⬜ Pending | — | — |\n" +
+          "| 3 | Clarify and critique | ⬜ Pending | — | — |\n" +
+          "| 4 | Create child items | ⬜ Pending | — | — |\n\n" +
           "## Task Execution (Phases 5–7)\n\n_No tasks yet_\n\n" +
           "## Execution Log\n<ts> — Phase 1: complete — fetched\n",
       );
@@ -400,11 +390,7 @@ describe("shipped progress helper", () => {
     const fixture = setup();
     try {
       expect(fixture.run({ action: "read" }).stdout).toContain("Fresh start");
-      const result = fixture.run({
-        action: "initialize_task",
-        task_number: 1,
-        phase_skills: phases,
-      });
+      const result = fixture.run({ action: "initialize_task", task_number: 1 });
       expect(result.status).toBe(BLOCKED);
       expect(result.stdout).toContain("main progress file is missing");
       expect(existsSync(join(fixture.cwd, root, `${key}-progress.md`))).toBe(
@@ -419,8 +405,10 @@ describe("shipped progress helper", () => {
     const fixture = setup();
     try {
       const result = fixture.run({
-        action: "initialize",
-        phase_skills: phases,
+        action: "update",
+        phase: FETCH,
+        status: "complete",
+        summary: "fetched",
         ticket_key: "../../outside",
       });
       expect(result.status).toBe(BLOCKED);
