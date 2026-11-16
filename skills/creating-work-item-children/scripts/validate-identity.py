@@ -4,7 +4,6 @@
 Read-only comparison of independently extracted plan and child content.
 Exit 0: complete matching identity; 1: invalid, incomplete, or stale evidence.
 """
-import hashlib
 import json
 import sys
 
@@ -29,10 +28,7 @@ def main():
     planned = task(evidence["task"])
     if task(child["task"]) != planned:
         raise ValueError("stale or conflicting task content; index is not identity")
-    canonical = json.dumps({"parent": parent, "task": planned}, sort_keys=True,
-                           ensure_ascii=False, separators=(",", ":"))
-    digest = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
-    print("IDENTITY: PASS sha256=" + digest)
+    print("IDENTITY: PASS")
 
 
 if __name__ == "__main__":

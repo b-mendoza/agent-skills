@@ -40,7 +40,7 @@ describe("child task content identity", () => {
   it("accepts complete matching content independently of mutable task numbering", () => {
     const result = validate(task);
     expect(result.status).toBe(SUCCESS);
-    expect(result.stdout).toMatch(/^IDENTITY: PASS sha256=[a-f0-9]{64}\n$/);
+    expect(result.stdout).toMatch(/^IDENTITY: PASS\n$/);
   });
   it.each([
     [
