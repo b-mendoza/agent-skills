@@ -99,7 +99,7 @@ Keep only status enums, artifact paths, exact fetched URLs, verdicts, and next-s
 
 ## Deterministic validation
 
-Resolve this package as `SKILL_DIR`. Before routing each producer result, run `python3 "${SKILL_DIR}/scripts/validate-output.py" <PREP|PLAN|TEST_SPEC|REFACTORING>` with the received envelope on stdin. Before accepting any of the four written artifacts, run the same script in `plan` mode with its contents on stdin; a brief or test spec cannot prescribe a forbidden action either. It performs no writes. Require exit 0; otherwise use the pipeline's bounded repair route. Missing shell or Python is `ERROR`, never permission to skip validation. This catches explicit prohibited actions, not every possible semantic evasion; also review the Implementation Approach for equivalent natural-language instructions.
+Resolve this package as `SKILL_DIR`. Before routing each producer result, run `python3 "${SKILL_DIR}/scripts/validate-output.py" <PREP|PLAN|TEST_SPEC|REFACTORING>` with the received envelope on stdin. Before accepting any of the four written artifacts, run the same script in `plan` mode with its contents on stdin; a brief or test spec cannot prescribe a forbidden action either. It performs no writes. Require exit 0; otherwise use the pipeline's bounded repair route. Missing shell or Python is `ERROR`, never permission to skip validation. The script checks explicit `git` commands only; the coordinator must review every artifact for prose stage, commit, push, or history-rewrite steps.
 
 ## Status Routing
 

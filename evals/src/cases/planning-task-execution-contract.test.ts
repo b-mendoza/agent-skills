@@ -37,30 +37,15 @@ describe("execution-plan action boundary", () => {
   });
   test.each([
     "Stage and commit the change.",
-    "Commit the changes with a conventional message.",
     "Push the branch to origin.",
-    'Run `git commit -m "feat: x"`.',
     "Rebase onto main.",
-    "Reset the branch to origin/main.",
-    "Commit the change.",
-    "Push the fix.",
-    "Stage the files.",
-    "Rewrite the commit history.",
-    "Then commit the implementation.",
-    "Finally, stage the named paths and commit the changes.",
     "Create a commit after tests pass.",
-    "Make the commit after tests pass.",
-    "Commit it.",
-    "Commit this change.",
-    "Stage src/timeout.js.",
-    "Stage timeout.js.",
-    "Push everything.",
-    "Commit once tests pass.",
-    "Reset to abc123.",
-  ])("rejects Git work with conventional operands: %s", (action) => {
-    const result = validate("plan", `## Implementation Approach\n${action}\n`);
-    expect(result.status).toBe(BLOCKED);
-    expect(result.stdout).toMatch(/outside.*execution.*boundary/i);
+    "Never commit and then push.",
+    "Stage the files. Do not commit yet.",
+  ])("leaves prose directives to model review: %s", (payload) => {
+    const result = validate("plan", `${payload}\n`);
+    expect(result.status).toBe(SUCCESS);
+    expect(result.stdout.trim()).toBe("VALID");
   });
   test.each([
     "add",
@@ -88,32 +73,6 @@ describe("execution-plan action boundary", () => {
     expect(result.status).toBe(SUCCESS);
   });
   test.each([
-    'Use a 5" margin and commit the changes, then print "done".',
-    'Set the width to 12" and push the branch to origin; the height stays 8".',
-    "Run the `build and commit the changes` step.",
-    "Set `a and commit the changes; set `b.",
-    "Run `npm run build and commit the changes`.",
-    "Run `make test; then push the branch to origin`.",
-    'Add the note "run tests and commit the changes when done" to the README.',
-    "Mark it 'done and commit the changes' in the log.",
-    'Print "building; then commit the changes" and exit.',
-    'Use the title "Stage and commit changes" for the section.',
-    'Tell the user to "commit and push when ready".',
-  ])("does not mask directives outside Git command operands: %s", (payload) => {
-    const result = validate("plan", `${payload}\n`);
-    expect(result.status).toBe(BLOCKED);
-    expect(result.stdout).toContain("action outside the execution boundary");
-  });
-  test.each([
-    'Add the note "git status" and commit the changes, then print "done".',
-    "Run `build and commit the changes; git status`.",
-    'Inspect `git status`; print "done and commit the changes".',
-  ])("keeps directives outside a Git operand scope visible: %s", (payload) => {
-    const result = validate("plan", `${payload}\n`);
-    expect(result.status).toBe(BLOCKED);
-    expect(result.stdout).toContain("action outside the execution boundary");
-  });
-  test.each([
     'Inspect `git log --grep="timeout and retry" --oneline`.',
     'Inspect `git diff -- "before and after.txt"`.',
     'Inspect git log --grep="timeout and retry" --oneline.',
@@ -121,14 +80,16 @@ describe("execution-plan action boundary", () => {
     'Inspect `git log --grep="timeout; then retry but stop" --oneline`.',
     "Inspect `git diff -- before and commit then push but reset`.",
     'Inspect `git log --grep="timeout retry" --oneline`.',
-    'Inspect `git log --grep="git commit and git push" --oneline`.',
     'Inspect `git log --grep="say \\"retry and stop\\" then wait" --oneline`.',
     "Don't run `git commit -m fix`; inspect `git status`.",
-  ])("accepts read-only Git operands without splitting them: %s", (payload) => {
-    const result = validate("plan", `${payload}\n`);
-    expect(result.stdout.trim()).toBe("VALID");
-    expect(result.status).toBe(SUCCESS);
-  });
+  ])(
+    "accepts read-only Git commands and clause-leading prohibitions: %s",
+    (payload) => {
+      const result = validate("plan", `${payload}\n`);
+      expect(result.stdout.trim()).toBe("VALID");
+      expect(result.status).toBe(SUCCESS);
+    },
+  );
   test.each([
     ['Run `git commit -m "fix this and that"`.', "commit"],
     ["Run `git commit -m 'fix this; then that but stop'`.", "commit"],
@@ -146,13 +107,10 @@ describe("execution-plan action boundary", () => {
     expect(result.stdout).not.toContain("unparseable");
   });
   test.each([
-    "4. Stage the changed source and commit the implementation.",
-    "4. Commit the changes once tests pass.",
     "4. Run `git add src/timeout.js && git commit -m fix`.",
     "```sh\ngit -C /repo add src/timeout.js\n```",
     "```sh\ngit --no-pager commit -m fix\n```",
     "```sh\ngit -c user.name=Tester push origin HEAD\n```",
-    "4. Rebase the branch before handoff.",
     "git reset --hard HEAD~1",
     "git cherry-pick abc123",
     "Do not modify unrelated files; then git commit -am fix",
@@ -183,50 +141,27 @@ describe("Git directives versus product objects and safety clauses", () => {
     },
   );
   test.each([
-    "Push origin main.",
-    "Push origin HEAD.",
-    "Push the branch main to origin.",
-    "Stage --all.",
-    "Commit --amend.",
-    "Reset --hard HEAD~1.",
-    "Push upstream feature/task.",
-    "Push origin main:release.",
-    "Push the branch feature/task to origin.",
-    "Stage -A.",
-    "Reset the branch main to HEAD~1.",
-    "Push upstream events to the queue.",
-  ])("rejects Git operands or leading flags: %s", (payload) => {
+    'Inspect `git log --grep="git commit and git push" --oneline`.',
+    "Do not run git add and git commit.",
+    "Do not run `git add src/a.ts` and `git commit -m fix`.",
+    "Do not run git add . and git commit --amend and git push origin main.",
+  ])("rejects unmasked commands or commands in a new clause: %s", (payload) => {
     const result = validate("plan", `${payload}\n`);
     expect(result.status).toBe(BLOCKED);
     expect(result.stdout).toMatch(/outside.*execution.*boundary/i);
   });
   test.each([
     "Do not stage and commit changes.",
-    "Do not run git add and git commit.",
     "Never commit and push.",
     "Do not stage and commit changes and push.",
-    "Do not run `git add src/a.ts` and `git commit -m fix`.",
-    "Do not run git add . and git commit --amend and git push origin main.",
     "Never stage and never commit.",
-  ])("accepts a shared prohibition: %s", (payload) => {
+  ])("accepts prose-only prohibitions: %s", (payload) => {
     const result = validate("plan", `${payload}\n`);
     expect(result.status).toBe(SUCCESS);
     expect(result.stdout.trim()).toBe("VALID");
   });
-  test.each([
-    "Do not stage and run git add src/a.ts.",
-    "Never commit and then push.",
-    "Never commit and finally push.",
-    "Do not commit but push.",
-    "Do not commit; push.",
-    "Do not commit, and push.",
-    "Do not commit changes and push.",
-    "Do not run git add . and push.",
-    "Do not stage and validate the changes and push.",
-    "Never commit. Push origin main.",
-    "Never commit.\nPush origin main.",
-  ])(
-    "rejects an independent or ambiguous positive directive: %s",
+  test.each(["Do not stage and run git add src/a.ts."])(
+    "rejects commands outside a prohibition's clause: %s",
     (payload) => {
       const result = validate("plan", `${payload}\n`);
       expect(result.status).toBe(BLOCKED);
@@ -279,45 +214,11 @@ describe("Git directives versus product objects and safety clauses", () => {
     expect(result.stdout.trim()).toBe("VALID");
   });
   test.each([
-    "9. Commit with a conventional message.",
-    "9. Commit using the message from the task brief.",
-    "Once tests pass, create a signed commit for the task.",
-    "Make one signed commit.",
-    "Create a single commit with the message feat: x.",
-    "Finally, commit the work.",
-    "Run the tests, then commit the changes.",
-    "Run the tests and commit the changes.",
     "Do not stage unrelated files, and run git add src/a.ts.",
-    "Push to origin.",
-    "Reset the branch to HEAD~1.",
     "Run git push origin main.",
-    "Commit abc1234 follow-up fixes.",
-    "Reset the branch to origin/main.",
-    "Reset HEAD to the previous commit.",
-    "Rewrite history so the commits are atomic.",
-    "Reset the index.",
-    "Stage src/a.ts.",
-    "Commit once tests pass.",
-    "Push.",
-    "Commit.",
-    "Stage and commit the change.",
-    "Commit the changes with a conventional message.",
-    "Push the branch to origin.",
     'Run `git commit -m "feat: x"`.',
-    "Rebase onto main.",
-    "Rebase the date range onto UTC.",
-    "Push after the lock is released so the queue stays ordered.",
-    "Stage the files in a temp directory before the import.",
-    'Commit -m "feat: x".',
-    "Reset the git index.",
-    "Reset abc1234.",
-    "Next, make one signed commit.",
-    "Afterwards, push the branch.",
-    "Do not commit; then push.",
     "Do not commit but run git add src/a.ts.",
-    "Stage the fixture rows; commit the changes.",
-    "Stage the fixture rows, and commit the changes.",
-  ])("rejects the Git directive: %s", (payload) => {
+  ])("rejects explicit Git commands: %s", (payload) => {
     const result = validate("plan", `${payload}\n`);
     expect(result.status).toBe(BLOCKED);
     expect(result.stdout).toMatch(/outside.*execution.*boundary/i);
@@ -374,10 +275,7 @@ describe("recorded negative safety note", () => {
       "Keep work scoped to Task 2. Do not stage, commit, push, rewrite history, or mutate GitHub. Leave planning artifacts on disk, unstaged and uncommitted.";
     expect(validate("plan", recorded).status).toBe(SUCCESS);
   });
-  test.each([
-    "Stage the files. Do not commit yet.",
-    "Do not stage unrelated files. git commit -am fix",
-  ])(
+  test.each(["Do not stage unrelated files. git commit -am fix"])(
     "still rejects an actionable sentence beside a prohibition: %s",
     (payload) => {
       expect(validate("plan", payload).status).toBe(BLOCKED);

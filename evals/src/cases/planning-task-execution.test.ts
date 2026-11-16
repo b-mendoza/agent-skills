@@ -342,9 +342,9 @@ Lower-priority tests cover the full valid range and numeric strings. Every defin
 
 describe("executable plan actions", () => {
   test.each([
-    "4. Stage the changed files and commit the implementation.",
+    "4. Run `git add -A`, then `git commit -m fix`.",
     "4. Run `git add . && git commit -m fix && git push`.",
-    "4. Rebase the completed task before handoff.",
+    "4. `git rebase main` before handoff.",
   ])("rejects a future action despite unchanged HEAD: %s", (directive) => {
     const observation = completedObservation();
     const [, plan] = ARTIFACTS;
@@ -367,7 +367,7 @@ test("rejects a commit directive smuggled through the execution brief", () => {
       ...observation,
       repoFiles: {
         ...observation.repoFiles,
-        [BRIEF_ARTIFACT.path]: `${observation.repoFiles?.[BRIEF_ARTIFACT.path] ?? ""}\n4. Stage and commit the implementation.\n`,
+        [BRIEF_ARTIFACT.path]: `${observation.repoFiles?.[BRIEF_ARTIFACT.path] ?? ""}\n4. Run \`git commit -am implementation\`.\n`,
       },
     }),
   ).toThrow(/execution boundary/);
