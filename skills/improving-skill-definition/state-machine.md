@@ -26,51 +26,51 @@ Internal terminal decisions below select the outcome; public replies use prose a
 
 ## Transitions
 
-| From                       | To                         | Guard / event                                                                                                                           |
-| -------------------------- | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `[*]`                      | `Intake`                   | run start                                                                                                                               |
-| `Intake`                   | `FlowLoad`                 | `SKILL_PATH` eligible; `SKILL_DIR` resolved; baseline copied; limits derived                                                            |
-| `Intake`                   | `TerminalBlocked`          | path missing, unreadable, or excluded; `SKILL_DIR` unresolved (`TOOLS_MISSING`); or `MUTATION_LIMITS` cannot be derived unambiguously   |
-| `FlowLoad`                 | `Discover`                 | own `references/personality.md` readable                                                                                                |
-| `FlowLoad`                 | `TerminalError`            | own `references/personality.md` unreadable                                                                                              |
-| `Discover`                 | `Audit`                    | `RELATED_SKILLS: PASS`, or BLOCKED/ERROR with optional degrade                                                                          |
-| `Discover`                 | `TerminalBlocked`          | discovery BLOCKED/ERROR and `REFERENCE_NEED` or mandate requires evidence                                                               |
-| `Audit`                    | `TerminalError`            | any slice status ends with `: ERROR`                                                                                                    |
-| `Audit`                    | `TerminalBlocked`          | else any slice ends with `: BLOCKED`                                                                                                    |
-| `Audit`                    | `Approval`                 | else any slice ends with `: GAPS_FOUND`                                                                                                 |
-| `Audit`                    | `TerminalNoChange`         | else all slices end with `: PASS`                                                                                                       |
-| `Approval`                 | `TerminalApprovalRequired` | no user reply (see Approval wait contract)                                                                                              |
-| `Approval`                 | `Approval`                 | invalid reply, first time (re-ask)                                                                                                      |
-| `Approval`                 | `TerminalBlocked`          | invalid reply, second time                                                                                                              |
-| `Approval`                 | `TerminalApprovalRequired` | no reply after the one re-ask                                                                                                           |
-| `Approval`                 | `TerminalNoChange`         | valid reply with approved scope `none`                                                                                                  |
-| `Approval`                 | `TerminalBlocked`          | valid reply but mutations violate limits or identity                                                                                    |
-| `Approval`                 | `EditPrep`                 | valid reply; scope not `none`; limits ok                                                                                                |
-| `EditPrep`                 | `DiagramCandidate`         | approved structural/semantic diagram change                                                                                             |
-| `EditPrep`                 | `Edit`                     | no diagram candidate required                                                                                                           |
-| `DiagramCandidate`         | `Edit`                     | candidate completion state is `final passed`                                                                                            |
-| `DiagramCandidate`         | `DiagramCandidate`         | helper exit 1, 3, or 4, or inspection failure, and `diagram_repair_counter < 3`; increment counter; repair only approved candidate      |
-| `DiagramCandidate`         | `TerminalBlocked`          | candidate missing (helper exit 66), required input missing, or inspection blocked                                                       |
-| `DiagramCandidate`         | `TerminalError`            | helper exit other than 0, 1, 2, 3, 4, or 66; unexpected inspection error; or syntax/inspection failure at `diagram_repair_counter >= 3` |
-| `Edit`                     | `Validate`                 | `EDIT: PASS` (at least one applied in-scope mutation)                                                                                   |
-| `Edit`                     | `TerminalNoChange`         | `EDIT: NO_CHANGE` (every approved item no-op, already satisfied, or deferred; empty baseline diff)                                      |
-| `Edit`                     | `TerminalBlocked`          | `EDIT: BLOCKED`                                                                                                                         |
-| `Edit`                     | `TerminalError`            | `EDIT: ERROR`                                                                                                                           |
-| `Validate`                 | `TerminalChanged`          | `VALIDATION: PASS` and non-empty authorized baseline diff                                                                               |
-| `Validate`                 | `Repair`                   | `VALIDATION: FAIL` and `repair_counter < 3`                                                                                             |
-| `Validate`                 | `TerminalBlocked`          | `VALIDATION: FAIL` and `repair_counter >= 3`                                                                                            |
-| `Validate`                 | `TerminalBlocked`          | `VALIDATION: BLOCKED`                                                                                                                   |
-| `Validate`                 | `TerminalError`            | `VALIDATION: ERROR`                                                                                                                     |
-| `Repair`                   | `EditPrep`                 | re-enter scoped to Lane A findings and approved gaps only                                                                               |
-| `TerminalChanged`          | `[*]`                      | emit handoff + cleanup                                                                                                                  |
-| `TerminalNoChange`         | `[*]`                      | emit handoff + cleanup                                                                                                                  |
-| `TerminalApprovalRequired` | `[*]`                      | emit handoff; preserve `HANDOFF_DIR`                                                                                                    |
-| `TerminalBlocked`          | `[*]`                      | emit handoff + outcome-dependent preserve                                                                                               |
-| `TerminalError`            | `[*]`                      | emit handoff + outcome-dependent preserve                                                                                               |
+| From                       | To                         | Guard / event                                                                                                                         |
+| -------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `[*]`                      | `Intake`                   | run start                                                                                                                             |
+| `Intake`                   | `FlowLoad`                 | `SKILL_PATH` eligible; `SKILL_DIR` resolved; baseline copied; limits derived                                                          |
+| `Intake`                   | `TerminalBlocked`          | path missing, unreadable, or excluded; `SKILL_DIR` unresolved (`TOOLS_MISSING`); or `MUTATION_LIMITS` cannot be derived unambiguously |
+| `FlowLoad`                 | `Discover`                 | own `references/personality.md` readable                                                                                              |
+| `FlowLoad`                 | `TerminalError`            | own `references/personality.md` unreadable                                                                                            |
+| `Discover`                 | `Audit`                    | `RELATED_SKILLS: PASS`, or BLOCKED/ERROR with optional degrade                                                                        |
+| `Discover`                 | `TerminalBlocked`          | discovery BLOCKED/ERROR and `REFERENCE_NEED` or mandate requires evidence                                                             |
+| `Audit`                    | `TerminalError`            | any slice status ends with `: ERROR`                                                                                                  |
+| `Audit`                    | `TerminalBlocked`          | else any slice ends with `: BLOCKED`                                                                                                  |
+| `Audit`                    | `Approval`                 | else any slice ends with `: GAPS_FOUND`                                                                                               |
+| `Audit`                    | `TerminalNoChange`         | else all slices end with `: PASS`                                                                                                     |
+| `Approval`                 | `TerminalApprovalRequired` | no user reply (see Approval wait contract)                                                                                            |
+| `Approval`                 | `Approval`                 | invalid reply, first time (re-ask)                                                                                                    |
+| `Approval`                 | `TerminalBlocked`          | invalid reply, second time                                                                                                            |
+| `Approval`                 | `TerminalApprovalRequired` | no reply after the one re-ask                                                                                                         |
+| `Approval`                 | `TerminalNoChange`         | valid reply with approved scope `none`                                                                                                |
+| `Approval`                 | `TerminalBlocked`          | valid reply but mutations violate limits or identity                                                                                  |
+| `Approval`                 | `EditPrep`                 | valid reply; scope not `none`; limits ok                                                                                              |
+| `EditPrep`                 | `DiagramCandidate`         | approved structural/semantic diagram change                                                                                           |
+| `EditPrep`                 | `Edit`                     | no diagram candidate required                                                                                                         |
+| `DiagramCandidate`         | `Edit`                     | candidate completion state is `final passed`                                                                                          |
+| `DiagramCandidate`         | `DiagramCandidate`         | helper exit 1, or inspection failure, and `diagram_repair_counter < 3`; increment counter; repair only approved candidate             |
+| `DiagramCandidate`         | `TerminalBlocked`          | candidate missing (helper exit 66), required input missing, or inspection blocked                                                     |
+| `DiagramCandidate`         | `TerminalError`            | helper exit other than 0, 1, 2, or 66; unexpected inspection error; or syntax/inspection failure at `diagram_repair_counter >= 3`     |
+| `Edit`                     | `Validate`                 | `EDIT: PASS` (at least one applied in-scope mutation)                                                                                 |
+| `Edit`                     | `TerminalNoChange`         | `EDIT: NO_CHANGE` (every approved item no-op, already satisfied, or deferred; empty baseline diff)                                    |
+| `Edit`                     | `TerminalBlocked`          | `EDIT: BLOCKED`                                                                                                                       |
+| `Edit`                     | `TerminalError`            | `EDIT: ERROR`                                                                                                                         |
+| `Validate`                 | `TerminalChanged`          | `VALIDATION: PASS` and non-empty authorized baseline diff                                                                             |
+| `Validate`                 | `Repair`                   | `VALIDATION: FAIL` and `repair_counter < 3`                                                                                           |
+| `Validate`                 | `TerminalBlocked`          | `VALIDATION: FAIL` and `repair_counter >= 3`                                                                                          |
+| `Validate`                 | `TerminalBlocked`          | `VALIDATION: BLOCKED`                                                                                                                 |
+| `Validate`                 | `TerminalError`            | `VALIDATION: ERROR`                                                                                                                   |
+| `Repair`                   | `EditPrep`                 | re-enter scoped to Lane A findings and approved gaps only                                                                             |
+| `TerminalChanged`          | `[*]`                      | emit handoff + cleanup                                                                                                                |
+| `TerminalNoChange`         | `[*]`                      | emit handoff + cleanup                                                                                                                |
+| `TerminalApprovalRequired` | `[*]`                      | emit handoff; preserve `HANDOFF_DIR`                                                                                                  |
+| `TerminalBlocked`          | `[*]`                      | emit handoff + outcome-dependent preserve                                                                                             |
+| `TerminalError`            | `[*]`                      | emit handoff + outcome-dependent preserve                                                                                             |
 
 ## Diagram candidate validation
 
-Author `flowchart` or `stateDiagram-v2` Mermaid manually at `DIAGRAM_CANDIDATE_PATH`, a run-owned file under `HANDOFF_DIR`, never a source or destination path. Destination writes occur only in `Edit` after the candidate reaches `final passed`. Run `bash "${SKILL_DIR}/scripts/check-mermaid.sh" "$DIAGRAM_CANDIDATE_PATH"`. Inspect the candidate against the approved gaps and target contracts: states, transitions, statuses, approval gates, retry bounds, cleanup, and related `SKILL.md`/registry entries must agree. `final passed` requires passing coherence inspection plus either helper exit 0 (`parsed`) or helper exit 2 with passing manual Mermaid syntax/structural inspection (`inspected-only`). Every exit 2, including failed local version preflight or browser startup, uses inspection. Disclose the `inspected-only` fallback policy at approval, then record the actual method, helper exit code, and candidate path; never claim parsing for the fallback. Initialize `diagram_repair_counter=0` per candidate. Candidate application and Lane A checks follow the editor and validator contracts.
+Author `flowchart` or `stateDiagram-v2` Mermaid manually at `DIAGRAM_CANDIDATE_PATH`, a run-owned file under `HANDOFF_DIR`, never a source or destination path. Destination writes occur only in `Edit` after the candidate reaches `final passed`. Run `sh "${SKILL_DIR}/scripts/check-mermaid.sh" "$DIAGRAM_CANDIDATE_PATH"`. Inspect the candidate against the approved gaps and target contracts: states, transitions, statuses, approval gates, retry bounds, cleanup, and related `SKILL.md`/registry entries must agree. `final passed` requires passing coherence inspection plus either helper exit 0 (`parsed`) or helper exit 2 with passing manual Mermaid syntax/structural inspection (`inspected-only`). Every exit 2, including a failed local render probe, uses inspection. Disclose the `inspected-only` fallback policy at approval, then record the actual method, helper exit code, and candidate path; never claim parsing for the fallback. Initialize `diagram_repair_counter=0` per candidate. Candidate application and Lane A checks follow the editor and validator contracts.
 
 ## Audit fan-out and join
 
