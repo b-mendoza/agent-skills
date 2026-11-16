@@ -25,10 +25,18 @@ describe("human-only execution guard", () => {
     "**Execution mode:** human-only\n**Human owner:** Release team\n**Branch name:** N/A (human-only)",
     "Execution mode: human-only\nHuman owner: Release team\nBranch name: feature/legacy-name",
     "**Branch name**: `N/A (human-only)`",
+    "**Execution mode:** human-only **Owner:** Human",
   ])("blocks selected human task before branch work: %s", (fields) => {
     const result = check(`## Task 1: Production signoff\n${fields}\n`);
     expect(result.status).toBe(BLOCKED);
     expect(result.stdout).toMatch(/BLOCKED.*human-only/i);
+  });
+  test("stops an inline owner value before the following task fields", () => {
+    const result = check(
+      "## Task 1: Do thing\n\n**Owner:** Dana **Execution mode:** human-only **Branch name:** N/A (human-only)\n",
+    );
+    expect(result.status).toBe(BLOCKED);
+    expect(result.stdout).toBe("BLOCKED: human-only task; hand off to Dana\n");
   });
   test("blocks a sentinel in the execution-order row even without task mode", () => {
     const result = check(
@@ -54,6 +62,7 @@ describe("human-only execution guard", () => {
     "`C` -> `1`",
     "**`C -> 1`**",
     "A -> B -> 1",
+    "Ta`sk 1",
   ])(
     "blocks a summary-only sentinel for task cell %s despite a stale code branch",
     (taskCell) => {
@@ -64,6 +73,46 @@ describe("human-only execution guard", () => {
       expect(result.stdout).toMatch(/BLOCKED.*human-only/i);
     },
   );
+  test("finds the Task header and a sentinel outside a branch column", () => {
+    const result = check(
+      "## Execution Order Summary\n| Handoff | Task | Branch |\n| --- | --- | --- |\n| N/A (human-only) | Task 1 | feature/stale-code |\n## Task 1: Approval\n**Owner:** Release team\n",
+    );
+    expect(result.status).toBe(BLOCKED);
+    expect(result.stdout).toBe(
+      "BLOCKED: human-only task; hand off to Release team\n",
+    );
+  });
+  test("does not mistake a Task data cell for a table header", () => {
+    const result = check(
+      "## Execution Order Summary\n| Order | Task | Type | Owner | Branch name |\n| --- | --- | --- | --- | --- |\n| 1 | 1 | Task | dev | feat/one |\n| 2 | 2 | Task | Ops | N/A (human-only) |\n## Task 1: One\n## Task 2: Two\n",
+      "2",
+    );
+    expect(result.status).toBe(BLOCKED);
+    expect(result.stdout).toMatch(/^BLOCKED: human-only/);
+  });
+  test("checks sentinel rows in every execution-order summary section", () => {
+    const result = check(
+      "## Execution Order Summary\n| Task | Branch |\n| --- | --- |\n| 1 | feature/one |\n## Execution Order Summary\n| Branch | Task |\n| :--- | ---: |\n| N/A (human-only) | 2 |\n## Task 1: One\n## Task 2: Two\n",
+      "2",
+    );
+    expect(result.status).toBe(BLOCKED);
+    expect(result.stdout).toMatch(/^BLOCKED: human-only/);
+  });
+  test("rejects a sentinel row under a header without a Task cell", () => {
+    const result = check(
+      "## Execution Order Summary\n| Number | Branch |\n| --- | --- |\n| 1 | N/A (human-only) |\n## Task 1: Approval\n",
+    );
+    expect(result.status).toBe(INVALID);
+    expect(result.stdout).toMatch(/^ERROR:/);
+  });
+  test("rejects an unreadable sentinel row before returning a human handoff", () => {
+    const result = check(
+      "## Execution Order Summary\n| Task | Handoff |\n| --- | --- |\n| 1 | N/A (human-only) |\n| T2 | N/A (human-only) |\n## Task 1: Approval\n**Execution mode:** human-only\n",
+    );
+    expect(result.status).toBe(INVALID);
+    expect(result.stdout).toMatch(/^ERROR:/);
+    expect(result.stdout).toContain("'T2'");
+  });
   test("accepts the code task named by a mapped row", () => {
     const result = check(
       "## Execution Order Summary\n| Task | Branch |\n| --- | --- |\n| C -> 1 | N/A (human-only) |\n| A -> 2 | feature/validation |\n## Task 1: Approval\n## Task 2: Implement validation\n**Branch name:** feature/validation\n",
@@ -90,7 +139,6 @@ describe("human-only execution guard", () => {
     "C => 1",
     "C -> 1 extra",
     " -> 1",
-    "Ta`sk 1",
     "",
   ])("rejects an unreadable sentinel Task cell %s", (taskCell) => {
     const result = check(
@@ -110,7 +158,6 @@ describe("human-only execution guard", () => {
     "C => 1",
     "C -> 1 extra",
     " -> 1",
-    "Ta`sk 1",
     "",
   ])("ignores an unreadable non-sentinel Task cell %s", (taskCell) => {
     const result = check(
@@ -139,7 +186,7 @@ describe("human-only execution guard", () => {
         `## Execution Order Summary\n| Task | Branch name |\n| --- | --- |\n| C -> 1 | ${firstBranch} |\n| Task 1 | ${secondBranch} |\n## Task 1: Approval\n**Branch name:** feature/stale-code\n**Human owner:** Release team\n`,
       );
       expect(result.status).toBe(BLOCKED);
-      expect(result.stdout).toMatch(/BLOCKED.*rows conflict/i);
+      expect(result.stdout).toMatch(/^BLOCKED: human-only/);
       expect(result.stdout).toContain("Release team");
     },
   );
@@ -152,7 +199,6 @@ describe("human-only execution guard", () => {
       expect(result.status).toBe(
         branch === "N/A (human-only)" ? BLOCKED : SUCCESS,
       );
-      expect(result.stdout).not.toMatch(/conflict/i);
     },
   );
   test("does not let a different human-only task block a code task", () => {
