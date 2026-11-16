@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -192,3 +194,153 @@ describe.each(["confirm-framing", "missing-subject"])(
     );
   },
 );
+
+describe("council packet validator", () => {
+  const SUCCESS = 0;
+  const FAILURE = 1;
+  const USAGE_ERROR = 2;
+  const script = fileURLToPath(
+    new URL(
+      "../../../skills/council-of-advisors/scripts/validate_packet.py",
+      import.meta.url,
+    ),
+  );
+  const good = {
+    reversibility: `seat: reversibility-seat
+decision_type: type_1
+reversal_cost_estimate:
+  money: high
+rationale: x
+confidence: low
+depth_setting: deep
+what_would_change_my_mind: [a]
+`,
+    analysis: `seat: focus-seat
+seat_class: recommending
+mandate: m
+verdict: hold
+reasoning_chain:
+  - premise: p
+key_risks_or_upside: [r]
+what_would_change_my_mind: [w]
+confidence: medium
+mental_model_in_use: Focus
+`,
+    branch: `seat: originality-seat (branch mode)
+branch: pivot
+rationale: r
+candidates:
+  - name: c
+`,
+    chair: `seat: chair-seat
+agreements_across_council: [a]
+disagreements_within_council: []
+recommendation: hold
+confidence: medium
+reasoning_chain: [s]
+minority_report: m
+required_kill_criterion: k
+power_questions_to_answer_before_proceeding: [q]
+`,
+    handoff: `status: ready
+subject: x
+high_stakes_disclosure: x
+decision_type: type_2
+classification_basis: seat_verdict
+chair_recommendation: go
+final_recommendation: go
+override_applied: false
+confidence: high
+research_tools: none
+minority_report: x
+required_kill_criterion: x
+power_questions_to_answer_before_proceeding: x
+seat_packets: x
+educate_me: x
+gates: x
+execution_fidelity: subagents
+run_log: x
+`,
+  };
+
+  function validate(kind: string, payload: string) {
+    return spawnSync("python3", ["-I", script, kind], {
+      input: payload,
+      encoding: "utf8",
+    });
+  }
+
+  it.each(Object.entries(good))("accepts valid %s payload", (kind, payload) => {
+    const result = validate(kind, payload);
+    expect(result.status).toBe(SUCCESS);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toBe("");
+  });
+
+  it.each([
+    [
+      "reversibility",
+      good.reversibility.replace(
+        "depth_setting: deep",
+        "depth_setting: standard",
+      ),
+      "depth_setting must be deep for type_1\n",
+    ],
+    [
+      "analysis",
+      good.analysis.replace(
+        "seat_class: recommending",
+        "seat_class: informational",
+      ),
+      "missing key headline_finding\ninformational seat verdict must be information_only\n",
+    ],
+    [
+      "branch",
+      good.branch.replace("branch: pivot", "branch: merge"),
+      "branch must be one of differentiate|pivot|abandon\n",
+    ],
+    [
+      "chair",
+      good.chair.replace("recommendation: hold", "recommendation: go"),
+      "recommendation go requires confidence high\n",
+    ],
+    [
+      "handoff",
+      good.handoff.replace("status: ready", "status: done"),
+      "status must be one of ready|needs_input|blocked|error\n",
+    ],
+  ])("rejects invalid %s payload with findings", (kind, payload, findings) => {
+    const result = validate(kind, payload);
+    expect(result.status).toBe(FAILURE);
+    expect(result.stdout).toBe(findings);
+    expect(result.stderr).toBe("");
+  });
+
+  it("accepts a BLOCKED escalation with an empty needed_input", () => {
+    const result = validate(
+      "analysis",
+      "status: BLOCKED\nseat: focus-seat\nreason: r\nneeded_input: ''\n",
+    );
+    expect(result.status).toBe(SUCCESS);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toBe("");
+  });
+
+  it("rejects a FAIL escalation with an empty reason", () => {
+    const result = validate(
+      "analysis",
+      "status: FAIL\nseat: focus-seat\nreason:\nneeded_input: ''\n",
+    );
+    expect(result.status).toBe(FAILURE);
+    expect(result.stdout).toBe("escalation: reason must be non-empty\n");
+    expect(result.stderr).toBe("");
+  });
+
+  it("reports usage on stderr for a bad kind", () => {
+    const result = validate("unknown", "");
+    expect(result.status).toBe(USAGE_ERROR);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toContain("usage: python3");
+    expect(result.stderr).toContain("<kind> [web] < payload");
+  });
+});
