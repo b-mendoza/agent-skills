@@ -1,4 +1,4 @@
-import { spawnSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -8,7 +8,7 @@ import { describe, expect, it } from "vitest";
 
 const SCRIPT = fileURLToPath(
   new URL(
-    "../../../skills/responding-to-pr-review-comments/scripts/post-review-reply.sh",
+    "../../../skills/responding-to-pr-review-comments/scripts/post-review-reply.py",
     import.meta.url,
   ),
 );
@@ -62,7 +62,7 @@ function withStub(run: (root: string) => void): void {
 }
 
 function invoke(root: string, args: string[], mode = "match") {
-  return spawnSync("bash", [SCRIPT, ...args], {
+  return spawnSync("python3", ["-I", SCRIPT, ...args], {
     cwd: root,
     encoding: "utf8",
     env: {
@@ -161,20 +161,27 @@ describe("shipped reply helper", () => {
     });
   });
 
-  it("fails before posting when python3 is unavailable", () => {
+  it("fails before posting when gh is unavailable", () => {
     withStub((root) => {
       const body = join(root, "approved.txt");
       writeFileSync(body, "Approved reply.");
-      const result = spawnSync(
-        "/bin/bash",
-        [SCRIPT, "eval-org/cart", "17", "701", body],
+      const python = execFileSync(
+        "python3",
+        ["-I", "-c", "import sys; print(sys.executable)"],
         {
           encoding: "utf8",
-          env: { ...process.env, PATH: root },
+        },
+      ).trim();
+      const result = spawnSync(
+        python,
+        ["-I", SCRIPT, "eval-org/cart", "17", "701", body],
+        {
+          encoding: "utf8",
+          env: { ...process.env, PATH: join(root, "missing-bin") },
         },
       );
       expect(result.status).toBe(DEPENDENCY_MISSING);
-      expect(result.stderr).toContain("python3 required");
+      expect(result.stderr).toContain("gh CLI required");
       expect(capturedArgs(root)).toEqual([]);
     });
   });
@@ -210,7 +217,7 @@ describe("shipped reply helper", () => {
         "missing.txt",
       ]);
       expect(result.status).toBe(MISSING_FILE);
-      expect(result.stderr).toContain("body file not found");
+      expect(result.stderr).toContain("cannot read UTF-8 approved body");
       expect(capturedArgs(root)).toEqual([]);
     });
   });
