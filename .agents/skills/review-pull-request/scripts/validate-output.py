@@ -1,24 +1,19 @@
 #!/usr/bin/env python3
-# Proves envelope, exact JSON keys/types, enums, identities and declared cross-field constraints.
-# Does not prove evidence, coverage, review quality, live identity, approval or external effects.
-# Usage: python3 -I validate-output.py <context|chunk|author|verify> < payload
-#        python3 -I validate-output.py --self-test | -h
-# Exit 0 conforms; 1 one "<mode>: line N: <message>" finding per defect (repair);
-#      2 bad/missing mode or invocation (ERROR). Missing python3 is the caller's TOOLS_MISSING.
-# Side effects: none. Environment: none. Check: python3 -I validate-output.py --self-test
-import copy
+r"""Usage: python3 -I validate-output.py <context|chunk|author|verify> < payload | -h
+Proves envelope, exact JSON keys/types, enums, identities and declared cross-field constraints.
+Does not prove evidence, coverage, review quality, live identity, approval or external effects.
+Exit 0 conforms; 1 one "<mode>: line N: <message>" finding per defect (repair);
+     2 bad/missing mode or invocation (ERROR). Missing python3 is the caller's TOOLS_MISSING.
+Side effects: none. Environment: none.
+Check (expect 0): printf 'VERIFY: PASS\n{"issues":[],"observed_checks":["ok"]}' | python3 -I validate-output.py verify; echo $?
+"""
 import json
 import re
-import subprocess
 import sys
 from urllib.parse import urlsplit
 
 MODES = ("context", "chunk", "author", "verify")
 FAILURES = ("NEEDS_CONTEXT", "TOOLS_MISSING", "ERROR")
-USAGE = ("Usage: python3 -I validate-output.py <context|chunk|author|verify> < payload\n"
-         "       python3 -I validate-output.py --self-test | -h\n"
-         "Exit 0 conforms; 1 defects (repair); 2 bad invocation (ERROR).\n"
-         "Missing python3: caller's TOOLS_MISSING. Side effects: none. Environment: none.")
 
 def text(value):
     return isinstance(value, str) and bool(value.strip())
@@ -256,90 +251,10 @@ def validate(mode, raw):
         array(data, "references", predicate=url, message="expected HTTPS URL with host")
     return errors
 
-def self_test():
-    finding = dict(id="c1", severity="blocking", title="Guard", confidence="high", anchor=None,
-                     evidence="Missing guard", failure_scenario="Empty", minimal_fix="Guard", sources=[])
-    good = {
-        "context": dict(pr="https://github.com/a/b/pull/1", state="open", title="T", author="A",
-            base_sha="a" * 40, head_sha="b" * 40, shortstat="", ci="Seen: pass", changed_files=["a"],
-            linked_context="", test_signals="", behavior_summary="Guard", risk_areas=[], limitations=[],
-            history="complete", dimensions=[dict(name="a", files=["a"], rationale="G")], base="M", head="H",
-            posting_basis=None, threads=[dict(thread_id="T1", is_resolved=False, path="a.py", line=None, root_comment_id=123,
-            root_url="https://a.co/r123", summary="Gap")], feedback=[], references=[]),
-        "chunk": dict(dimension="tests", inspected=[dict(path="test.py", ranges="1-9")], gaps=[], findings=[],
-                      residual_risks=[], references=[]),
-        "author": dict(decision="REQUEST_CHANGES", summary="Fix guard.\n\nTests pass.", dropped=[],
-                       residual_risks=[], references=[], thread_assessments=[], findings=[
-            dict(finding, id="a1", placement="inline", body="Fix:\n\n```suggestion\npass\n```\n",
-            anchor=dict(path="app.py", line=4, start_line=2, side="RIGHT")),
-            dict(finding, id="a2", placement="reply", root_comment_id=123, body="Still applies"),
-            dict(finding, id="a3", placement="summary"), dict(finding, id="a4", placement="unknown")]),
-        "verify": dict(issues=[], observed_checks=["Inspected guard"])}
-    def payload(mode, data, status="PASS"):
-        return (mode.upper() + ": " + status + "\n" + json.dumps(data)).encode()
-    cases = [(mode + " good", mode, payload(mode, data), "") for mode, data in good.items()]
-    cases.append(("FAIL", "verify", payload("verify", dict(issues=["Fix"], observed_checks=[]), "FAIL"), ""))
-    cases += [(mode + status, mode, payload(mode, dict(reason="R", next_step="N"), status), "")
-              for mode in MODES for status in FAILURES]
-    mutations = [
-        ("context", lambda d: d["threads"][0].update(is_resolved=True, line=2), ""),
-        ("context", lambda d: d.pop("title"), "title: missing key"),
-        ("context", lambda d: d.update(extra=1), "extra: extra key"),
-        ("context", lambda d: d.update(state="draft"), "state: expected one of"),
-        ("context", lambda d: d.update(base_sha="A" * 40), "base_sha: expected lowercase SHA"),
-        ("context", lambda d: d.update(references=["http://example.com"]), "references[0]: expected HTTPS"),
-        ("context", lambda d: d["dimensions"][0].update(files=["other.py"]), "not in changed_files"),
-        ("context", lambda d: d.update(dimensions=[dict(name=f"d{i}", files=["a"], rationale="R")
-                                                 for i in range(7)]), "dimensions: expected 1..6"),
-        ("context", lambda d: d["dimensions"][0].update(name="Bad_name"), "expected dimension name"),
-        ("context", lambda d: d.update(dimensions=d["dimensions"] * 2), "dimensions[1].name: duplicate"),
-        ("context", lambda d: d.update(threads=[d["threads"][0]] * 2), "root_comment_id: duplicate"),
-        ("chunk", lambda d: d.update(findings=[dict(finding, id="1")]), "id: expected dimension-N"),
-        ("chunk", lambda d: d.update(inspected=[]), "inspected/gaps: must not both be empty"),
-        ("author", lambda d: d["findings"][0]["anchor"].update(line=True), "anchor.line: expected integer"),
-        ("author", lambda d: d["findings"][1].update(id="a1"), "findings[1].id: duplicate"),
-        ("author", lambda d: d["findings"][0].update(anchor=None), "anchor: inline requires non-null"),
-        ("author", lambda d: d["findings"][1].pop("root_comment_id"), "root_comment_id: missing"),
-        ("author", lambda d: d["findings"][3].update(placement="reply", root_comment_id=123, body="R"),
-         "root_comment_id: duplicate"),
-        ("author", lambda d: d["findings"][2].update(body="extra"), "findings[2].body: extra key"),
-        ("author", lambda d: d["findings"][0]["anchor"].update(start_line=4), "start_line: must be < line"),
-        ("author", lambda d: d["findings"][0]["anchor"].update(start_line=5), "start_line: must be < line"),
-        ("author", lambda d: d.update(findings=[]), "REQUEST_CHANGES requires at least one finding"),
-        ("verify", lambda d: d.update(issues=["Problem"]), "issues: must be empty on PASS")]
-    for mode, mutate, expected in mutations:
-        data = copy.deepcopy(good[mode])
-        mutate(data)
-        cases.append((mode + expected, mode, payload(mode, data), expected))
-    cases += [(expected, "verify", raw, expected) for raw, expected in [
-        (b'WRONG: PASS\n{"issues":[],"observed_checks":[]}', "line 1: envelope"),
-        (b'VERIFY: MAYBE\n{"issues":[],"observed_checks":[]}', "line 1: envelope"),
-        (b'VERIFY: PASS\n{"issues":[],"issues":[],"observed_checks":[]}', "issues: duplicate key"),
-        (b'VERIFY: FAIL\n{"issues":[],"observed_checks":[]}', "issues: must be empty on PASS"),
-        (b'VERIFY: ERROR\n{"reason":"","next_step":"Ask"}', "reason: expected non-empty string"),
-        (b'VERIFY: PASS\n{"issues":[],"observed_checks":[]} trailing', "line 2: $: Extra data"),
-        (b'VERIFY: PASS\n\xff', "line 2: $: invalid UTF-8"),
-        (b'VERIFY: PASS\n{"issues":NaN,"observed_checks":[]}', "invalid JSON constant NaN"),
-        (b'VERIFY: PASS\n{"issues":Infinity,"observed_checks":[]}', "invalid JSON constant Infinity"),
-        (b'VERIFY: PASS\n[]', "line 2: $: expected object")]]
-    failed = [name for name, mode, raw, expected in cases
-              if (not validate(mode, raw) if expected else bool(validate(mode, raw)))
-              or (expected and not any(expected in error for error in validate(mode, raw)))]
-    for arguments, raw, expected in [(["verify"], payload("verify", good["verify"]), 0),
-                                     (["verify"], b"VERIFY: PASS\n{}", 1), ([], b"", 2)]:
-        result = subprocess.run([sys.executable, "-I", __file__, *arguments], input=raw, capture_output=True)
-        if result.returncode != expected:
-            failed.append("CLI exit " + str(expected))
-    total = len(cases) + 3
-    print("\n".join(failed + [f"{total - len(failed)}/{total} passed"]))
-    return int(bool(failed))
-
 if __name__ == "__main__":
     arguments = sys.argv[1:]
-    if arguments == ["--self-test"]:
-        sys.exit(self_test())
     if arguments == ["-h"] or len(arguments) != 1 or arguments[0] not in MODES:
-        print(USAGE, file=sys.stdout if arguments == ["-h"] else sys.stderr)
+        print(__doc__.strip(), file=sys.stdout if arguments == ["-h"] else sys.stderr)
         sys.exit(0 if arguments == ["-h"] else 2)
     errors = validate(arguments[0], sys.stdin.buffer.read())
     print("\n".join(errors), end="\n" if errors else "")

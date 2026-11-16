@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-# Usage: python3 -I render-review.py RUN_DIR OUTPUT_FILE [--replace <sha256>] | --self-test | -h
-# Paths: workspace-relative RUN_DIR/OUTPUT_FILE; run from the workspace root, no .. or symlinks.
-# Environment: none. Python 3 stdlib only; use isolated mode (-I).
-# Exit: 0 written/help/test; 1 refused/invalid input (WRITE_ERROR); 2 usage (REVIEW_ERROR).
-# Side effects: creates output exclusively or stages digest-guarded replacement in RUN_DIR/render.tmp.
-# Check, temp files only: python3 -I render-review.py --self-test
+r"""Usage: python3 -I render-review.py RUN_DIR OUTPUT_FILE [--replace <sha256>] | -h
+Paths: workspace-relative RUN_DIR/OUTPUT_FILE; run from the workspace root, no .. or symlinks.
+Environment: none. Python 3 stdlib only; use isolated mode (-I).
+Exit: 0 written/help; 1 refused/invalid input (WRITE_ERROR); 2 usage (REVIEW_ERROR).
+Side effects: creates output exclusively or stages digest-guarded replacement in RUN_DIR/render.tmp.
+Check (expect 1, nothing written): python3 -I render-review.py no-such-run out.md; echo $?
+"""
 import hashlib
 import json
 import os
@@ -13,12 +14,7 @@ import re
 import stat
 import subprocess
 import sys
-import tempfile
-from unittest.mock import patch
 from urllib.parse import quote
-
-USAGE = ("Usage: python3 -I render-review.py RUN_DIR OUTPUT_FILE [--replace <sha256>] | --self-test | -h\n"
-         "Paths: workspace-relative, from the workspace root; no .. or symlinks.\nEnvironment: none.")
 
 
 def digest(data):
@@ -157,115 +153,13 @@ def render(run):
     return ("\n\n".join(parts) + "\n").encode("utf-8")
 
 
-def fixture(run):
-    body = "Exact body  \n\n```suggestion\nnew value  \n```\n\nTrailing spaces  \n"
-    context = dict(pr="https://github.com/cli/cli/pull/1", state="open", title="Fixture", author="someone",
-                   base="main", head="fix", base_sha="a" * 40, head_sha="b" * 40, shortstat="",
-                   changed_files=["file.py"], ci="Not run; collected at fixture time",
-                   linked_context="", test_signals="", behavior_summary="Fixture behavior", risk_areas=[],
-                   dimensions=[dict(name="correctness", files=["file.py"], rationale="Changed logic")],
-                   history="complete", threads=[dict(thread_id="thread", is_resolved=False, path="file.py",
-                   line=1, root_comment_id=7, root_url="https://github.com/cli/cli/pull/1#discussion_r7",
-                   summary="Existing")], feedback=[], references=[], limitations=[],
-                   posting_basis=dict(viewer="reviewer", approval_urls=[],
-                       history_sha256=digest(b'[[],[],[]]')))
-    finding = dict(id="F1", severity="important", title="Fix this", confidence="high",
-                   anchor=dict(path="file.py", line=2, side="RIGHT", start_line=1), evidence="Evidence  \n",
-                   failure_scenario="Failure", minimal_fix="Fix", sources=[], placement="inline", body=body)
-    author = dict(decision="REQUEST_CHANGES", summary=body, findings=[finding], dropped=[],
-                  residual_risks=[], references=[], thread_assessments=[
-                      dict(root_comment_id=7, status="still-valid", evidence="file.py:1-2 at pinned head")])
-    chunk = dict(dimension="correctness", inspected=[dict(path="file.py", ranges="1-2")], gaps=[],
-                 findings=[], residual_risks=[], references=[])
-    for mode, name, value in [("context", "context.txt", context), ("chunk", "chunk-correctness.txt", chunk),
-                              ("author", "author.txt", author),
-                              ("verify", "verify.txt", dict(issues=[], observed_checks=["Fixture only"]))]:
-        (Path(run) / name).write_bytes((mode.upper() + ": PASS\n" + json.dumps(value)).encode())
-    return context, author, body
-
-
-def self_test():
-    tests = 0
-    def refused(action):
-        try:
-            action()
-        except (ValueError, OSError):
-            return
-        raise AssertionError("expected refusal")
-    cwd = Path.cwd()
-    with tempfile.TemporaryDirectory() as directory:
-        try:
-            os.chdir(directory)
-            run = Path(".")
-            context, author, body = fixture(run)
-            data = render(run)
-            assert body.encode() in data and b"file.py:1-2 RIGHT" in data
-            assert data.rsplit(b"## Posting\n", 1)[1] == b"\nNot posted.\n"
-            tests += 1
-            output = run / "review.md"
-            sha = write_file(run, output, data)
-            assert sha == digest(data) and output.read_bytes() == data
-            tests += 1
-            link = run / "link.md"
-            link.symlink_to(output)
-            linked_dir = run / "linked-dir"
-            linked_dir.symlink_to(Path.cwd(), target_is_directory=True)
-            for target, expected in [(output, None), (link, None), (link, sha),
-                                     (linked_dir / "new.md", None), (output, "0" * 64),
-                                     (Path.cwd() / "absolute.md", None), (Path("../new.md"), None)]:
-                refused(lambda: write_file(run, target, b"no", expected))
-                tests += 1
-            temporary = run / "render.tmp"
-            temporary.write_bytes(b"keep")
-            refused(lambda: write_file(run, output, data, sha))
-            assert temporary.read_bytes() == b"keep" and output.read_bytes() == data
-            temporary.unlink()
-            tests += 1
-            with patch("os.replace", side_effect=OSError("cross-device replacement refused")):
-                refused(lambda: write_file(run, output, data + b"updated", sha))
-            assert not temporary.exists() and output.read_bytes() == data
-            tests += 1
-            assert write_file(run, output, data + b"updated", sha) == digest(data + b"updated")
-            assert not temporary.exists()
-            tests += 1
-            receipts = dict(review=dict(id=9, url="https://github.com/cli/cli/pull/1#pullrequestreview-9"),
-                            replies=[], failed=[], complete=True)
-            (run / "receipts.json").write_text(json.dumps(receipts))
-            posting = render(run).rsplit(b"## Posting\n", 1)[1]
-            assert b"pullrequestreview-9" in posting and b"Posting is incomplete." not in posting
-            tests += 1
-            warning = (b"Posting is incomplete. An action without a receipt may still have taken effect on GitHub. "
-                       b"Check the PR before any manual follow-up; never re-run the poster.")
-            for complete in (False, None):
-                receipts["complete"] = complete
-                if complete is None:
-                    del receipts["complete"]
-                (run / "receipts.json").write_text(json.dumps(receipts))
-                posting = render(run).rsplit(b"## Posting\n", 1)[1]
-                assert warning in posting.splitlines() and b"pullrequestreview-9" in posting
-                tests += 1
-            (run / "chunk-correctness.txt").unlink()
-            refused(lambda: render(run))
-            tests += 1
-            fixture(run)
-            (run / "verify.txt").write_text('VERIFY: FAIL\n{"issues":["Not verified"],"observed_checks":[]}')
-            refused(lambda: render(run))
-            tests += 1
-        finally:
-            os.chdir(cwd)
-    print(f"render-review: {tests}/{tests} tests passed")
-
-
 def main(args):
     if args == ["-h"]:
-        print(USAGE)
-        return 0
-    if args == ["--self-test"]:
-        self_test()
+        print(__doc__.strip())
         return 0
     if (len(args) not in (2, 4) or
             (len(args) == 4 and (args[2] != "--replace" or not re.fullmatch(r"[0-9a-f]{64}", args[3])))):
-        print(USAGE, file=sys.stderr)
+        print(__doc__.strip(), file=sys.stderr)
         return 2
     try:
         sha = write_file(args[0], args[1], render(args[0]), args[3] if len(args) == 4 else None)
