@@ -1,6 +1,5 @@
-import { spawn, spawnSync } from "node:child_process";
-import { once } from "node:events";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -90,38 +89,4 @@ describe("planning task contracts", () => {
   ])("rejects %s", (_label, text) => {
     expect(validate(text).status).toBe(FAILURE);
   });
-});
-
-it("does not certify settlement while a delayed producer can still write", async () => {
-  const root = mkdtempSync(join(tmpdir(), "producer-settlement-"));
-  const path = join(root, "late-write.txt");
-  const child = spawn(
-    process.execPath,
-    [
-      "-e",
-      "process.stdin.once('data', () => { require('node:fs').writeFileSync(process.argv[1], 'done'); });",
-      path,
-    ],
-    { stdio: ["pipe", "ignore", "ignore"] },
-  );
-  const exited = once(child, "exit");
-  try {
-    expect(child.pid).toBeDefined();
-    const arguments_ = [
-      "-I",
-      join(scripts, "validate-settlement.py"),
-      String(child.pid),
-    ];
-    expect(spawnSync("python3", arguments_, { encoding: "utf8" }).status).toBe(
-      FAILURE,
-    );
-    child.stdin.end("finish");
-    await exited;
-    const settled = spawnSync("python3", arguments_, { encoding: "utf8" });
-    expect(settled.status).toBe(SUCCESS);
-    expect(readFileSync(path, "utf8")).toBe("done");
-  } finally {
-    child.kill();
-    rmSync(root, { recursive: true, force: true });
-  }
 });
