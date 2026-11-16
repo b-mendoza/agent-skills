@@ -48,6 +48,7 @@ When the harness does not offer `claude-haiku-5-5`, use `gpt-6.1-sol` at `low` e
 - For `claude-haiku-5-5`, `claude-opus-5-5`, and `claude-fable-5-2`, set the `model` parameter to `haiku`, `opus`, or `fable`.
 - For `gpt-6.1-sol`, do not set the `model` parameter. The `CLAUDE_CODE_SUBAGENT_MODEL` environment variable makes `gpt-6.1-sol` the default subagent model. The `model` parameter does not accept this model.
 - For `gpt-6.1-sol`, use a `subagent_type` whose definition sets no `model`, such as `general-purpose`. A `model` in the agent definition replaces the default. Do not use `fork`, because a fork always runs on the model of the orchestrator's thread.
+- Use the Codex and Grok harnesses only for web reads and adjudication.
 
 ### Effort
 
@@ -78,6 +79,23 @@ For a design decision, do these steps in order.
 
 1. Ask `claude-fable-5-2` for a written plan. State the scope in the brief, and ask for the simplest design that satisfies the requirements.
 2. Delegate the implementation of the plan to `claude-opus-5-5` or `gpt-6.1-sol`.
+
+### Web reads
+
+- After the first blocked fetch, delegate the read. Do not try other URLs, user agents, or scrapers to get past the block. Require quotes to come from retrieved content.
+- For a blocked web page, use `gpt-6.1-sol` in the Codex harness. For X posts, use `grok-4.6` in the Grok harness, not `grok-4.7`.
+
+### Adjudication
+
+- An adjudication is a verdict on a judgment dispute between the orchestrator and a subagent.
+- In the Codex harness, use `gpt-6-astra` for an adjudication.
+- In the Grok harness, use `grok-4.7-build-fast` for an adjudication.
+
+### T3 Code
+
+- Use `delegate_task` only for web reads and adjudication. The provider is `codex` for the Codex harness and `grok` for the Grok harness.
+- Use `orchestrator_capabilities` to make sure that the provider offers the model.
+- Set the effort level in `target.options`. The option is `reasoningEffort`.
 
 ## Open when relevant
 
