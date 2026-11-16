@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import type { SeedContext } from "#/cases/case-contract.ts";
 import {
@@ -26,6 +27,133 @@ export interface ReviewFixtureOptions {
 }
 
 const LARGE_NOTES_LINES = 600;
+const FENCE = "```";
+const REVIEW_SCRIPTS = fileURLToPath(
+  new URL("../../../skills/review-pull-request/scripts/", import.meta.url),
+);
+
+// Python source defining fixture(run): writes one passing context, chunk,
+// author and verify payload into run and returns (context, author, body).
+export const REVIEW_FIXTURE = String.raw`
+import hashlib, json
+from pathlib import Path
+def fixture(run):
+    body = "Exact body  \n\n${FENCE}suggestion\nnew value  \n${FENCE}\n\nTrailing spaces  \n"
+    context = dict(pr="https://github.com/cli/cli/pull/1", state="open", title="Fixture", author="someone",
+                   base="main", head="fix", base_sha="a" * 40, head_sha="b" * 40, shortstat="",
+                   changed_files=["file.py"], ci="Not run; collected at fixture time",
+                   linked_context="", test_signals="", behavior_summary="Fixture behavior", risk_areas=[],
+                   dimensions=[dict(name="correctness", files=["file.py"], rationale="Changed logic")],
+                   history="complete", threads=[dict(thread_id="thread", is_resolved=False, path="file.py",
+                   line=1, root_comment_id=7, root_url="https://github.com/cli/cli/pull/1#discussion_r7",
+                   summary="Existing")], feedback=[], references=[], limitations=[],
+                   posting_basis=dict(viewer="reviewer", approval_urls=[],
+                       history_sha256=hashlib.sha256(b'[[],[],[]]').hexdigest()))
+    finding = dict(id="F1", severity="important", title="Fix this", confidence="high",
+                   anchor=dict(path="file.py", line=2, side="RIGHT", start_line=1), evidence="Evidence  \n",
+                   failure_scenario="Failure", minimal_fix="Fix", sources=[], placement="inline", body=body)
+    author = dict(decision="REQUEST_CHANGES", summary=body, findings=[finding], dropped=[],
+                  residual_risks=[], references=[], thread_assessments=[
+                      dict(root_comment_id=7, status="still-valid", evidence="file.py:1-2 at pinned head")])
+    chunk = dict(dimension="correctness", inspected=[dict(path="file.py", ranges="1-2")], gaps=[],
+                 findings=[], residual_risks=[], references=[])
+    for mode, name, value in [("context", "context.txt", context), ("chunk", "chunk-correctness.txt", chunk),
+                              ("author", "author.txt", author),
+                              ("verify", "verify.txt", dict(issues=[], observed_checks=["Fixture only"]))]:
+        (Path(run) / name).write_bytes((mode.upper() + ": PASS\n" + json.dumps(value)).encode())
+    return context, author, body
+`;
+
+// Python source for validate-output.py cases ported from its former --self-test.
+// VALIDATOR_CASES needs python()'s validate; report(cases) prints the failures.
+export const VALIDATOR_CASES = String.raw`
+import copy
+MODES, FAILURES = validate.__globals__["MODES"], validate.__globals__["FAILURES"]
+finding = dict(id="c1", severity="blocking", title="Guard", confidence="high", anchor=None,
+                 evidence="Missing guard", failure_scenario="Empty", minimal_fix="Guard", sources=[])
+good = {
+    "context": dict(pr="https://github.com/a/b/pull/1", state="open", title="T", author="A",
+        base_sha="a" * 40, head_sha="b" * 40, shortstat="", ci="Seen: pass", changed_files=["a"],
+        linked_context="", test_signals="", behavior_summary="Guard", risk_areas=[], limitations=[],
+        history="complete", dimensions=[dict(name="a", files=["a"], rationale="G")], base="M", head="H",
+        posting_basis=None, threads=[dict(thread_id="T1", is_resolved=False, path="a.py", line=None, root_comment_id=123,
+        root_url="https://a.co/r123", summary="Gap")], feedback=[], references=[]),
+    "chunk": dict(dimension="tests", inspected=[dict(path="test.py", ranges="1-9")], gaps=[], findings=[],
+                  residual_risks=[], references=[]),
+    "author": dict(decision="REQUEST_CHANGES", summary="Fix guard.\n\nTests pass.", dropped=[],
+                   residual_risks=[], references=[], thread_assessments=[], findings=[
+        dict(finding, id="a1", placement="inline", body="Fix:\n\n${FENCE}suggestion\npass\n${FENCE}\n",
+        anchor=dict(path="app.py", line=4, start_line=2, side="RIGHT")),
+        dict(finding, id="a2", placement="reply", root_comment_id=123, body="Still applies"),
+        dict(finding, id="a3", placement="summary"), dict(finding, id="a4", placement="unknown")]),
+    "verify": dict(issues=[], observed_checks=["Inspected guard"])}
+def payload(mode, data, status="PASS"):
+    return (mode.upper() + ": " + status + "\n" + json.dumps(data)).encode()
+def report(cases):
+    failed = [[name, validate(mode, raw)] for name, mode, raw, expected in cases
+              if (not validate(mode, raw) if expected else bool(validate(mode, raw)))
+              or (expected and not any(expected in error for error in validate(mode, raw)))]
+    print(json.dumps(dict(count=len(cases), failed=failed)))
+`;
+export const VALIDATOR_MUTATIONS = String.raw`
+mutations = [
+    ("context", lambda d: d["threads"][0].update(is_resolved=True, line=2), ""),
+    ("context", lambda d: d.pop("title"), "title: missing key"),
+    ("context", lambda d: d.update(extra=1), "extra: extra key"),
+    ("context", lambda d: d.update(state="draft"), "state: expected one of"),
+    ("context", lambda d: d.update(base_sha="A" * 40), "base_sha: expected lowercase SHA"),
+    ("context", lambda d: d.update(references=["http://example.com"]), "references[0]: expected HTTPS"),
+    ("context", lambda d: d["dimensions"][0].update(files=["other.py"]), "not in changed_files"),
+    ("context", lambda d: d.update(dimensions=[dict(name=f"d{i}", files=["a"], rationale="R")
+                                             for i in range(7)]), "dimensions: expected 1..6"),
+    ("context", lambda d: d["dimensions"][0].update(name="Bad_name"), "expected dimension name"),
+    ("context", lambda d: d.update(dimensions=d["dimensions"] * 2), "dimensions[1].name: duplicate"),
+    ("context", lambda d: d.update(threads=[d["threads"][0]] * 2), "root_comment_id: duplicate"),
+    ("chunk", lambda d: d.update(findings=[dict(finding, id="1")]), "id: expected dimension-N"),
+    ("chunk", lambda d: d.update(inspected=[]), "inspected/gaps: must not both be empty"),
+    ("author", lambda d: d["findings"][0]["anchor"].update(line=True), "anchor.line: expected integer"),
+    ("author", lambda d: d["findings"][1].update(id="a1"), "findings[1].id: duplicate"),
+    ("author", lambda d: d["findings"][0].update(anchor=None), "anchor: inline requires non-null"),
+    ("author", lambda d: d["findings"][1].pop("root_comment_id"), "root_comment_id: missing"),
+    ("author", lambda d: d["findings"][3].update(placement="reply", root_comment_id=123, body="R"),
+     "root_comment_id: duplicate"),
+    ("author", lambda d: d["findings"][2].update(body="extra"), "findings[2].body: extra key"),
+    ("author", lambda d: d["findings"][0]["anchor"].update(start_line=4), "start_line: must be < line"),
+    ("author", lambda d: d["findings"][0]["anchor"].update(start_line=5), "start_line: must be < line"),
+    ("author", lambda d: d.update(findings=[]), "REQUEST_CHANGES requires at least one finding"),
+    ("verify", lambda d: d.update(issues=["Problem"]), "issues: must be empty on PASS")]
+`;
+
+// Runs source (lines at module level) in a fresh temporary run directory that
+// REVIEW_FIXTURE has seeded. The source sees scripts, render (the renderer's
+// globals), validate, run, context, author, body and put(mode, value).
+export function python(source: string): string {
+  return execFileSync(
+    "python3",
+    [
+      "-I",
+      "-c",
+      `
+import contextlib, io, json, os, pathlib, runpy, tempfile, subprocess, sys
+${REVIEW_FIXTURE}
+scripts = pathlib.Path(${JSON.stringify(REVIEW_SCRIPTS)})
+render = runpy.run_path(str(scripts / "render-review.py"))
+validate = runpy.run_path(str(scripts / "validate-output.py"))["validate"]
+with tempfile.TemporaryDirectory() as directory:
+ os.chdir(directory)
+ run = pathlib.Path(".")
+ context, author, body = fixture(run)
+ def put(mode, value):
+  (run / (mode + ".txt")).write_text(mode.split("-")[0].upper() + ": PASS\\n" + json.dumps(value))
+${source
+  .split("\n")
+  .map((line) => ` ${line}`)
+  .join("\n")}
+`,
+    ],
+    { encoding: "utf8" },
+  );
+}
 
 function seedReviewSources(
   context: SeedContext,
