@@ -32,7 +32,7 @@ Primary inputs live in each playbook. The playbook derives the shared workflow k
 
 ## Mutation limits
 
-Derive `MUTATION_LIMITS` before dispatch and pass the same boundary to every helper. Progress writes are limited to `docs/<KEY>-progress.md` and `docs/<KEY>-task-<N>-progress.md`. Other phase artifacts remain governed by their owning skill's declared paths. The orchestrator never stages, commits, pushes, changes ignore rules, or widens a downstream skill's permissions. Product edits and platform writes remain owned by the downstream skill and its own approval gates.
+Derive `MUTATION_LIMITS` before dispatch and pass the same boundary to every helper. Progress writes are limited to `docs/<KEY>-progress.md`. Other phase artifacts remain governed by their owning skill's declared paths. The orchestrator never stages, commits, pushes, changes ignore rules, or widens a downstream skill's permissions. Product edits and platform writes remain owned by the downstream skill and its own approval gates.
 
 ## Workflow Overview
 
@@ -74,7 +74,7 @@ Use this registry as a lookup table. Read one subagent definition only when you 
 | ----------------------- | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
 | `preflight-checker`     | [`./subagents/preflight-checker.md`](./subagents/preflight-checker.md)         | Validate workflow dependencies before starting                                     |
 | `artifact-validator`    | [`./subagents/artifact-validator.md`](./subagents/artifact-validator.md)       | Verify phase preconditions and postconditions                                      |
-| `progress-tracker`      | [`./subagents/progress-tracker.md`](./subagents/progress-tracker.md)           | Read, initialize, update, and skip progress artifacts                                        |
+| `progress-tracker`      | [`./subagents/progress-tracker.md`](./subagents/progress-tracker.md)           | Read and update workflow and task progress, and record skips                       |
 | `status-checker`        | [`./subagents/status-checker.md`](./subagents/status-checker.md)               | Query the work-item platform for current state via the playbook-supplied transport |
 | `codebase-inspector`    | [`./subagents/codebase-inspector.md`](./subagents/codebase-inspector.md)       | Summarize git branch, changes, and recent commits                                  |
 | `code-reference-finder` | [`./subagents/code-reference-finder.md`](./subagents/code-reference-finder.md) | Locate symbols, files, and implementation touchpoints                              |
@@ -99,7 +99,6 @@ Use [`./references/data-contracts.md`](./references/data-contracts.md) for exact
 This workflow maintains Category A1 persistent orchestration records on disk:
 
 - `docs/<KEY>-progress.md`
-- `docs/<KEY>-task-<N>-progress.md`
 - The downstream phase artifacts listed in [Workflow Overview](#workflow-overview)
 
 Category A1 artifacts are preserved for resumability and are not committed by the orchestrator. Ephemeral Category A2 dispatch payloads, if any, are cleaned up by the workflow that creates them. Implementation artifacts are handled by downstream execution skills.
@@ -143,7 +142,7 @@ Input: `JIRA_URL=https://workspace.atlassian.net/browse/PROJ-123`
 5. Read `./references/phases-1-4.md` and enter Phase 1.
 6. Invoke the playbook's Phase 1 downstream skill (`fetching-work-item`) with `RESULT_FORMAT=handoff`.
 7. Pass `MUTATION_LIMITS` to each remaining dispatch. Dispatch `artifact-validator` with `TICKET_KEY=PROJ-123`, `PLAYBOOK_PATH=<resolved-skill-directory>/references/jira-playbook.md`, `PHASE=1`, `DIRECTION=postcondition`.
-8. Dispatch `progress-tracker` with `TICKET_KEY=PROJ-123`, `PLAYBOOK_PATH=<resolved-skill-directory>/references/jira-playbook.md`, `ACTION=update`, `PHASE=1`, `STATUS=complete`, `SUMMARY="Work item fetched"`.
+8. Dispatch `progress-tracker` with `TICKET_KEY=PROJ-123`, `ACTION=update`, `PHASE=1`, `STATUS=complete`, `SUMMARY="Work item fetched"`.
 9. Tell the user: `Work item fetched. Moving to task planning.`
 
 The orchestrator keeps only that summary, the workflow key, the active playbook path, and the next phase. </example>

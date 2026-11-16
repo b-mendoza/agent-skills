@@ -10,7 +10,6 @@ import {
   PROGRESS_ROOT,
   progressCases,
   SKIP_REASON,
-  TASK_PROGRESS_PATH,
 } from "#/cases/orchestrating-workflow-progress-cases.ts";
 import {
   BASELINE_REFLOG,
@@ -21,26 +20,19 @@ import {
 import { createObservation } from "#/observation/observation-test-support.ts";
 
 const main = `# acme-app-42 — Workflow Progress
-| Phase | Skill | Status | Completed at | Notes |
+| Phase | Name | Status | Completed at | Notes |
 | --- | --- | --- | --- | --- |
-| 1 | fetching-work-item | Complete | now | Fetched |
-| 2 | planning-work-item-tasks | Complete | now | Planned |
-| 3 | clarifying-assumptions | Complete | now | Clarified |
-| 4 | creating-work-item-children | Complete | now | Linked |
+| 1 | Fetch work item | Complete | now | Fetched |
+| 2 | Plan tasks | Complete | now | Planned |
+| 3 | Clarify and critique | Complete | now | Clarified |
+| 4 | Create child items | Complete | now | Linked |
 ## Task Execution (Phases 5–7)
-| Task | Title | Dependencies | Priority | Child item | Current Phase | Status | Detail | Outcome |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | Code | None | High | acme/app#101 | 7/7 Execute | Active | progress | — |
-| 2 | Manual verification | 1 | Low | task-list | — | Skipped | progress | ${SKIP_REASON} |
+| Task | Title | Dependencies | Priority | Child item | Current Phase | Status | Outcome |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | Code | None | High | acme/app#101 | 7/7 Execute | Active | — |
+| 2 | Manual verification | 1 | Low | task-list | — | Skipped | ${SKIP_REASON} |
 ## Execution Log
 ${SKIP_REASON}
-`;
-const detail = `# Task 1 progress
-| Phase | Skill | Status | Completed at | Notes |
-| --- | --- | --- | --- | --- |
-| 5 | planning-task-execution | Complete | now | Planned |
-| 6 | clarifying-assumptions | Complete | now | Critiqued |
-| 7 | executing-work-item-task | Pending | — | Not started |
 `;
 
 function progressObservation() {
@@ -56,10 +48,7 @@ function progressObservation() {
     return createObservation({
       gitStatusAfter: {
         kind: "worktree",
-        entries: [PROGRESS_PATH, TASK_PROGRESS_PATH]
-          .map((path) => `?? ${path}`)
-          .sort((first, second) => first.localeCompare(second))
-          .join("\n"),
+        entries: `?? ${PROGRESS_PATH}`,
       },
       finalText:
         "Tasks: 0/2 complete | 1 skipped | 1 remaining\nResume from: Phase 7, Task 1",
@@ -67,8 +56,6 @@ function progressObservation() {
         ...files,
         [`${PROGRESS_ROOT}/`]: "",
         [PROGRESS_PATH]: main,
-        [TASK_PROGRESS_PATH]: detail,
-        [`${PROGRESS_ROOT}/acme-app-42-task-2-progress.md`]: null,
       },
     });
   } finally {
@@ -87,8 +74,8 @@ describe("progress observation checks", () => {
     [
       "dropped early phase",
       main.replace(
-        "| 1 | fetching-work-item | Complete",
-        "| 1 | fetching-work-item | Pending",
+        "| 1 | Fetch work item | Complete",
+        "| 1 | Fetch work item | Pending",
       ),
     ],
     ["unrecorded exclusion", main.replaceAll(SKIP_REASON, "—")],
@@ -101,14 +88,14 @@ describe("progress observation checks", () => {
       }),
     ).toThrow();
   });
-  test("rejects fabricated execution for skipped task", () => {
+  test("rejects an extra progress file for the skipped task", () => {
     const observation = progressObservation();
     expect(() =>
       checkProgressProjection({
         ...observation,
         repoFiles: {
           ...observation.repoFiles,
-          [`${PROGRESS_ROOT}/acme-app-42-task-2-progress.md`]: detail,
+          [`${PROGRESS_ROOT}/acme-app-42-task-2-progress.md`]: "fabricated",
         },
       }),
     ).toThrow();
@@ -126,24 +113,16 @@ describe("progress observation checks", () => {
   });
 });
 
-test("fresh progress fixture exposes individual untracked files to the case checker", () => {
+test("fresh progress fixture exposes the untracked progress file to the case checker", () => {
   const [entry] = progressCases;
   const fixture = makeFixture("clean", ["orchestrating-workflow"], entry.seed);
   try {
-    writeRepoFiles(fixture.cwd, {
-      [PROGRESS_PATH]: main,
-      [TASK_PROGRESS_PATH]: detail,
-    });
+    writeRepoFiles(fixture.cwd, { [PROGRESS_PATH]: main });
     const actual = execFileSync("git", ["status", "--short"], {
       cwd: fixture.cwd,
       encoding: "utf8",
     }).trim();
-    expect(actual).toBe(
-      [PROGRESS_PATH, TASK_PROGRESS_PATH]
-        .map((path) => `?? ${path}`)
-        .sort((first, second) => first.localeCompare(second))
-        .join("\n"),
-    );
+    expect(actual).toBe(`?? ${PROGRESS_PATH}`);
   } finally {
     fixture.cleanup();
   }

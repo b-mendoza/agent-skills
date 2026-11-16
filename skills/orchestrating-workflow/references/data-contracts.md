@@ -111,18 +111,16 @@ When dispatching `progress-tracker`, read its subagent definition from the regis
 
 ```text
 TICKET_KEY: <KEY>
-ACTION: read | initialize | update | initialize_task | update_task | skip_task
+ACTION: read | update | initialize_task | update_task | skip_task
 MUTATION_LIMITS: <effective workflow boundary>
 ```
 
-Include `PLAYBOOK_PATH=<resolved-skill-directory>/references/<platform>-playbook.md` only for actions that read progress templates or phase skill names: `initialize`, `update`, and `initialize_task`.
-
 - `update`: `PHASE` (1-4), `STATUS`, `SUMMARY`; for `PHASE=4` and `STATUS=complete`, include `TASKS` (metadata for the workflow task table, from the Phase 4 downstream summary).
-- `initialize_task`: `TASK_NUMBER`, `TASK_TITLE`.
+- `initialize_task`: `TASK_NUMBER` of a pending task.
 - `update_task`: `TASK_NUMBER`, `PHASE` (5-7), `STATUS` (`active`, `complete`, `failed`), `SUMMARY`.
-- `skip_task`: `TASK_NUMBER`, nonempty user-recorded `REASON`; no per-task file or Phase 5 readiness is needed.
+- `skip_task`: `TASK_NUMBER`, nonempty user-recorded `REASON`; no Phase 5 readiness is needed.
 
-The first `update` creates missing main progress lazily. Map each Phase 4 child reference into the named `TASKS[].child_item` field. Phase 5/6 completion keeps task Status active; only successful Phase 7 completes a task. See the progress helper contract for terminal accounting.
+The first `update` creates missing progress lazily, `read` writes nothing, and every other action writes only `docs/<KEY>-progress.md`. Map each Phase 4 child reference into the named `TASKS[].child_item` field. Phase 5/6 completion keeps task Status active; only successful Phase 7 completes a task. See the progress helper contract for terminal accounting.
 
 ---
 

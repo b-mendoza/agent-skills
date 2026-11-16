@@ -28,7 +28,7 @@ If the selected task has `Execution mode: human-only` or `Branch name: N/A (huma
 
 For `status-checker`, pass the workflow key under `TICKET_KEY`, the active `PLAYBOOK_PATH`, the narrowest useful `QUERY_TYPE` (`status` or `children` for task selection context), and any additional locator inputs required by the active playbook's `Inputs and Identifier` section. For GitHub, prefer `ISSUE_URL`; when it is unavailable, pass `OWNER`, `REPO`, and `ISSUE_NUMBER`. The playbook supplies transport and output template.
 
-Do not initialize task progress during selection. Initialize it only after the Phase 5 precondition passes and only if the task does not already have a progress file.
+Do not initialize task progress during selection. Initialize it only after the Phase 5 precondition passes and only if the task's Status is pending.
 
 ## Phase 5 - Plan Task Execution
 
@@ -36,7 +36,7 @@ Do not initialize task progress during selection. Initialize it only after the P
 
 1. Announce Phase 5 for Task `<N>`.
 2. Dispatch `artifact-validator` with the workflow key under `TICKET_KEY`, `PLAYBOOK_PATH=<active playbook path>`, `PHASE=5`, `DIRECTION=precondition`, `TASK_NUMBER=<N>`.
-3. If the precondition passes and the task progress file does not exist, dispatch `progress-tracker` with the workflow key under `TICKET_KEY`, `PLAYBOOK_PATH=<active playbook path>`, `ACTION=initialize_task`, `TASK_NUMBER=<N>`, and `TASK_TITLE=<title>`.
+3. If the precondition passes and the task's Status is pending, dispatch `progress-tracker` with the workflow key under `TICKET_KEY`, `ACTION=initialize_task`, and `TASK_NUMBER=<N>`.
 4. Invoke the downstream skill with the inputs named in the playbook's Phase Skill Map row for Phase 5.
 5. Retain only the downstream completion summary: four artifact paths, approach summary, test coverage shape, and refactoring verdict. Accept a prose completion summary; do not require a status line.
 6. Dispatch `artifact-validator` with the workflow key under `TICKET_KEY`, `PLAYBOOK_PATH=<active playbook path>`, `PHASE=5`, `DIRECTION=postcondition`, `TASK_NUMBER=<N>`.
@@ -110,6 +110,6 @@ When all tasks are complete or explicitly skipped, or the user stops, dispatch `
 | 4 | Complete | Tasks linked to platform child items |
 | 5-7 | <complete / accounted for / paused> | <N> completed, <N> skipped, <N> remaining |
 
-Per-task detail: `docs/<KEY>-task-<N>-progress.md`
+Progress: `docs/<KEY>-progress.md`
 Artifacts: <explicit workflow paths>
 ```
