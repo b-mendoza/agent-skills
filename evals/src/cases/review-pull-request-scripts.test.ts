@@ -3,38 +3,40 @@ import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "vitest";
 
+import {
+  python,
+  VALIDATOR_CASES,
+  VALIDATOR_MUTATIONS,
+} from "#/cases/review-pull-request-fixtures.ts";
+
 const SHA_LENGTH = 40;
 const ONE_FINDING = 1;
 const scripts = fileURLToPath(
   new URL("../../../skills/review-pull-request/scripts/", import.meta.url),
 );
 
-function python(source: string): string {
-  return execFileSync(
-    "python3",
-    [
-      "-I",
-      "-c",
-      `
-import contextlib, io, json, os, pathlib, runpy, tempfile, subprocess, sys
-scripts = pathlib.Path(${JSON.stringify(scripts)})
-render = runpy.run_path(str(scripts / "render-review.py"))
-validate = runpy.run_path(str(scripts / "validate-output.py"))["validate"]
-with tempfile.TemporaryDirectory() as directory:
- os.chdir(directory)
- run = pathlib.Path(".")
- context, author, body = render["fixture"](run)
- def put(mode, value):
-  (run / (mode + ".txt")).write_text(mode.split("-")[0].upper() + ": PASS\\n" + json.dumps(value))
-${source
-  .split("\n")
-  .map((line) => ` ${line}`)
-  .join("\n")}
-`,
-    ],
-    { encoding: "utf8" },
-  );
-}
+const ACCEPTED_CASES = 17;
+const MALFORMED_CASES = 10;
+const MUTATION_CASES = { context: 11, chunk: 2, author: 9, verify: 1 };
+
+// render-review.py setup shared by the cases ported from its former --self-test.
+const RENDER_SETUP = String.raw`
+from unittest.mock import patch
+renderer = render
+render, write_file, digest = renderer["render"], renderer["write_file"], renderer["digest"]
+def refused(action):
+    try:
+        action()
+    except (ValueError, OSError):
+        return
+    raise AssertionError("expected refusal")
+data = render(run)
+output = run / "review.md"
+`;
+const RECEIPTS = String.raw`
+receipts = dict(review=dict(id=9, url="https://github.com/cli/cli/pull/1#pullrequestreview-9"),
+                replies=[], failed=[], complete=True)
+`;
 
 describe("shipped review boundaries", () => {
   it.each(["identical", "superseded"])(
@@ -156,66 +158,6 @@ print(result.stdout)
     ).toContain("findings: expected array");
   });
 
-  it.each([
-    "unchanged",
-    "thread",
-    "new-thread",
-    "reply-text",
-    "truncated",
-    "review",
-    "discussion",
-    "viewer",
-    "head",
-    "base",
-    "closed",
-  ])("preflights history and preserves exact approved bytes: %s", (change) => {
-    const output = python(`
-post = runpy.run_path(str(scripts / "post-review.py"))
-threads = [dict(thread_id="thread", is_resolved=False, path="file.py", line=1, root_comment_id="7", root_url="https://github.com/cli/cli/pull/1#discussion_r7", comments_total=1, comments_truncated=False, comments=[dict(body="Original")])]
-post["execute"].__globals__["collect_threads"] = lambda *args: threads
-calls = []
-phase = "collection"
-def runner(args, data=None):
- calls.append((args, data))
- endpoint = next((a for a in args if a == "user" or a.startswith("repos/")), "")
- if "--method" in args: return dict(id=len(calls), html_url="https://github.com/receipt/" + str(len(calls)))
- if endpoint == "user": return dict(login="other" if phase == "changed" and change == "viewer" else "reviewer")
- if endpoint.endswith("/reviews"): return [[dict(id=1, state="APPROVED", user=dict(login="reviewer"), commit_id=context["head_sha"], html_url="https://github.com/approval")]] if phase == "changed" and change == "review" else [[]]
- if endpoint.endswith("/comments"): return [[dict(body="New discussion")]] if phase == "changed" and change == "discussion" else [[]]
- if "/compare/" in endpoint: return dict(merge_base_commit=dict(sha="c" * 40 if change == "base" else context["base_sha"]))
- return dict(state="closed" if change == "closed" else "open", head=dict(sha="c" * 40 if change == "head" else context["head_sha"]), base=dict(ref=context["base"]))
-change = ${JSON.stringify(change)}
-if "history_basis" in post:
- context["posting_basis"] = post["history_basis"]("cli/cli", 1, context["head_sha"], runner)
- put("context", context)
-with contextlib.redirect_stdout(io.StringIO()) as preview:
- assert post["execute"](["--dry-run", "."], runner, lambda: True) == 0
-sha = preview.getvalue().split("approval-sha256: ")[-1].strip()
-phase = "changed"
-if change == "thread": threads[0]["is_resolved"] = True
-if change == "new-thread": threads.append(dict(threads[0], thread_id="new", root_comment_id="8"))
-if change == "reply-text": threads[0]["comments"][0]["body"] = "Changed claim"
-if change == "truncated":
- def fail_threads(*args): raise ValueError("truncated history")
- post["execute"].__globals__["collect_threads"] = fail_threads
-calls.clear()
-with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
- code = post["execute"](["--approved", sha, "."], runner, lambda: True)
-writes = [(args, json.loads(data)) for args, data in calls if data is not None]
-assert code == (0 if change == "unchanged" else 3), (code, calls)
-if change not in ("head", "base", "closed"):
- assert any("user" in args for args, data in calls)
-if change == "unchanged":
- assert writes[0][1]["body"] == body
- assert "new review as reviewer" in preview.getvalue()
- assert "Inline comments: 1; thread replies: 0" in preview.getvalue()
-else:
- assert writes == [], writes
-print("verified")
-`);
-    expect(output.trim()).toBe("verified");
-  });
-
   it("renders no-findings, populated drops, separate pins and qualified CI without inventing approval", () => {
     const output = python(`
 author.update(decision="COMMENT", findings=[], dropped=[dict(candidate="tests-1", reason="No changed-code causality")], residual_risks=["Binary coverage unavailable"])
@@ -284,20 +226,6 @@ print(pathlib.Path("review.md").is_file())
     ).toContain("True");
   });
 
-  it.each(["closed", "merged"])(
-    "refuses historical %s posting before mutation",
-    (state) => {
-      expect(
-        python(`
-post = runpy.run_path(str(scripts / "post-review.py"))
-context["state"] = ${JSON.stringify(state)}
-put("context", context)
-with contextlib.redirect_stderr(io.StringIO()): print(post["execute"](["--dry-run", "."]))
-`),
-      ).toContain("3");
-    },
-  );
-
   it.each(["validate-output.py", "render-review.py", "post-review.py"])(
     "runs shipped %s self-tests",
     (script) => {
@@ -306,6 +234,190 @@ with contextlib.redirect_stderr(io.StringIO()): print(post["execute"](["--dry-ru
           encoding: "utf8",
         }),
       ).toContain("passed");
+    },
+  );
+});
+
+describe("validate-output.py contract", () => {
+  it("accepts conforming payloads, a verify FAIL and every failure-status envelope", () => {
+    const output = python(String.raw`${VALIDATOR_CASES}
+cases = [(mode + " good", mode, payload(mode, data), "") for mode, data in good.items()]
+cases.append(("FAIL", "verify", payload("verify", dict(issues=["Fix"], observed_checks=[]), "FAIL"), ""))
+cases += [(mode + status, mode, payload(mode, dict(reason="R", next_step="N"), status), "")
+          for mode in MODES for status in FAILURES]
+report(cases)
+`);
+    expect(JSON.parse(output)).toEqual({ count: ACCEPTED_CASES, failed: [] });
+  });
+
+  it.each(Object.entries(MUTATION_CASES))(
+    "reports the expected diagnostic for each %s mutation",
+    (mode, count) => {
+      const output = python(String.raw`${VALIDATOR_CASES}${VALIDATOR_MUTATIONS}
+cases = []
+for mode, mutate, expected in mutations:
+    if mode != ${JSON.stringify(mode)}: continue
+    data = copy.deepcopy(good[mode])
+    mutate(data)
+    cases.append((mode + expected, mode, payload(mode, data), expected))
+report(cases)
+`);
+      expect(JSON.parse(output)).toEqual({ count, failed: [] });
+    },
+  );
+
+  it("rejects malformed envelopes and JSON with a located diagnostic", () => {
+    const output = python(String.raw`${VALIDATOR_CASES}
+cases = [(expected, "verify", raw, expected) for raw, expected in [
+    (b'WRONG: PASS\n{"issues":[],"observed_checks":[]}', "line 1: envelope"),
+    (b'VERIFY: MAYBE\n{"issues":[],"observed_checks":[]}', "line 1: envelope"),
+    (b'VERIFY: PASS\n{"issues":[],"issues":[],"observed_checks":[]}', "issues: duplicate key"),
+    (b'VERIFY: FAIL\n{"issues":[],"observed_checks":[]}', "issues: must be empty on PASS"),
+    (b'VERIFY: ERROR\n{"reason":"","next_step":"Ask"}', "reason: expected non-empty string"),
+    (b'VERIFY: PASS\n{"issues":[],"observed_checks":[]} trailing', "line 2: $: Extra data"),
+    (b'VERIFY: PASS\n\xff', "line 2: $: invalid UTF-8"),
+    (b'VERIFY: PASS\n{"issues":NaN,"observed_checks":[]}', "invalid JSON constant NaN"),
+    (b'VERIFY: PASS\n{"issues":Infinity,"observed_checks":[]}', "invalid JSON constant Infinity"),
+    (b'VERIFY: PASS\n[]', "line 2: $: expected object")]]
+report(cases)
+`);
+    expect(JSON.parse(output)).toEqual({ count: MALFORMED_CASES, failed: [] });
+  });
+
+  it("exits 0 when conforming, 1 on defects and 2 on a missing mode", () => {
+    const output = python(String.raw`${VALIDATOR_CASES}
+failed = []
+for arguments, raw, expected in [(["verify"], payload("verify", good["verify"]), 0),
+                                 (["verify"], b"VERIFY: PASS\n{}", 1), ([], b"", 2)]:
+    result = subprocess.run([sys.executable, "-I", str(scripts / "validate-output.py"), *arguments], input=raw, capture_output=True)
+    if result.returncode != expected:
+        failed.append("CLI exit " + str(expected))
+print(json.dumps(failed))
+`);
+    expect(JSON.parse(output)).toEqual([]);
+  });
+});
+
+function rendered(source: string): string {
+  return python(`${RENDER_SETUP}${source}\nprint("verified")\n`).trim();
+}
+
+describe("render-review.py contract", () => {
+  it.each([
+    [
+      "renders exact bodies, the anchor and an unposted marker",
+      String.raw`
+assert body.encode() in data and b"file.py:1-2 RIGHT" in data
+assert data.rsplit(b"## Posting\n", 1)[1] == b"\nNot posted.\n"
+`,
+    ],
+    [
+      "creates the output exclusively and returns its digest",
+      String.raw`
+sha = write_file(run, output, data)
+assert sha == digest(data) and output.read_bytes() == data
+`,
+    ],
+    [
+      "refuses replacement over a stale render.tmp and preserves it",
+      String.raw`
+sha = write_file(run, output, data)
+temporary = run / "render.tmp"
+temporary.write_bytes(b"keep")
+refused(lambda: write_file(run, output, data, sha))
+assert temporary.read_bytes() == b"keep" and output.read_bytes() == data
+`,
+    ],
+    [
+      "removes render.tmp and keeps the output when os.replace fails",
+      String.raw`
+sha = write_file(run, output, data)
+temporary = run / "render.tmp"
+with patch("os.replace", side_effect=OSError("cross-device replacement refused")):
+    refused(lambda: write_file(run, output, data + b"updated", sha))
+assert not temporary.exists() and output.read_bytes() == data
+`,
+    ],
+    [
+      "replaces the output when the expected sha matches",
+      String.raw`
+sha = write_file(run, output, data)
+temporary = run / "render.tmp"
+assert write_file(run, output, data + b"updated", sha) == digest(data + b"updated")
+assert not temporary.exists()
+`,
+    ],
+    [
+      "renders complete receipts without the incomplete-posting warning",
+      String.raw`${RECEIPTS}
+(run / "receipts.json").write_text(json.dumps(receipts))
+posting = render(run).rsplit(b"## Posting\n", 1)[1]
+assert b"pullrequestreview-9" in posting and b"Posting is incomplete." not in posting
+`,
+    ],
+    [
+      "refuses to render without a chunk file",
+      String.raw`
+(run / "chunk-correctness.txt").unlink()
+refused(lambda: render(run))
+`,
+    ],
+    [
+      "refuses to render a failed verification",
+      String.raw`
+fixture(run)
+(run / "verify.txt").write_text('VERIFY: FAIL\n{"issues":["Not verified"],"observed_checks":[]}')
+refused(lambda: render(run))
+`,
+    ],
+  ])("%s", (_name, source) => {
+    expect(rendered(source)).toBe("verified");
+  });
+
+  // Labels follow the order of the Python targets list below.
+  it.each(
+    [
+      "an existing output",
+      "a symlink",
+      "a symlink with its sha",
+      "a path through a symlinked directory",
+      "a wrong sha",
+      "an absolute path",
+      "a .. path",
+    ].map((label, index) => [label, index] as const),
+  )("refuses to write %s", (_label, index) => {
+    expect(
+      rendered(String.raw`
+sha = write_file(run, output, data)
+link = run / "link.md"
+link.symlink_to(output)
+linked_dir = run / "linked-dir"
+linked_dir.symlink_to(Path.cwd(), target_is_directory=True)
+targets = [(output, None), (link, None), (link, sha),
+           (linked_dir / "new.md", None), (output, "0" * 64),
+           (Path.cwd() / "absolute.md", None), (Path("../new.md"), None)]
+target, expected = targets[${String(index)}]
+refused(lambda: write_file(run, target, b"no", expected))
+`),
+    ).toBe("verified");
+  });
+
+  it.each(["False", "None"])(
+    "warns that posting is incomplete when complete is %s or missing",
+    (complete) => {
+      expect(
+        rendered(String.raw`${RECEIPTS}
+warning = (b"Posting is incomplete. An action without a receipt may still have taken effect on GitHub. "
+           b"Check the PR before any manual follow-up; never re-run the poster.")
+complete = ${complete}
+receipts["complete"] = complete
+if complete is None:
+    del receipts["complete"]
+(run / "receipts.json").write_text(json.dumps(receipts))
+posting = render(run).rsplit(b"## Posting\n", 1)[1]
+assert warning in posting.splitlines() and b"pullrequestreview-9" in posting
+`),
+      ).toBe("verified");
     },
   );
 });

@@ -9,6 +9,7 @@ import { expect, it } from "vitest";
 import { GITHUB_FACTS } from "#/cases/pr-creator-fixtures.ts";
 import { assertPosting } from "#/cases/review-pull-request-checks.ts";
 import {
+  REVIEW_FIXTURE,
   REVIEW_POSTS,
   seedReviewFixture,
 } from "#/cases/review-pull-request-fixtures.ts";
@@ -214,11 +215,12 @@ it.each([
           "-c",
           `
 import json, pathlib, runpy, subprocess, sys
+${REVIEW_FIXTURE}
 script=pathlib.Path(sys.argv[1])
 run=pathlib.Path('.handoffs/review-pull-request/offline')
 run.mkdir(parents=True)
 renderer=runpy.run_path(str(script.with_name('render-review.py')))
-ctx, author, body=renderer['fixture'](run)
+ctx, author, body=fixture(run)
 head=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
 state=json.loads(pathlib.Path('.git/fake-gh-state.json').read_text())
 snapshot=json.loads(subprocess.check_output(['python3','-I',str(script),'--snapshot','eval-org/cart','17',head],text=True))
