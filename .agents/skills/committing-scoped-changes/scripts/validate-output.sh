@@ -38,7 +38,6 @@ function sortedTokens(n, s, name,    k, i, t, prev) {
   k = split(s, t, " ")
   prev = ""
   for (i = 1; i <= k; i++) {
-    if (t[i] == "") { fail(n, name ": tokens must be single-space separated"); return }
     if (prev != "" && !(prev < t[i])) { fail(n, name ": tokens must be strictly ascending byte-wise"); return }
     prev = t[i]
   }
