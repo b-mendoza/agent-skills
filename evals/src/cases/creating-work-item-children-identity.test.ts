@@ -37,6 +37,14 @@ function validate(
 }
 
 describe("child task content identity", () => {
+  it("prints usage and rejects arguments", () => {
+    const result = spawnSync("python3", ["-I", script, "-h"], {
+      encoding: "utf8",
+    });
+    const USAGE_ERROR = 2;
+    expect(result.status).toBe(USAGE_ERROR);
+    expect(result.stdout).toContain("Usage: python3 -I validate-identity.py");
+  });
   it("accepts complete matching content independently of mutable task numbering", () => {
     const result = validate(task);
     expect(result.status).toBe(SUCCESS);
