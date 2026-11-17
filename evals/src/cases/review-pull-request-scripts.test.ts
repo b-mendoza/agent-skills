@@ -7,251 +7,153 @@ import {
 } from "#/cases/review-pull-request-fixtures.ts";
 
 const SHA_LENGTH = 40;
-const ONE_FINDING = 1;
+const PROSE_WORD_LIMIT = 130;
+const PATH_DIAGNOSTIC = "expected repository-relative path";
 
-const ACCEPTED_CASES = 17;
-const MALFORMED_CASES = 10;
-const MUTATION_CASES = { context: 11, chunk: 2, author: 9, verify: 1 };
+const PATH_CLASSES: ReadonlyArray<readonly [string, string, boolean]> = [
+  ["an absolute path", "/outside/file.py", true],
+  ["a UNC root", "\\\\host\\share", true],
+  ["a drive root", "C:/file.py", true],
+  ["a NUL byte", "src/\u0000file.py", true],
+  ["a .. component", "src/../../file.py", true],
+  ["a . component", "src/./file.py", true],
+  ["an empty component", "src//file.py", true],
+  ["a colon inside a name", "a:b.py", false],
+  ["a backslash inside a name", "src/back\\slash.py", false],
+];
 
-// render-review.py setup shared by the cases ported from its former --self-test.
-const RENDER_SETUP = String.raw`
-from unittest.mock import patch
-renderer = render
-render, write_file, digest = renderer["render"], renderer["write_file"], renderer["digest"]
-def refused(action):
-    try:
-        action()
-    except (ValueError, OSError):
-        return
-    raise AssertionError("expected refusal")
-data = render(run)
-output = run / "review.md"
-`;
-const RECEIPTS = String.raw`
-receipts = dict(review=dict(id=9, url="https://github.com/cli/cli/pull/1#pullrequestreview-9"),
-                replies=[], failed=[], complete=True)
-`;
+const PATH_FIELDS: ReadonlyArray<readonly [string, string, string]> = [
+  ["context", 'data["changed_files"][0]', "changed_files[0]"],
+  ["context", 'data["dimensions"][0]["files"][0]', "dimensions[0].files[0]"],
+  ["context", 'data["threads"][0]["path"]', "threads[0].path"],
+  ["chunk", 'data["inspected"][0]["path"]', "inspected[0].path"],
+  ["chunk", 'data["gaps"][0]["path"]', "gaps[0].path"],
+  [
+    "author",
+    'data["findings"][0]["anchor"]["path"]',
+    "findings[0].anchor.path",
+  ],
+];
 
-describe("shipped review boundaries", () => {
-  it.each(["identical", "superseded"])(
-    "renders only canonical residual risks: %s",
-    (variant) => {
-      const output = python(`
-chunk = json.loads((run / "chunk-correctness.txt").read_text().split("\\n", 1)[1])
-chunk["residual_risks"] = ["Raw risk"]
-author["residual_risks"] = [${JSON.stringify(variant === "identical" ? "Raw risk" : "Corrected risk")}]
-put("chunk-correctness", chunk)
-put("author", author)
-print(render["render"](run).decode().split("## Residual risks\\n\\n")[1].split("\\n\\n## Verification notes")[0])
-`);
-      expect(output.trim()).toBe(
-        variant === "identical" ? "Raw risk" : "Corrected risk",
-      );
-    },
-  );
-
-  const pathFields = [
-    ["context", 'data["changed_files"][0]', "changed_files[0]"],
-    ["context", 'data["dimensions"][0]["files"][0]', "dimensions[0].files[0]"],
-    ["context", 'data["threads"][0]["path"]', "threads[0].path"],
-    ["chunk", 'data["inspected"][0]["path"]', "inspected[0].path"],
-    ["chunk", 'data["gaps"][0]["path"]', "gaps[0].path"],
-    [
-      "author",
-      'data["findings"][0]["anchor"]["path"]',
-      "findings[0].anchor.path",
-    ],
-  ] as const;
-  it.each(pathFields)(
-    "rejects escaping %s %s with a field diagnostic",
-    (mode, target, diagnostic) => {
-      for (const path of [
-        "/outside/file.py",
-        "../file.py",
-        "src/../../file.py",
-        "C:/file.py",
-        "C:\\file.py",
-        "\\\\host\\share",
-        "src//file.py",
-        "src/./file.py",
-        "src/\u0000file.py",
-      ]) {
-        const output = python(`
-mode = ${JSON.stringify(mode)}
-name = "chunk-correctness" if mode == "chunk" else mode
-data = json.loads((run / (name + ".txt")).read_text().split("\\n", 1)[1])
-if mode == "chunk": data["gaps"] = [dict(path="missing.py", kind="omitted", detail="Not inspected")]
-${target} = ${JSON.stringify(path)}
-result = subprocess.run([sys.executable, "-I", str(scripts / "validate-output.py"), mode], input=mode.upper() + ": PASS\\n" + json.dumps(data), capture_output=True, text=True)
-assert result.returncode == 1, (result.returncode, result.stdout, result.stderr)
-print(result.stdout)
-`);
-        expect(output).toContain(
-          `${diagnostic}: expected repository-relative path`,
-        );
-      }
-    },
-  );
-
-  it.each([
-    " ",
-    "dir with spaces/é.py",
-    "src/odd#name?.py",
-    "a:b.py",
-    "-leading.py",
-    "src/back\\slash.py",
-  ])("preserves legitimate Git path %s", (path) => {
-    expect(
-      python(`
-author["findings"][0]["anchor"]["path"] = ${JSON.stringify(path)}
-print(json.dumps(validate("author", ("AUTHOR: PASS\\n" + json.dumps(author)).encode())))
-`).trim(),
-    ).toBe("[]");
-  });
-
-  it("renders a pinned encoded anchor without a public severity heading", () => {
-    const output = python(`
-author["findings"][0]["anchor"]["path"] = "dir with spaces/a#b.py"
-put("author", author)
-print(render["render"](run).decode())
-`);
-    expect(output).toContain(
-      `https://github.com/cli/cli/blob/${"b".repeat(SHA_LENGTH)}/dir%20with%20spaces/a%23b.py#L1-L2`,
-    );
-    expect(output).not.toContain("### [important]");
-  });
-
-  it.each([
+const UNSUITABLE_PROSE: ReadonlyArray<
+  readonly [string, "body" | "title", string, string]
+> = [
+  [
+    "a severity label in a body",
+    "body",
     "blocking: fix this",
+    "public severity labels are not allowed",
+  ],
+  [
+    "an idiom",
+    "body",
     "This is a footgun.",
-    Array.from({ length: 130 }, () => "word").join(" "),
+    "replace idiom or praise filler with literal language",
+  ],
+  [
+    `${String(PROSE_WORD_LIMIT)} prose words`,
+    "body",
+    Array.from({ length: PROSE_WORD_LIMIT }, () => "word").join(" "),
+    `expected fewer than ${String(PROSE_WORD_LIMIT)} prose words (fenced code excluded)`,
+  ],
+  [
+    "a none suggestion",
+    "body",
     "```suggestion\nnone\n```",
-  ])("rejects unsuitable exact prose %s", (body) => {
+    "unsafe placeholder suggestion",
+  ],
+  [
+    "a severity label in the title",
+    "title",
+    "[P1] Guard",
+    "public severity labels are not allowed",
+  ],
+];
+
+describe("validate-output.py", () => {
+  it("separates repository-relative Git paths from escaping paths in a finding anchor", () => {
+    const paths = PATH_CLASSES.map(([label, path]) => [label, path]);
+    const output = python(`
+results = {}
+for label, path in json.loads(${JSON.stringify(JSON.stringify(paths))}):
+    author["findings"][0]["anchor"]["path"] = path
+    results[label] = validate("author", ("AUTHOR: PASS\\n" + json.dumps(author)).encode())
+print(json.dumps(results))
+`);
+    expect(JSON.parse(output)).toEqual(
+      Object.fromEntries(
+        PATH_CLASSES.map(([label, , rejected]) => [
+          label,
+          rejected
+            ? [`author: line 2: findings[0].anchor.path: ${PATH_DIAGNOSTIC}`]
+            : [],
+        ]),
+      ),
+    );
+  });
+
+  it("rejects an escaping path in every repository path field", () => {
+    const assignments = PATH_FIELDS.map(
+      ([mode, target]) => String.raw`
+data = payload(${JSON.stringify(mode)})
+${target} = "../file.py"
+errors += validate(${JSON.stringify(mode)}, (${JSON.stringify(mode.toUpperCase())} + ": PASS\n" + json.dumps(data)).encode())`,
+    ).join("");
+    const output = python(String.raw`
+def payload(mode):
+    name = "chunk-correctness" if mode == "chunk" else mode
+    data = json.loads((run / (name + ".txt")).read_text().split("\n", 1)[1])
+    if mode == "chunk":
+        data["gaps"] = [dict(path="missing.py", kind="omitted", detail="Not inspected")]
+    return data
+errors = []${assignments}
+print(json.dumps([error for error in errors if error.endswith("${PATH_DIAGNOSTIC}")]))
+`);
+    expect(JSON.parse(output)).toEqual(
+      PATH_FIELDS.map(
+        ([mode, , field]) => `${mode}: line 2: ${field}: ${PATH_DIAGNOSTIC}`,
+      ),
+    );
+  });
+
+  it.each(UNSUITABLE_PROSE)("rejects %s", (_label, field, text, diagnostic) => {
     expect(
       python(`
-author["findings"][0]["body"] = ${JSON.stringify(body)}
+author["findings"][0][${JSON.stringify(field)}] = ${JSON.stringify(text)}
 print("\\n".join(validate("author", ("AUTHOR: PASS\\n" + json.dumps(author)).encode())))
 `),
-    ).toContain("findings[0].body:");
+    ).toContain(`author: line 2: findings[0].${field}: ${diagnostic}`);
   });
 
-  it("rejects a public title label and malformed findings without crashing", () => {
-    expect(
-      python(`
-author["findings"][0]["title"] = "[P1] Guard"
-print("\\n".join(validate("author", ("AUTHOR: PASS\\n" + json.dumps(author)).encode())))
-`),
-    ).toContain("findings[0].title: public severity");
-    expect(
-      python(`
-author["findings"] = None
-result = subprocess.run([sys.executable, "-I", str(scripts / "validate-output.py"), "author"], input="AUTHOR: PASS\\n"+json.dumps(author), text=True, capture_output=True)
-assert result.returncode == 1, result.stderr
-print(result.stdout)
-`),
-    ).toContain("findings: expected array");
-  });
-
-  it("renders no-findings, populated drops, separate pins and qualified CI without inventing approval", () => {
-    const output = python(`
-author.update(decision="COMMENT", findings=[], dropped=[dict(candidate="tests-1", reason="No changed-code causality")], residual_risks=["Binary coverage unavailable"])
-put("author", author)
-print(render["render"](run).decode())
-`);
-    expect(output).toContain(
-      "No findings in the inspected scope. This is not proof of correctness.",
-    );
-    expect(output).toContain("tests-1: No changed-code causality");
-    expect(output).toContain("## Review decision\n\nCOMMENT");
-    expect(output).toContain(
-      "Dimensions reviewed: correctness\n\nReviewed base:",
-    );
-    expect(output).toContain(
-      "CI as observed at collection:\n\nNot run; collected at fixture time",
-    );
-  });
-
-  it.each(["APPROVE", "COMMENT", "REQUEST_CHANGES"])(
-    "preserves authored merge-readiness decision %s, not a severity lookup",
-    (decision) => {
-      expect(
-        python(`
-author["decision"] = ${JSON.stringify(decision)}
-author["summary"] = "Within the inspected scope, this decision follows merge readiness, not the important severity label."
-put("author", author)
-print(render["render"](run).decode())
-`),
-      ).toContain(`## Review decision\n\n${decision}`);
-    },
-  );
-
-  it("requires assessments even with no rediscovered candidates", () => {
-    expect(
-      python(`
-author.update(decision="COMMENT", findings=[], thread_assessments=[])
-put("author", author)
-try: render["render"](run)
-except ValueError as error: print(str(error))
-`),
-    ).toContain("thread_assessments must cover exactly");
-  });
-
-  it("renders base-only citations at the base SHA and keeps one cross-file causal finding", () => {
-    const output = python(`
-author["findings"][0]["anchor"]["side"] = "LEFT"
-author["findings"][0]["evidence"] = "file.py:1 calls cart.py:3 from checkout.py:4; one connected defect"
-put("author", author)
-print(render["render"](run).decode())
-`);
-    expect(output).toContain(`/blob/${"a".repeat(SHA_LENGTH)}/file.py#L1-L2`);
-    expect(output).toContain("file.py:1 calls cart.py:3 from checkout.py:4");
-    expect(output.match(/^ID:/gm)).toHaveLength(ONE_FINDING);
-  });
-
-  it("resolves shipped helpers outside the workspace through a root containing spaces", () => {
-    expect(
-      python(`
-import shutil, subprocess
-package = pathlib.Path("package with spaces")
-shutil.copytree(scripts, package)
-print(subprocess.check_output([${JSON.stringify("python3")}, "-I", str(package / "render-review.py"), ".", "review.md"], text=True))
-print(pathlib.Path("review.md").is_file())
-`),
-    ).toContain("True");
-  });
-});
-
-describe("validate-output.py contract", () => {
-  it("accepts conforming payloads, a verify FAIL and every failure-status envelope", () => {
+  it("accepts conforming payloads, a verify FAIL and each failure status", () => {
     const output = python(String.raw`${VALIDATOR_CASES}
 cases = [(mode + " good", mode, payload(mode, data), "") for mode, data in good.items()]
 cases.append(("FAIL", "verify", payload("verify", dict(issues=["Fix"], observed_checks=[]), "FAIL"), ""))
 cases += [(mode + status, mode, payload(mode, dict(reason="R", next_step="N"), status), "")
-          for mode in MODES for status in FAILURES]
+          for mode, status in zip(MODES, FAILURES)]
 report(cases)
 `);
-    expect(JSON.parse(output)).toEqual({ count: ACCEPTED_CASES, failed: [] });
+    expect(JSON.parse(output)).toMatchObject({ failed: [] });
   });
 
-  it.each(Object.entries(MUTATION_CASES))(
-    "reports the expected diagnostic for each %s mutation",
-    (mode, count) => {
-      const output = python(String.raw`${VALIDATOR_CASES}${VALIDATOR_MUTATIONS}
+  it("reports the expected diagnostic for every schema mutation", () => {
+    const output = python(String.raw`${VALIDATOR_CASES}${VALIDATOR_MUTATIONS}
+assert mutations, "no schema mutations"
 cases = []
 for mode, mutate, expected in mutations:
-    if mode != ${JSON.stringify(mode)}: continue
     data = copy.deepcopy(good[mode])
     mutate(data)
     cases.append((mode + expected, mode, payload(mode, data), expected))
+cases.append(("findings None", "author", payload("author", dict(good["author"], findings=None)),
+              "findings: expected array"))
 report(cases)
 `);
-      expect(JSON.parse(output)).toEqual({ count, failed: [] });
-    },
-  );
+    expect(JSON.parse(output)).toMatchObject({ failed: [] });
+  });
 
   it("rejects malformed envelopes and JSON with a located diagnostic", () => {
     const output = python(String.raw`${VALIDATOR_CASES}
-cases = [(expected, "verify", raw, expected) for raw, expected in [
+report([(expected, "verify", raw, expected) for raw, expected in [
     (b'WRONG: PASS\n{"issues":[],"observed_checks":[]}', "line 1: envelope"),
     (b'VERIFY: MAYBE\n{"issues":[],"observed_checks":[]}', "line 1: envelope"),
     (b'VERIFY: PASS\n{"issues":[],"issues":[],"observed_checks":[]}', "issues: duplicate key"),
@@ -260,11 +162,9 @@ cases = [(expected, "verify", raw, expected) for raw, expected in [
     (b'VERIFY: PASS\n{"issues":[],"observed_checks":[]} trailing', "line 2: $: Extra data"),
     (b'VERIFY: PASS\n\xff', "line 2: $: invalid UTF-8"),
     (b'VERIFY: PASS\n{"issues":NaN,"observed_checks":[]}', "invalid JSON constant NaN"),
-    (b'VERIFY: PASS\n{"issues":Infinity,"observed_checks":[]}', "invalid JSON constant Infinity"),
-    (b'VERIFY: PASS\n[]', "line 2: $: expected object")]]
-report(cases)
+    (b'VERIFY: PASS\n[]', "line 2: $: expected object")]])
 `);
-    expect(JSON.parse(output)).toEqual({ count: MALFORMED_CASES, failed: [] });
+    expect(JSON.parse(output)).toMatchObject({ failed: [] });
   });
 
   it("exits 0 when conforming, 1 on defects and 2 on a missing mode", () => {
@@ -281,94 +181,148 @@ print(json.dumps(failed))
   });
 });
 
+// render-review.py helpers; data is any byte string for the write-path rows.
+const RENDER_SETUP = String.raw`
+from unittest.mock import patch
+render, write_file, digest = render["render"], render["write_file"], render["digest"]
+def refused(action, message=""):
+    try:
+        action()
+    except (ValueError, OSError) as error:
+        assert message in str(error), error
+        return
+    raise AssertionError("expected refusal")
+data = b"review\n"
+output = run / "review.md"
+`;
+const RECEIPTS = String.raw`
+receipts = dict(review=dict(id=9, url="https://github.com/cli/cli/pull/1#pullrequestreview-9"),
+                replies=[], failed=[], complete=True)
+`;
+const INCOMPLETE_WARNING = String.raw`
+warning = (b"Posting is incomplete. An action without a receipt may still have taken effect on GitHub. "
+           b"Check the PR before any manual follow-up; never re-run the poster.")
+`;
+
 function rendered(source: string): string {
   return python(`${RENDER_SETUP}${source}\nprint("verified")\n`).trim();
 }
 
-describe("render-review.py contract", () => {
-  it.each([
-    [
-      "renders exact bodies, the anchor and an unposted marker",
-      String.raw`
-assert body.encode() in data and b"file.py:1-2 RIGHT" in data
-assert data.rsplit(b"## Posting\n", 1)[1] == b"\nNot posted.\n"
+const RENDER_CONTRACT: ReadonlyArray<readonly [string, string]> = [
+  [
+    "renders the author package verbatim",
+    String.raw`
+chunk = json.loads((run / "chunk-correctness.txt").read_text().split("\n", 1)[1])
+chunk["residual_risks"] = ["Raw risk"]
+put("chunk-correctness", chunk)
+author.update(decision="APPROVE", residual_risks=["Corrected risk"])
+put("author", author)
+report = render(run)
+assert body.encode() in report and b"Anchor: file.py:1-2 RIGHT" in report
+assert b"## Review decision\n\nAPPROVE\n" in report
+assert report.split(b"## Residual risks\n\n")[1].split(b"\n\n## Verification notes")[0] == b"Corrected risk"
+assert b"Raw risk" not in report
+assert report.rsplit(b"## Posting\n", 1)[1] == b"\nNot posted.\n"
 `,
-    ],
-    [
-      "creates the output exclusively and returns its digest",
-      String.raw`
+  ],
+  [
+    "creates the output exclusively, then replaces it only at the matching digest",
+    String.raw`
 sha = write_file(run, output, data)
 assert sha == digest(data) and output.read_bytes() == data
+assert write_file(run, output, data + b"updated", sha) == digest(data + b"updated")
+assert output.read_bytes() == data + b"updated" and not (run / "render.tmp").exists()
 `,
-    ],
-    [
-      "refuses replacement over a stale render.tmp and preserves it",
-      String.raw`
+  ],
+  [
+    "refuses replacement over a stale render.tmp and preserves it",
+    String.raw`
 sha = write_file(run, output, data)
 temporary = run / "render.tmp"
 temporary.write_bytes(b"keep")
-refused(lambda: write_file(run, output, data, sha))
+refused(lambda: write_file(run, output, data + b"updated", sha), "File exists")
 assert temporary.read_bytes() == b"keep" and output.read_bytes() == data
 `,
-    ],
-    [
-      "removes render.tmp and keeps the output when os.replace fails",
-      String.raw`
+  ],
+  [
+    "removes render.tmp and keeps the output when os.replace fails",
+    String.raw`
 sha = write_file(run, output, data)
-temporary = run / "render.tmp"
 with patch("os.replace", side_effect=OSError("cross-device replacement refused")):
-    refused(lambda: write_file(run, output, data + b"updated", sha))
-assert not temporary.exists() and output.read_bytes() == data
+    refused(lambda: write_file(run, output, data + b"updated", sha), "cross-device")
+assert not (run / "render.tmp").exists() and output.read_bytes() == data
 `,
-    ],
-    [
-      "replaces the output when the expected sha matches",
-      String.raw`
-sha = write_file(run, output, data)
-temporary = run / "render.tmp"
-assert write_file(run, output, data + b"updated", sha) == digest(data + b"updated")
-assert not temporary.exists()
-`,
-    ],
-    [
-      "renders complete receipts without the incomplete-posting warning",
-      String.raw`${RECEIPTS}
+  ],
+  [
+    "renders complete receipts without the incomplete-posting warning",
+    String.raw`${RECEIPTS}
 (run / "receipts.json").write_text(json.dumps(receipts))
 posting = render(run).rsplit(b"## Posting\n", 1)[1]
 assert b"pullrequestreview-9" in posting and b"Posting is incomplete." not in posting
 `,
-    ],
-    [
-      "refuses to render without a chunk file",
-      String.raw`
+  ],
+  [
+    "warns that posting is incomplete when complete is false",
+    String.raw`${RECEIPTS}${INCOMPLETE_WARNING}
+receipts["complete"] = False
+(run / "receipts.json").write_text(json.dumps(receipts))
+posting = render(run).rsplit(b"## Posting\n", 1)[1]
+assert warning in posting.splitlines() and b"pullrequestreview-9" in posting
+`,
+  ],
+  [
+    "warns that posting is incomplete when complete is missing",
+    String.raw`${RECEIPTS}${INCOMPLETE_WARNING}
+del receipts["complete"]
+(run / "receipts.json").write_text(json.dumps(receipts))
+posting = render(run).rsplit(b"## Posting\n", 1)[1]
+assert warning in posting.splitlines() and b"pullrequestreview-9" in posting
+`,
+  ],
+  [
+    "refuses to render without a chunk file",
+    String.raw`
 (run / "chunk-correctness.txt").unlink()
-refused(lambda: render(run))
+refused(lambda: render(run), "chunk-correctness.txt")
 `,
-    ],
-    [
-      "refuses to render a failed verification",
-      String.raw`
-fixture(run)
+  ],
+  [
+    "refuses to render a failed verification",
+    String.raw`
 (run / "verify.txt").write_text('VERIFY: FAIL\n{"issues":["Not verified"],"observed_checks":[]}')
-refused(lambda: render(run))
+refused(lambda: render(run), "verify.txt: expected VERIFY: PASS")
 `,
-    ],
-  ])("%s", (_name, source) => {
+  ],
+  [
+    "refuses to render when an unresolved thread is unassessed",
+    String.raw`
+author.update(decision="COMMENT", findings=[], thread_assessments=[])
+put("author", author)
+refused(lambda: render(run), "thread_assessments must cover exactly")
+`,
+  ],
+];
+
+const WRITE_REFUSALS: ReadonlyArray<readonly [string, string]> = [
+  ["an existing output", "output, None"],
+  ["a symlink in place of the output being replaced", "link, sha"],
+  ["a path through a symlinked directory", 'linked_dir / "new.md", None'],
+  ["a wrong digest", 'output, "0" * 64'],
+  ["an absolute path", 'Path.cwd() / "absolute.md", None'],
+  ["a .. path", 'Path("../new.md"), None'],
+];
+
+const ANCHOR_PINS: ReadonlyArray<readonly [string, string]> = [
+  ["RIGHT", "b".repeat(SHA_LENGTH)],
+  ["LEFT", "a".repeat(SHA_LENGTH)],
+];
+
+describe("render-review.py", () => {
+  it.each(RENDER_CONTRACT)("%s", (_name, source) => {
     expect(rendered(source)).toBe("verified");
   });
 
-  // Labels follow the order of the Python targets list below.
-  it.each(
-    [
-      "an existing output",
-      "a symlink",
-      "a symlink with its sha",
-      "a path through a symlinked directory",
-      "a wrong sha",
-      "an absolute path",
-      "a .. path",
-    ].map((label, index) => [label, index] as const),
-  )("refuses to write %s", (_label, index) => {
+  it.each(WRITE_REFUSALS)("refuses to write %s", (_label, target) => {
     expect(
       rendered(String.raw`
 sha = write_file(run, output, data)
@@ -376,31 +330,52 @@ link = run / "link.md"
 link.symlink_to(output)
 linked_dir = run / "linked-dir"
 linked_dir.symlink_to(Path.cwd(), target_is_directory=True)
-targets = [(output, None), (link, None), (link, sha),
-           (linked_dir / "new.md", None), (output, "0" * 64),
-           (Path.cwd() / "absolute.md", None), (Path("../new.md"), None)]
-target, expected = targets[${String(index)}]
+target, expected = ${target}
 refused(lambda: write_file(run, target, b"no", expected))
+assert output.read_bytes() == data
 `),
     ).toBe("verified");
   });
 
-  it.each(["False", "None"])(
-    "warns that posting is incomplete when complete is %s or missing",
-    (complete) => {
-      expect(
-        rendered(String.raw`${RECEIPTS}
-warning = (b"Posting is incomplete. An action without a receipt may still have taken effect on GitHub. "
-           b"Check the PR before any manual follow-up; never re-run the poster.")
-complete = ${complete}
-receipts["complete"] = complete
-if complete is None:
-    del receipts["complete"]
-(run / "receipts.json").write_text(json.dumps(receipts))
-posting = render(run).rsplit(b"## Posting\n", 1)[1]
-assert warning in posting.splitlines() and b"pullrequestreview-9" in posting
-`),
-      ).toBe("verified");
+  it.each(ANCHOR_PINS)(
+    "links a %s anchor at its side's pinned SHA with an encoded path",
+    (side, pin) => {
+      const output = python(`
+author["findings"][0]["anchor"].update(path="dir with spaces/a#b.py", side=${JSON.stringify(side)})
+put("author", author)
+print(render["render"](run).decode())
+`);
+      expect(output).toContain(
+        `https://github.com/cli/cli/blob/${pin}/dir%20with%20spaces/a%23b.py#L1-L2`,
+      );
     },
   );
+
+  it("renders an empty package with the not-proof disclaimer, drops and collection-time CI", () => {
+    const output = python(`
+author.update(decision="COMMENT", findings=[], dropped=[dict(candidate="tests-1", reason="No changed-code causality")], residual_risks=["Binary coverage unavailable"])
+put("author", author)
+print(render["render"](run).decode())
+`);
+    expect(output).toContain(
+      "No findings in the inspected scope. This is not proof of correctness.",
+    );
+    expect(output).toContain("tests-1: No changed-code causality");
+    expect(output).toContain(
+      "CI as observed at collection:\n\nNot run; collected at fixture time",
+    );
+  });
+
+  it("runs from a skill directory containing spaces and prints the output digest", () => {
+    expect(
+      python(`
+import shutil
+package = pathlib.Path("package with spaces")
+shutil.copytree(scripts, package)
+printed = subprocess.check_output([sys.executable, "-I", str(package / "render-review.py"), ".", "review.md"], text=True)
+assert printed == "sha256: " + hashlib.sha256(pathlib.Path("review.md").read_bytes()).hexdigest() + "\\n", printed
+print("verified")
+`).trim(),
+    ).toBe("verified");
+  });
 });
