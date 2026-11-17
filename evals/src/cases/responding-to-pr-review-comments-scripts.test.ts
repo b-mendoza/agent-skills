@@ -197,6 +197,30 @@ describe("shipped reply helper", () => {
       stderr: USAGE,
     },
     {
+      name: "a repository with an extra path segment",
+      args: ["eval-org/cart/other", "17", "701", "approved.txt"],
+      exit: USAGE_ERROR,
+      stderr: USAGE,
+    },
+    {
+      name: "a repository with a query character",
+      args: ["eval-org/cart?other", "17", "701", "approved.txt"],
+      exit: USAGE_ERROR,
+      stderr: USAGE,
+    },
+    {
+      name: "a repository with a fragment character",
+      args: ["eval-org/cart#other", "17", "701", "approved.txt"],
+      exit: USAGE_ERROR,
+      stderr: USAGE,
+    },
+    {
+      name: "a repository with a dot segment before reading the body",
+      args: ["../cart", "17", "701", "missing.txt"],
+      exit: USAGE_ERROR,
+      stderr: USAGE,
+    },
+    {
       name: "a PR number carrying a path segment",
       args: ["eval-org/cart", "17/other", "701", "approved.txt"],
       exit: USAGE_ERROR,
