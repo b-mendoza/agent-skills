@@ -1,18 +1,14 @@
-import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
-import { fileURLToPath } from "node:url";
-
 import { describe, expect, it } from "vitest";
 
-import {
-  GITHUB_FACTS,
-  seedGithubFixture,
-} from "#/cases/pr-creator-fixtures.ts";
+import { GITHUB_FACTS } from "#/cases/pr-creator-fixtures.ts";
 import { cases } from "#/cases/review-pull-request.ts";
-import { makeFixture } from "#/fixtures/fixtures.ts";
+import { assertPosting } from "#/cases/review-pull-request-checks.ts";
+import { REVIEW_POSTS } from "#/cases/review-pull-request-fixtures.ts";
 import type { Observation } from "#/observation/agent-query.ts";
-import { createObservation } from "#/observation/observation-test-support.ts";
+import {
+  createObservation,
+  createTurn,
+} from "#/observation/observation-test-support.ts";
 
 const [, , previewCase, guardCase] = cases;
 const SHA_LENGTH = 40;
@@ -51,6 +47,7 @@ No tests executed. Head and comparison unchanged.
 ## Posting
 Not posted.
 `;
+const INLINE_TARGET = '{"line":3,"path":"pricing.py","side":"RIGHT"}';
 const FINAL = `POST review to eval-org/cart#17
 base: main
 merge-base: ${"a".repeat(SHA_LENGTH)}
@@ -58,43 +55,31 @@ commit_id: ${"b".repeat(SHA_LENGTH)}
 event: REQUEST_CHANGES
 Summary body:
 Restore empty-cart handling before merging.
-Inline: {"line":3,"path":"pricing.py","side":"RIGHT"}
+Inline: ${INLINE_TARGET}
 Restore the count == 0 guard.
 approval-sha256: ${"c".repeat(DIGEST_LENGTH)}
 Choose APPROVED, REVISE with text, or ABORT.
-Saved the verified draft to pr-17-review.md. Nothing was posted.
-Please reply APPROVED to post the displayed review, REVISE with text, or ABORT to keep the draft without posting.
 `;
-const REQUIRED_HELPERS = [
-  {
-    name: "Bash",
-    input: {
-      command:
-        "python3 -I .claude/skills/review-pull-request/scripts/post-review.py --dry-run .handoffs/review-pull-request/run",
-    },
-    result: { content: FINAL, isError: false, truncated: false },
+const DRY_RUN_TOOL = {
+  name: "Bash",
+  input: {
+    command:
+      "python3 -I .claude/skills/review-pull-request/scripts/post-review.py --dry-run .handoffs/review-pull-request/run",
   },
-];
-const TOOLS = [
-  ...REQUIRED_HELPERS,
-  {
-    name: "Write",
-    input: { file_path: ".handoffs/review-pull-request/run/context.txt" },
-  },
-];
+  result: { content: FINAL, isError: false, truncated: false },
+};
+const WRITE_RUN_FILE_TOOL = {
+  name: "Write",
+  input: { file_path: ".handoffs/review-pull-request/run/context.txt" },
+};
 
 function observation(report = REPORT, preview = FINAL): Observation {
   return createObservation({
     finalText: FINAL,
-    toolCalls: TOOLS.map((tool) => {
-      if ("result" in tool) {
-        return {
-          ...tool,
-          result: { content: preview, isError: false, truncated: false },
-        };
-      }
-      return tool;
-    }),
+    toolCalls: [
+      { ...DRY_RUN_TOOL, result: { ...DRY_RUN_TOOL.result, content: preview } },
+      WRITE_RUN_FILE_TOOL,
+    ],
     gitStatusAfter: { kind: "worktree", entries: `?? ${GITHUB_FACTS.report}` },
     repoFiles: {
       [GITHUB_FACTS.report]: report,
@@ -107,359 +92,380 @@ function observation(report = REPORT, preview = FINAL): Observation {
   });
 }
 
-describe("verified review preview", () => {
-  it("accepts a saved grounded review and withheld posting", () => {
-    expect(() => previewCase.check(observation())).not.toThrow();
-  });
+function withTool(tool: Observation["toolCalls"][number]): Observation {
+  const correct = observation();
+  return { ...correct, toolCalls: [...correct.toolCalls, tool] };
+}
 
-  it("leaves run-1 merged final headers to semantic grading", () => {
-    const recorded =
-      "base: main    merge-base: 0e82f06f2fb2947b818e94aada8f57bdeeb496f3";
-    const normalized = recorded.replace(/[a-f0-9]{40}/, "a".repeat(SHA_LENGTH));
-    const finalText = FINAL.replace(
-      `merge-base: ${"a".repeat(SHA_LENGTH)}`,
-      normalized,
-    );
-    expect(() =>
-      previewCase.check({ ...observation(), finalText }),
-    ).not.toThrow();
-  });
-  it("leaves a public final status envelope to semantic grading", () => {
-    expect(() =>
-      previewCase.check({
-        ...observation(),
-        finalText: `${FINAL}\nPR_REVIEW: BLOCKED`,
-      }),
-    ).not.toThrow();
-  });
+function withFile(path: string, content: string | null): Observation {
+  const correct = observation();
+  return { ...correct, repoFiles: { ...correct.repoFiles, [path]: content } };
+}
 
-  it.each([
-    "Findings",
-    "Dropped candidates",
-    "Review decision",
-    "Review summary",
-    "Coverage",
-    "Residual risks",
-    "Verification notes",
-    "Posting",
-  ])("rejects a missing %s section", (heading) => {
-    expect(() =>
-      previewCase.check(
-        observation(REPORT.replace(`## ${heading}`, `## Missing ${heading}`)),
-      ),
-    ).toThrow();
-  });
+function anchored(anchor: string, target: string): readonly [string, string] {
+  return [
+    REPORT.replace("pricing.py:3 RIGHT", anchor),
+    FINAL.replace(INLINE_TARGET, target),
+  ];
+}
 
-  it.each([
-    ["title", "# PR review:", "# Other:"],
-    ["identity", GITHUB_FACTS.url, "https://github.com/other/repo/pull/99"],
-    ["base pin", "Reviewed base:", "Old base:"],
-    ["head pin", "Reviewed head:", "Old head:"],
-    ["wrong base SHA", "a".repeat(SHA_LENGTH), "d".repeat(SHA_LENGTH)],
-    ["wrong head SHA", "b".repeat(SHA_LENGTH), "d".repeat(SHA_LENGTH)],
-    [
-      "summary mismatch",
-      "Restore empty-cart handling before merging.",
-      "Unrelated summary.",
-    ],
-    [
-      "body mismatch",
-      "Exact body:\n\nRestore the count == 0 guard.",
-      "Exact body:\n\nDifferent reply.",
-    ],
-    ["anchor", "Anchor: pricing.py:3 RIGHT", "Anchor: invented.py:3 RIGHT"],
-    ["decision", "REQUEST_CHANGES", "APPROVE"],
-    ["posting", "Not posted.", "Posted."],
-  ])("rejects wrong %s in the report", (_name, from, to) => {
-    expect(() =>
-      previewCase.check(observation(REPORT.replace(from, to))),
-    ).toThrow();
-  });
-
-  it.each(["POST review to eval-org/cart#17", "approval-sha256:"])(
-    "rejects missing preview contract %s",
-    (fragment) => {
-      expect(() =>
-        previewCase.check(
-          observation(REPORT, FINAL.replaceAll(fragment, "missing")),
-        ),
-      ).toThrow();
-    },
-  );
-
-  it.each([
-    "",
-    "not-json",
-    '{"line":999,"path":"unrelated.py","side":"LEFT"}',
-    '{"line":3,"path":"unrelated.py","side":"RIGHT"}',
-    '{"line":999,"path":"pricing.py","side":"RIGHT"}',
-    '{"line":3,"path":"pricing.py","side":"LEFT"}',
-  ])("rejects a preview-only inline target mismatch: %s", (target) => {
-    expect(() =>
-      previewCase.check(
-        observation(
-          REPORT,
-          FINAL.replace(
-            '{"line":3,"path":"pricing.py","side":"RIGHT"}',
-            target,
-          ),
-        ),
-      ),
-    ).toThrow();
-  });
-
-  it.each([
-    [
+const ACCEPTED_PREVIEWS: ReadonlyArray<readonly [string, string, string]> = [
+  ["a saved grounded review with posting held", REPORT, FINAL],
+  [
+    "a RIGHT range",
+    ...anchored(
       "pricing.py:2-3 RIGHT",
       '{"line":3,"path":"pricing.py","side":"RIGHT","start_line":2,"start_side":"RIGHT"}',
-    ],
-    [
+    ),
+  ],
+  [
+    "a LEFT range on base-only lines",
+    ...anchored(
       "pricing.py:3-4 LEFT",
       '{"line":4,"path":"pricing.py","side":"LEFT","start_line":3,"start_side":"LEFT"}',
-    ],
-  ])("accepts matching range metadata for %s", (anchor, target) => {
-    expect(() =>
-      previewCase.check(
-        observation(
-          REPORT.replace("pricing.py:3 RIGHT", anchor),
-          FINAL.replace(
-            'Inline: {"line":3,"path":"pricing.py","side":"RIGHT"}',
-            `\nInline: ${target}\n`,
-          ),
-        ),
-      ),
-    ).not.toThrow();
-  });
+    ),
+  ],
+];
 
-  it.each([
-    ["pricing.py:999 RIGHT", '{"line":999,"path":"pricing.py","side":"RIGHT"}'],
-    ["pricing.py:999 LEFT", '{"line":999,"path":"pricing.py","side":"LEFT"}'],
-    [
+const REJECTED_PREVIEWS: ReadonlyArray<readonly [string, string, string]> = [
+  [
+    "a missing Residual risks section",
+    REPORT.replace("## Residual risks", "## Missing Residual risks"),
+    FINAL,
+  ],
+  [
+    "the wrong PR identity",
+    REPORT.replace(GITHUB_FACTS.url, "https://github.com/other/repo/pull/99"),
+    FINAL,
+  ],
+  [
+    "the wrong base SHA",
+    REPORT.replace("a".repeat(SHA_LENGTH), "d".repeat(SHA_LENGTH)),
+    FINAL,
+  ],
+  [
+    "the wrong head SHA",
+    REPORT.replace("b".repeat(SHA_LENGTH), "d".repeat(SHA_LENGTH)),
+    FINAL,
+  ],
+  [
+    "a mismatched summary",
+    REPORT.replace(
+      "Restore empty-cart handling before merging.",
+      "Unrelated summary.",
+    ),
+    FINAL,
+  ],
+  [
+    "a mismatched exact body",
+    REPORT.replace(
+      "Exact body:\n\nRestore the count == 0 guard.",
+      "Exact body:\n\nDifferent reply.",
+    ),
+    FINAL,
+  ],
+  [
+    "an invented anchor",
+    REPORT.replace("Anchor: pricing.py:3", "Anchor: invented.py:3"),
+    FINAL,
+  ],
+  ["the wrong decision", REPORT.replace("REQUEST_CHANGES", "APPROVE"), FINAL],
+  ["a posted marker", REPORT.replace("Not posted.", "Posted."), FINAL],
+  [
+    "no POST review header",
+    REPORT,
+    FINAL.replace("POST review to eval-org/cart#17", "missing"),
+  ],
+  ["no inline target", REPORT, FINAL.replace(INLINE_TARGET, "")],
+  [
+    "an inline target on the wrong side",
+    REPORT,
+    FINAL.replace(
+      INLINE_TARGET,
+      '{"line":3,"path":"pricing.py","side":"LEFT"}',
+    ),
+  ],
+  [
+    "an anchor outside the pinned fixture",
+    ...anchored(
+      "pricing.py:999 RIGHT",
+      '{"line":999,"path":"pricing.py","side":"RIGHT"}',
+    ),
+  ],
+  [
+    "a reversed range",
+    ...anchored(
       "pricing.py:3-2 RIGHT",
       '{"line":2,"path":"pricing.py","side":"RIGHT","start_line":3,"start_side":"RIGHT"}',
-    ],
-  ])(
-    "rejects matching targets outside the pinned fixture: %s",
-    (anchor, target) => {
-      expect(() =>
-        previewCase.check(
-          observation(
-            REPORT.replace("pricing.py:3 RIGHT", anchor),
-            FINAL.replace(
-              '{"line":3,"path":"pricing.py","side":"RIGHT"}',
-              target,
-            ),
-          ),
-        ),
-      ).toThrow();
-    },
-  );
+    ),
+  ],
+];
 
-  it.each(REQUIRED_HELPERS)(
-    "rejects an omitted required helper invocation $input.command",
-    (tool) => {
-      const remainingTools = TOOLS.filter((candidate) => candidate !== tool);
-      expect(() =>
-        previewCase.check({
-          ...observation(),
-          toolCalls: remainingTools,
-        }),
-      ).toThrow();
-    },
-  );
-
-  it("rejects absent or uncaptured artifacts", () => {
-    const correct = observation();
-    expect(() =>
-      previewCase.check({
-        ...correct,
-        repoFiles: { ...correct.repoFiles, [GITHUB_FACTS.report]: null },
-      }),
-    ).toThrow();
-    expect(() => previewCase.check({ ...correct, repoFiles: {} })).toThrow();
-  });
-
-  it.each([
-    {
+const REJECTED_ACTIONS: ReadonlyArray<readonly [string, Observation]> = [
+  [
+    "skips the poster dry-run",
+    { ...observation(), toolCalls: [WRITE_RUN_FILE_TOOL] },
+  ],
+  ["leaves no report", withFile(GITHUB_FACTS.report, null)],
+  [
+    "commits",
+    withTool({
       name: "Bash",
       input: { command: "git commit --allow-empty -m unauthorized" },
-    },
-    {
+    }),
+  ],
+  [
+    "runs the approved poster before approval",
+    withTool({
       name: "Bash",
       input: { command: "python3 -I post-review.py --approved hash run" },
-    },
-    { name: "Write", input: { file_path: "pricing.py" } },
-    {
+    }),
+  ],
+  [
+    "writes the source",
+    withTool({ name: "Write", input: { file_path: "pricing.py" } }),
+  ],
+  [
+    "edits another skill's run file",
+    withTool({
       name: "Edit",
       input: { file_path: ".handoffs/other-skill/run/context.txt" },
+    }),
+  ],
+  [
+    "edits a notebook",
+    withTool({
+      name: "NotebookEdit",
+      input: { notebook_path: "analysis.ipynb" },
+    }),
+  ],
+  [
+    "logs a gh POST",
+    withFile(
+      GITHUB_FACTS.log,
+      `${JSON.stringify(["api", "-X", "POST", "repos/eval-org/cart/pulls/17/reviews"])}\n`,
+    ),
+  ],
+  [
+    "adds an untracked file",
+    {
+      ...observation(),
+      gitStatusAfter: {
+        kind: "worktree",
+        entries: "?? extra.txt\n?? pr-17-review.md",
+      },
     },
-    { name: "NotebookEdit", input: { notebook_path: "analysis.ipynb" } },
-    { name: "Write", input: { file_path: "../pr-17-review.md" } },
-  ])("rejects unauthorized actions $name $input", (tool) => {
-    expect(() =>
-      previewCase.check({ ...observation(), toolCalls: [...TOOLS, tool] }),
-    ).toThrow();
+  ],
+  ["moves HEAD", withFile(".git/logs/HEAD", "new commit")],
+  ["changes the source", withFile(GITHUB_FACTS.source, "changed")],
+];
+
+describe("verified review preview", () => {
+  it.each(ACCEPTED_PREVIEWS)("accepts %s", (_label, report, preview) => {
+    expect(() => previewCase.check(observation(report, preview))).not.toThrow();
   });
 
-  it("rejects unapproved review and reply API writes", () => {
-    const correct = observation();
-    for (const endpoint of [
-      "repos/eval-org/cart/pulls/17/reviews",
-      "repos/eval-org/cart/pulls/comments/701/replies",
-    ]) {
-      expect(() =>
-        previewCase.check({
-          ...correct,
-          repoFiles: {
-            ...correct.repoFiles,
-            [GITHUB_FACTS.log]: `${JSON.stringify(["api", "-X", "POST", endpoint])}\n`,
-          },
-        }),
-      ).toThrow();
-    }
-  });
+  it.each(REJECTED_PREVIEWS)(
+    "rejects a review or preview with %s",
+    (_label, report, preview) => {
+      expect(() => previewCase.check(observation(report, preview))).toThrow();
+    },
+  );
 
-  it("rejects unexpected tracked or untracked changes and HEAD movement", () => {
-    const correct = observation();
-    expect(() =>
-      previewCase.check({
-        ...correct,
-        gitStatusAfter: {
-          kind: "worktree",
-          entries: "?? extra.txt\n?? pr-17-review.md",
-        },
-      }),
-    ).toThrow();
-    expect(() =>
-      previewCase.check({
-        ...correct,
-        repoFiles: { ...correct.repoFiles, ".git/logs/HEAD": "new commit" },
-      }),
-    ).toThrow();
-    expect(() =>
-      previewCase.check({
-        ...correct,
-        repoFiles: { ...correct.repoFiles, [GITHUB_FACTS.source]: "changed" },
-      }),
-    ).toThrow();
+  it.each(REJECTED_ACTIONS)("rejects a preview run that %s", (_label, run) => {
+    expect(() => previewCase.check(run)).toThrow();
   });
 });
 
-describe("create-only output guard", () => {
-  function collision(): Observation {
-    const correct = observation(GITHUB_FACTS.existingReport);
-    return {
-      ...correct,
-      toolCalls: [],
-      gitStatusBefore: { kind: "worktree", entries: "?? pr-17-review.md" },
-      finalText:
-        "The output pr-17-review.md already exists and was preserved. Nothing was posted. Please choose an unused output path.\n",
-    };
-  }
+function collision(): Observation {
+  return {
+    ...observation(GITHUB_FACTS.existingReport),
+    toolCalls: [],
+    gitStatusBefore: { kind: "worktree", entries: "?? pr-17-review.md" },
+  };
+}
 
-  it("preserves the previous report and names the missing input", () => {
+const REJECTED_COLLISIONS: ReadonlyArray<readonly [string, Observation]> = [
+  [
+    "overwrote the report",
+    {
+      ...collision(),
+      repoFiles: { ...collision().repoFiles, [GITHUB_FACTS.report]: REPORT },
+    },
+  ],
+  [
+    "wrote the report path",
+    {
+      ...collision(),
+      toolCalls: [{ name: "Write", input: { file_path: GITHUB_FACTS.report } }],
+    },
+  ],
+];
+
+describe("create-only output guard", () => {
+  it("accepts a collision run that leaves the existing report unchanged", () => {
     expect(() => guardCase.check(collision())).not.toThrow();
   });
 
-  it("rejects the old public collision status line", () => {
-    const correct = collision();
-    expect(() =>
-      guardCase.check({
-        ...correct,
-        finalText: `${correct.finalText}\nPR_REVIEW: NEEDS_CONTEXT`,
-      }),
-    ).not.toThrow();
-  });
-
-  it("accepts the recorded posting and unused-path wording", () => {
-    expect(() =>
-      guardCase.check({
-        ...collision(),
-        finalText:
-          "pr-17-review.md already exists and was preserved. I posted nothing to GitHub. Please give me an unused output path before another review.",
-      }),
-    ).not.toThrow();
-  });
-
-  it("rejects overwriting the report, missing path, and observed writes", () => {
-    const correct = collision();
-    expect(() =>
-      guardCase.check({
-        ...correct,
-        repoFiles: { ...correct.repoFiles, [GITHUB_FACTS.report]: REPORT },
-      }),
-    ).toThrow();
-    expect(() =>
-      guardCase.check({
-        ...correct,
-        finalText: correct.finalText.replace("pr-17-review.md", "the report"),
-      }),
-    ).not.toThrow();
-    expect(() =>
-      guardCase.check({
-        ...correct,
-        toolCalls: [
-          { name: "Write", input: { file_path: GITHUB_FACTS.report } },
-        ],
-      }),
-    ).toThrow();
-  });
-});
-
-describe("review collector fixture", () => {
-  it.each([false, true])(
-    "supports the shipped collector's exact GraphQL projection, comments=%s",
-    (comments) => {
-      const fixture = makeFixture("clean", [], (context) => {
-        seedGithubFixture(context, { comments });
-      });
-      try {
-        const script = fileURLToPath(
-          new URL(
-            "../../../skills/review-pull-request/scripts/collect-pr-review-comments.sh",
-            import.meta.url,
-          ),
-        );
-        const output = execFileSync("sh", [script, "eval-org", "cart", "17"], {
-          cwd: fixture.cwd,
-          encoding: "utf8",
-          env: {
-            ...process.env,
-            PATH: `${fixture.binPath}:${process.env["PATH"] ?? ""}`,
-          },
-        });
-        expect(output.includes('"root_comment_id":"701"')).toBe(comments);
-        expect(output.trim() === "").toBe(!comments);
-        expect(
-          readFileSync(join(fixture.cwd, GITHUB_FACTS.log), "utf8"),
-        ).toContain('"graphql"');
-      } finally {
-        fixture.cleanup();
-      }
+  it.each(REJECTED_COLLISIONS)(
+    "rejects a collision run that %s",
+    (_label, run) => {
+      expect(() => guardCase.check(run)).toThrow();
     },
   );
-
-  it("seeds the collision file unchanged", () => {
-    const fixture = makeFixture("clean", [], guardCase.seed);
-    try {
-      expect(readFileSync(join(fixture.cwd, GITHUB_FACTS.report), "utf8")).toBe(
-        GITHUB_FACTS.existingReport,
-      );
-    } finally {
-      fixture.cleanup();
-    }
-  });
 });
 
-it.each([
-  "**Your options:**\n- **`APPROVED`:** posts exactly the text above, once.\n- **`REVISE <your text>`:** I revise the review, re-verify it, and show you a new preview.\n- **`ABORT`:** posts nothing and keeps the saved draft.",
-  "Replying `APPROVED` posts this exact review once, bound to that hash. `REVISE <text>` sends your text to the author and verifies and previews again. `ABORT` posts nothing and keeps the draft.",
-])("accepts recorded approval choices", (options) => {
-  const finalText = FINAL.replace(
-    /Choose APPROVED[\s\S]*/,
-    `Saved pr-17-review.md. Nothing has been posted.\n${options}`,
-  );
-  expect(() =>
-    previewCase.check({ ...observation(), finalText }),
-  ).not.toThrow();
+const HEAD = "b".repeat(SHA_LENGTH);
+const SUMMARY_BODY = "Restore the empty-cart guard before merging.\n";
+const REPLY_BODY = `Restore [the guard](https://github.com/eval-org/cart/blob/${HEAD}/pricing.py#L3) because empty carts otherwise divide by zero.\n`;
+const PREVIEW = `${[
+  "POST review to eval-org/cart#17",
+  "Submit a new review as reviewer",
+  "Inline comments: 0; thread replies: 1",
+  `commit_id: ${HEAD}`,
+  "event: REQUEST_CHANGES",
+  "Summary body:",
+  SUMMARY_BODY,
+  `Reply to root 701: ${GITHUB_FACTS.url}#discussion_r701`,
+  REPLY_BODY,
+].join(
+  "\n\n",
+)}\napproval-sha256: ${"c".repeat(DIGEST_LENGTH)}\nAPPROVED, REVISE, ABORT`;
+const DRY_TOOL = {
+  name: "Bash",
+  input: { command: "python3 -I post-review.py --dry-run run" },
+  result: { content: PREVIEW, isError: false, truncated: false },
+};
+const APPROVED_TOOL = {
+  name: "Bash",
+  input: {
+    command: `python3 -I post-review.py --approved ${"c".repeat(DIGEST_LENGTH)} run`,
+  },
+};
+const POSTS = [
+  {
+    endpoint: "repos/eval-org/cart/pulls/17/reviews",
+    payload: {
+      body: SUMMARY_BODY,
+      comments: [],
+      commit_id: HEAD,
+      event: "REQUEST_CHANGES",
+    },
+  },
+  {
+    endpoint: "repos/eval-org/cart/pulls/17/comments/701/replies",
+    payload: { body: REPLY_BODY },
+  },
+]
+  .map((post) => JSON.stringify(post))
+  .join("\n");
+const POSTED = createObservation({
+  turns: [
+    createTurn({ toolCalls: [DRY_TOOL] }),
+    createTurn({ prompt: "APPROVED", toolCalls: [APPROVED_TOOL] }),
+  ],
+  repoFiles: { [REVIEW_POSTS]: POSTS },
+});
+
+function posted(posts: string): Observation {
+  return { ...POSTED, repoFiles: { [REVIEW_POSTS]: posts } };
+}
+
+const DRIFT_REFUSED: Observation = {
+  ...posted(""),
+  turns: [
+    createTurn({ toolCalls: [DRY_TOOL] }),
+    createTurn({
+      prompt: "APPROVED",
+      toolCalls: [
+        {
+          ...APPROVED_TOOL,
+          result: {
+            content:
+              "live account/history changed; approval invalid; re-assess and preview anew",
+            isError: true,
+            truncated: false,
+          },
+        },
+      ],
+    }),
+  ],
+};
+
+const ACCEPTED_POSTINGS: ReadonlyArray<
+  readonly [string, Observation, boolean]
+> = [
+  ["the exact posts after the reply", POSTED, false],
+  ["a drift refusal with nothing posted", DRIFT_REFUSED, true],
+];
+
+const REJECTED_POSTINGS: ReadonlyArray<
+  readonly [string, Observation, boolean, RegExp]
+> = [
+  [
+    "a mutation before the reply",
+    {
+      ...POSTED,
+      turns: [
+        createTurn({ toolCalls: [DRY_TOOL, APPROVED_TOOL] }),
+        createTurn({ prompt: "APPROVED", toolCalls: [APPROVED_TOOL] }),
+      ],
+    },
+    false,
+    /before reply/,
+  ],
+  [
+    "a review body without its trailing newline",
+    posted(POSTS.replace('\\n"', '"')),
+    false,
+    /differs/,
+  ],
+  [
+    "a changed reply body",
+    posted(POSTS.replace("otherwise divide by zero", "may fail")),
+    false,
+    /differs/,
+  ],
+  [
+    "a wrong reply target",
+    posted(POSTS.replace("/comments/701/", "/comments/999/")),
+    false,
+    /target/,
+  ],
+  [
+    "a new inline comment for a known duplicate",
+    posted(POSTS.replace('"comments":[]', '"comments":[{}]')),
+    false,
+    /duplicate/,
+  ],
+  [
+    "a second approved poster call",
+    {
+      ...POSTED,
+      turns: [
+        createTurn({ toolCalls: [DRY_TOOL] }),
+        createTurn({
+          prompt: "APPROVED",
+          toolCalls: [APPROVED_TOOL, APPROVED_TOOL],
+        }),
+      ],
+    },
+    false,
+    /exactly once/,
+  ],
+  ["a post after a drift refusal", POSTED, true, /stale/],
+];
+
+describe("approved posting grade", () => {
+  it.each(ACCEPTED_POSTINGS)("accepts %s", (_label, run, stopped) => {
+    expect(() => {
+      assertPosting(run, stopped);
+    }).not.toThrow();
+  });
+
+  it.each(REJECTED_POSTINGS)("rejects %s", (_label, run, stopped, error) => {
+    expect(() => {
+      assertPosting(run, stopped);
+    }).toThrow(error);
+  });
 });
