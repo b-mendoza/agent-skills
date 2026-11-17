@@ -159,7 +159,7 @@ def summary_human_only(summary):
             task_column = None  # A table ends at the first line that is not a row.
             continue
         cells = table_cells(line)
-        if all(SEPARATOR_CELL.fullmatch(cell) for cell in table_cells(following)):
+        if following.startswith("|") and all(SEPARATOR_CELL.fullmatch(cell) for cell in table_cells(following)):
             task_column = cells.index("Task") if "Task" in cells else None
             continue
         if not any(cell.casefold() == HUMAN_ONLY_BRANCH.casefold() for cell in cells):

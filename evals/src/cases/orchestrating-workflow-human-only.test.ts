@@ -309,6 +309,11 @@ describe("human-only guard", () => {
         "| Order | Task | Branch |\n| --- | --- | --- |\n| 1 | 1 | N/A (human-only) |\n",
     },
     {
+      label: "a sentinel row followed by a thematic break",
+      summary:
+        "| Order | Task | Branch |\n| --- | --- | --- |\n| C | 1 | N/A (human-only) |\n---\nNotes follow.\n",
+    },
+    {
       label: "a bold source mapped to a backticked Task N",
       summary:
         "| Order | Task | Branch |\n| --- | --- | --- |\n| 1 | **C** -> `Task 1` | N/A (human-only) |\n",
