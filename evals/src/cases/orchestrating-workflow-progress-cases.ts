@@ -25,18 +25,10 @@ import {
 import type { Observation, ToolCall } from "#/observation/agent-query.ts";
 
 export const PROGRESS_KEY = "acme-app-42";
-export const PROGRESS_PHASE_NAMES = [
-  "Fetch work item",
-  "Plan tasks",
-  "Clarify and critique",
-  "Create child items",
-];
 export const PROGRESS_ROOT = "docs";
 export const PROGRESS_PATH = `${PROGRESS_ROOT}/acme-app-42-progress.md`;
 export const SKIP_REASON = "User excluded Task 2; Operations owns verification";
 const CHILDREN = 4;
-const CRITIQUE = 6;
-const EXECUTE = 7;
 
 export const ARTIFACT_PLANNING_FILES = {
   "docs/acme-app-42.md": "# Snapshot\n",
@@ -50,31 +42,6 @@ export const TASK_PLANNING_FILES = {
   "docs/acme-app-42-task-1-test-spec.md": "# Tests\n",
   "docs/acme-app-42-task-1-refactoring-plan.md": "# Refactoring\n",
 };
-export const ARTIFACT_RESUME_ACTIONS = [
-  { action: "initialize_task", task_number: 1, resume: "Phase 5, Task 1" },
-  {
-    action: "skip_task",
-    task_number: 1,
-    reason: "User excluded task",
-    resume: "None (all tasks accounted for)",
-  },
-];
-export const TASK_ARTIFACT_RESUME_ACTIONS = [
-  {
-    critique: false,
-    action: "update_task",
-    phase: CRITIQUE,
-    status: "complete",
-    resume: "Phase 7, Task 1",
-  },
-  {
-    critique: true,
-    action: "update_task",
-    phase: EXECUTE,
-    status: "active",
-    resume: "Phase 7, Task 1",
-  },
-];
 
 const seedFiles = {
   "fixture-facts.txt": "Local progress fixture; no remote work.\n",
