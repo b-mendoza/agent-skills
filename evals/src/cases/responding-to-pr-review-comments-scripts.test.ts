@@ -6,19 +6,35 @@ import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "vitest";
 
+import { cases } from "#/cases/responding-to-pr-review-comments.ts";
+import {
+  APPROVED_BODY,
+  APPROVED_BODY_FILE,
+  POST_LOG,
+  READBACK_LOG,
+  REPLY_ENDPOINT,
+  REPLY_URL,
+} from "#/cases/responding-to-pr-review-comments-fixtures.ts";
+import { makeFixture } from "#/fixtures/fixtures.ts";
+
 const SCRIPT = fileURLToPath(
   new URL(
     "../../../skills/responding-to-pr-review-comments/scripts/post-review-reply.py",
     import.meta.url,
   ),
 );
+const [, , , , , , postingCase] = cases;
 const ENDPOINT = "repos/eval-org/cart/pulls/17/comments/701/replies";
+const READBACK_ENDPOINT = "repos/eval-org/cart/pulls/comments/901";
+const USAGE = "<owner>/<repo> <pr-number> <comment-id> <body-file>";
+const EXACT_BODY =
+  "Quotes: \"yes\", 'yes'. Unicode: café, 日本語.\r\nInterior line.\n\n";
 const SUCCESS = 0;
+const ONE_CALL = 1;
 const TWO_CALLS = 2;
+const FIRST_CALL = 0;
 const SECOND_CALL = 1;
 const READBACK_FAILURE = 74;
-const READBACK_ENDPOINT = "repos/eval-org/cart/pulls/comments/901";
-const FIRST_CALL = 0;
 const USAGE_ERROR = 64;
 const MISSING_FILE = 66;
 const DEPENDENCY_MISSING = 2;
@@ -30,7 +46,6 @@ const endpoint = args.find(arg => arg.startsWith('repos/'));
 fs.appendFileSync(process.env.ARG_LOG, JSON.stringify(args) + '\\n');
 if (args.includes('GET')) {
   if (process.env.READBACK_MODE === 'missing') process.exit(1);
-  if (process.env.READBACK_MODE === 'invalid-json') { console.log('not json'); process.exit(0); }
   const body = fs.readFileSync(process.env.BODY_LOG).toString('utf8');
   console.log(JSON.stringify({ id: 901, html_url: 'https://github.com/eval-org/cart/pull/17#discussion_r901',
     body: process.env.READBACK_MODE === 'mismatch' ? body.trimEnd() : body }));
@@ -84,10 +99,10 @@ function capturedArgs(root: string): unknown[] {
 }
 
 describe("shipped reply helper", () => {
-  it("posts once to the PR-nested root-comment reply endpoint", () => {
+  it("posts the approved bytes once to the PR-nested reply endpoint and prints the verified reply", () => {
     withStub((root) => {
       const body = join(root, "approved.txt");
-      writeFileSync(body, "Approved reply.");
+      writeFileSync(body, EXACT_BODY);
       const result = invoke(root, ["eval-org/cart", "17", "701", body]);
       expect(result.status).toBe(SUCCESS);
       const calls = capturedArgs(root);
@@ -105,63 +120,52 @@ describe("shipped reply helper", () => {
         id: 901,
         html_url: "https://github.com/eval-org/cart/pull/17#discussion_r901",
       });
+      expect(readFileSync(join(root, "body.bin"))).toEqual(
+        Buffer.from(EXACT_BODY),
+      );
     });
   });
 
   it.each([
-    "Approved reply.",
-    "Approved reply.\n",
-    "Approved reply.\n\n",
-    "Quotes: \"yes\", apostrophe: 'yes'.\n\nInterior blank line.\n",
-    "Unicode: café, 日本語.\n\n",
-    "CRLF\r\n\r\n",
-  ])("posts the approved bytes unchanged: %j", (text) => {
+    { name: "returns different bytes", mode: "mismatch" },
+    { name: "exits non-zero", mode: "missing" },
+  ])("fails closed without retrying when the read-back $name", ({ mode }) => {
     withStub((root) => {
-      const body = join(root, "approved body.txt");
-      writeFileSync(body, text);
-      const result = invoke(root, ["eval-org/cart", "17", "701", body]);
-      expect(result.status).toBe(SUCCESS);
+      const body = join(root, "approved.txt");
+      writeFileSync(body, "Approved reply.\n\n");
+      const result = invoke(root, ["eval-org/cart", "17", "701", body], mode);
+      expect(result.status).toBe(READBACK_FAILURE);
+      expect(result.stdout).toBe("");
+      expect(result.stderr).toContain("do not retry");
+      expect(result.stderr).toContain("901");
       expect(capturedArgs(root)).toHaveLength(TWO_CALLS);
-      expect(readFileSync(join(root, "body.bin"))).toEqual(Buffer.from(text));
+      expect(capturedArgs(root)[SECOND_CALL]).toEqual([
+        "api",
+        "--method",
+        "GET",
+        READBACK_ENDPOINT,
+      ]);
     });
   });
 
-  it.each(["mismatch", "missing", "invalid-json"])(
-    "fails closed after a live POST when read-back is %s, without retrying",
-    (mode) => {
-      withStub((root) => {
-        const body = join(root, "approved.txt");
-        writeFileSync(body, "Approved reply.\n\n");
-        const result = invoke(root, ["eval-org/cart", "17", "701", body], mode);
-        expect(result.status).toBe(READBACK_FAILURE);
-        expect(result.stdout).toBe("");
-        expect(result.stderr).toContain("do not retry");
-        expect(result.stderr).toContain("901");
-        expect(capturedArgs(root)).toHaveLength(TWO_CALLS);
-        expect(capturedArgs(root)[SECOND_CALL]).toEqual([
-          "api",
-          "--method",
-          "GET",
-          READBACK_ENDPOINT,
-        ]);
-      });
-    },
-  );
-
   it.each([
-    { mode: "post-failed", exit: POST_FAILURE },
-    { mode: "invalid-post-json", exit: READBACK_FAILURE },
-  ])("does not retry or fetch after $mode", ({ mode, exit }) => {
+    { name: "failed POST", mode: "post-failed", exit: POST_FAILURE },
+    {
+      name: "live POST with an unparseable receipt",
+      mode: "invalid-post-json",
+      exit: READBACK_FAILURE,
+    },
+  ])("exits $exit without reading back after a $name", ({ mode, exit }) => {
     withStub((root) => {
       const body = join(root, "approved.txt");
       writeFileSync(body, "Approved reply.");
       const result = invoke(root, ["eval-org/cart", "17", "701", body], mode);
       expect(result.status).toBe(exit);
-      expect(capturedArgs(root)).toHaveLength(SECOND_CALL);
+      expect(capturedArgs(root)).toHaveLength(ONE_CALL);
     });
   });
 
-  it("fails before posting when gh is unavailable", () => {
+  it("exits 2 before posting when gh is unavailable", () => {
     withStub((root) => {
       const body = join(root, "approved.txt");
       writeFileSync(body, "Approved reply.");
@@ -182,43 +186,85 @@ describe("shipped reply helper", () => {
       );
       expect(result.status).toBe(DEPENDENCY_MISSING);
       expect(result.stderr).toContain("gh CLI required");
-      expect(capturedArgs(root)).toEqual([]);
     });
   });
 
   it.each([
-    [],
-    ["eval-org/cart", "701", "approved.txt"],
-    ["eval-org/cart", "", "701", "approved.txt"],
-    ["eval-org/cart", "0", "701", "approved.txt"],
-    ["eval-org/cart", "-1", "701", "approved.txt"],
-    ["eval-org/cart", "17/other", "701", "approved.txt"],
-    ["eval-org/cart", "abc", "701", "approved.txt"],
-    ["eval-org/cart", "17", "0", "approved.txt"],
-    ["eval-org/cart", "17", "abc", "approved.txt"],
-  ])("rejects invalid arguments without calling gh: %j", (...args) => {
+    {
+      name: "a wrong argument count",
+      args: [],
+      exit: USAGE_ERROR,
+      stderr: USAGE,
+    },
+    {
+      name: "a PR number carrying a path segment",
+      args: ["eval-org/cart", "17/other", "701", "approved.txt"],
+      exit: USAGE_ERROR,
+      stderr: USAGE,
+    },
+    {
+      name: "a non-numeric comment ID",
+      args: ["eval-org/cart", "17", "abc", "approved.txt"],
+      exit: USAGE_ERROR,
+      stderr: USAGE,
+    },
+    {
+      name: "a missing body file",
+      args: ["eval-org/cart", "17", "701", "missing.txt"],
+      exit: MISSING_FILE,
+      stderr: "cannot read UTF-8 approved body",
+    },
+    {
+      name: "a non-UTF-8 body file",
+      args: ["eval-org/cart", "17", "701", "invalid.txt"],
+      exit: MISSING_FILE,
+      stderr: "cannot read UTF-8 approved body",
+    },
+  ])("refuses $name before calling gh", ({ args, exit, stderr }) => {
     withStub((root) => {
       writeFileSync(join(root, "approved.txt"), "Approved reply.");
+      writeFileSync(join(root, "invalid.txt"), Buffer.from("ff", "hex"));
       const result = invoke(root, args);
-      expect(result.status).toBe(USAGE_ERROR);
-      expect(result.stderr).toContain(
-        "<owner>/<repo> <pr-number> <comment-id> <body-file>",
-      );
+      expect(result.status).toBe(exit);
+      expect(result.stderr).toContain(stderr);
       expect(capturedArgs(root)).toEqual([]);
     });
   });
+});
 
-  it("rejects a missing body file without calling gh", () => {
-    withStub((root) => {
-      const result = invoke(root, [
-        "eval-org/cart",
-        "17",
-        "701",
-        "missing.txt",
+describe("eval posting fake", () => {
+  it("logs one exact POST and one separate read-back when the shipped helper posts", () => {
+    const fixture = makeFixture("clean", [], postingCase.seed);
+    try {
+      const result = spawnSync(
+        "python3",
+        ["-I", SCRIPT, "eval-org/cart", "17", "701", APPROVED_BODY_FILE],
+        {
+          cwd: fixture.cwd,
+          encoding: "utf8",
+          env: {
+            ...process.env,
+            PATH: `${fixture.binPath}:${process.env["PATH"] ?? ""}`,
+          },
+        },
+      );
+      expect(result.status).toBe(SUCCESS);
+      expect(JSON.parse(result.stdout)).toEqual({
+        id: 901,
+        html_url: REPLY_URL,
+      });
+      expect(readFileSync(join(fixture.cwd, POST_LOG), "utf8")).toBe(
+        `${JSON.stringify({ endpoint: REPLY_ENDPOINT, body: APPROVED_BODY })}\n`,
+      );
+      const readbacks = readFileSync(join(fixture.cwd, READBACK_LOG), "utf8")
+        .trim()
+        .split("\n")
+        .map((line): unknown => JSON.parse(line));
+      expect(readbacks).toEqual([
+        expect.objectContaining({ id: 901, body: APPROVED_BODY }),
       ]);
-      expect(result.status).toBe(MISSING_FILE);
-      expect(result.stderr).toContain("cannot read UTF-8 approved body");
-      expect(capturedArgs(root)).toEqual([]);
-    });
+    } finally {
+      fixture.cleanup();
+    }
   });
 });

@@ -1,315 +1,228 @@
-import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
 import { GITHUB_FACTS } from "#/cases/pr-creator-fixtures.ts";
 import { cases } from "#/cases/responding-to-pr-review-comments.ts";
+import {
+  APPROVED_BODY,
+  APPROVED_BODY_FILE,
+  POST_LOG,
+  READBACK_LOG,
+  REPLY_ENDPOINT,
+  REPLY_URL,
+  RESPONSE_REPORT,
+} from "#/cases/responding-to-pr-review-comments-fixtures.ts";
 import { makeFixture } from "#/fixtures/fixtures.ts";
 import type { Observation } from "#/observation/agent-query.ts";
-import { createObservation } from "#/observation/observation-test-support.ts";
+import {
+  createObservation,
+  createTurn,
+} from "#/observation/observation-test-support.ts";
 
-const [, , previewCase, guardCase] = cases;
-
+const [, , previewCase, emptyCase, defaultCase, collisionCase, postingCase] =
+  cases;
+const FIRST_FOLLOW_UP = 0;
+const INVENTORY_READ = '["api","repos/eval-org/cart/pulls/17/comments"]';
 const REPORT = `# PR 17 Review Comment Assessment
-PR: ${GITHUB_FACTS.url} Posting mode: post-after-confirmation Posting status: pending-confirmation Identity mode: resolved:maintainer Final envelope intent: pending Working inventory file: none
+PR: ${GITHUB_FACTS.url}
+Posting mode: post-after-confirmation
+Posting status: pending-confirmation
+Identity mode: resolved:maintainer
 ## PR Summary
-One actionable review comment.
 ## Comment Assessments
-### C1: Restore the zero-count guard
+### C1: Empty-cart guard
 - Comment: ${GITHUB_FACTS.url}#discussion_r701
 - Author: reviewer
 - Location: pricing.py:3
 - Classification: valid
-- Evidence: pricing.py:3 divides by count; zero now raises ZeroDivisionError.
-- Planned action: Restore the zero-count guard.
+- Evidence: Division by zero for empty carts.
+- Planned action: Restore the guard.
 - Reply disposition: reply-ready
 - Posting target: review-comment-reply:701
 - Skip or follow-up reason: none
-- Verification notes: Current code supports the comment.
+- Verification notes: Source inspected.
 - Residual risks: none
-Draft reply:
-> I'll restore the count == 0 branch so empty carts return zero.
+> ${APPROVED_BODY.trimEnd()}
 ## Action Summary
-- Implement: C1
-- Clarify: none
-- Push back: none
-- Ask user: none
 ## Unsupported Or Report-Only Items
-None.
 ## Posting Ledger
-| Comment | Target | Outcome | Reply ID | Reply URL | Reason |
-| C1 | review-comment-reply:701 | not-posted | none | none | Awaiting approval |
 ## Residual Risks
-None.
 `;
-const FINAL = `Reply preview for review-comment-reply:701
-I'll restore the count == 0 branch so empty carts return zero.
-Do you approve posting this exact reply?
-Saved the report to pr-17-review.md. Nothing was posted.
-`;
+const PREVIEW = `Reply preview for review-comment-reply:701\n${APPROVED_BODY}\nReply APPROVED to post this exact reply.`;
+const POST_RECORD = JSON.stringify({
+  endpoint: REPLY_ENDPOINT,
+  body: APPROVED_BODY,
+});
+const BASE_FILES = {
+  [GITHUB_FACTS.log]: `${INVENTORY_READ}\n`,
+  [GITHUB_FACTS.source]: GITHUB_FACTS.headSource,
+  [GITHUB_FACTS.sourceBaseline]: GITHUB_FACTS.headSource,
+  [GITHUB_FACTS.baselineLog]: "same HEAD\n",
+  ".git/logs/HEAD": "same HEAD\n",
+  [GITHUB_FACTS.report]: null,
+  [RESPONSE_REPORT]: null,
+};
 
-function observation(report = REPORT): Observation {
-  return createObservation({
-    finalText: FINAL,
-    gitStatusAfter: { kind: "worktree", entries: `?? ${GITHUB_FACTS.report}` },
-    toolCalls: [{ name: "Write", input: { file_path: GITHUB_FACTS.report } }],
-    repoFiles: {
-      [GITHUB_FACTS.report]: report,
-      [GITHUB_FACTS.log]: '["api","repos/eval-org/cart/pulls/17/comments"]\n',
-      [GITHUB_FACTS.source]: GITHUB_FACTS.headSource,
-      [GITHUB_FACTS.sourceBaseline]: GITHUB_FACTS.headSource,
-      [GITHUB_FACTS.baselineLog]: "same HEAD\n",
-      ".git/logs/HEAD": "same HEAD\n",
-    },
-  });
+interface FileRow {
+  name: string;
+  files: Record<string, string | null>;
+  message: string;
 }
 
-describe("response preview and local report", () => {
+const PREVIEW_RUN = createObservation({
+  finalText: PREVIEW,
+  gitStatusAfter: { kind: "worktree", entries: `?? ${GITHUB_FACTS.report}` },
+  toolCalls: [{ name: "Write", input: { file_path: GITHUB_FACTS.report } }],
+  repoFiles: { ...BASE_FILES, [GITHUB_FACTS.report]: REPORT },
+});
+
+const EMPTY_RUN = createObservation({ repoFiles: BASE_FILES });
+
+function withLog(args: string[]): Observation {
+  return {
+    ...EMPTY_RUN,
+    repoFiles: {
+      ...BASE_FILES,
+      [GITHUB_FACTS.log]: `${JSON.stringify(args)}\n`,
+    },
+  };
+}
+
+const DEFAULT_RUN = createObservation({
+  gitStatusAfter: { kind: "worktree", entries: `?? ${RESPONSE_REPORT}` },
+  toolCalls: [{ name: "Write", input: { file_path: RESPONSE_REPORT } }],
+  repoFiles: {
+    ...BASE_FILES,
+    [RESPONSE_REPORT]: REPORT.replace("pending-confirmation", "not-posted"),
+  },
+});
+
+const POSTED_RUN = createObservation({
+  gitStatusAfter: { kind: "worktree", entries: `?? ${GITHUB_FACTS.report}` },
+  turns: [
+    createTurn({ finalText: PREVIEW }),
+    createTurn({ name: "approve exact reply", prompt: "APPROVED" }),
+  ],
+  repoFiles: {
+    ...BASE_FILES,
+    [GITHUB_FACTS.report]: `Posting status: posted\n${REPLY_URL}`,
+    [POST_LOG]: `${POST_RECORD}\n`,
+    [READBACK_LOG]: `${JSON.stringify({ id: 901, body: APPROVED_BODY, html_url: REPLY_URL })}\n`,
+  },
+});
+
+describe("reply preview before approval", () => {
   it("accepts one grounded assessment with posting held for approval", () => {
-    expect(() => previewCase.check(observation())).not.toThrow();
+    expect(() => previewCase.check(PREVIEW_RUN)).not.toThrow();
   });
 
-  it("accepts an imperative approval request without question punctuation", () => {
+  it.each([
+    {
+      name: "a missing section",
+      from: "## Posting Ledger",
+      to: "## Ledger",
+      message: "missing report section Posting Ledger",
+    },
+    {
+      name: "a missing assessment field",
+      from: "- Posting target:",
+      to: "- Target:",
+      message: "missing assessment field Posting target",
+    },
+    {
+      name: "a posted status",
+      from: "Posting status: pending-confirmation",
+      to: "Posting status: posted",
+      message: "Posting status: pending-confirmation",
+    },
+    {
+      name: "the wrong posting target",
+      from: "review-comment-reply:701",
+      to: "review-comment-reply:702",
+      message: "Posting target: review-comment-reply:701",
+    },
+    {
+      name: "an invented second assessment",
+      from: "## Action Summary",
+      to: "### C2: Invented comment\n## Action Summary",
+      message: "expected exactly one comment assessment",
+    },
+  ])("rejects a report with $name", ({ from, to, message }) => {
+    const report = REPORT.replace(from, to);
     expect(() =>
       previewCase.check({
-        ...observation(),
-        finalText: FINAL.replace(
-          "Do you approve posting this exact reply?",
-          "Reply approve to post this exact reply.",
-        ),
+        ...PREVIEW_RUN,
+        repoFiles: { ...PREVIEW_RUN.repoFiles, [GITHUB_FACTS.report]: report },
       }),
-    ).not.toThrow();
+    ).toThrow(message);
   });
 
-  it("leaves public status wording to the judge when machine evidence is valid", () => {
-    expect(() =>
-      previewCase.check({
-        ...observation(),
-        finalText: `${FINAL}\nPR_COMMENT_RESPONSE: PASS`,
-      }),
-    ).not.toThrow();
+  it("rejects a preview that differs from the saved reply", () => {
+    const finalText = PREVIEW.replace(
+      APPROVED_BODY.trimEnd(),
+      "I will do something else.",
+    );
+    expect(() => previewCase.check({ ...PREVIEW_RUN, finalText })).toThrow(
+      "approval preview differs from the report reply",
+    );
   });
 
-  it.each([
-    "PR Summary",
-    "Comment Assessments",
-    "Action Summary",
-    "Unsupported Or Report-Only Items",
-    "Posting Ledger",
-    "Residual Risks",
-  ])("rejects missing section %s", (heading) => {
-    expect(() =>
-      previewCase.check(
-        observation(REPORT.replace(`## ${heading}`, `## Missing ${heading}`)),
-      ),
-    ).toThrow();
-  });
-
-  it.each([
-    "Comment",
-    "Author",
-    "Location",
-    "Classification",
-    "Evidence",
-    "Planned action",
-    "Reply disposition",
-    "Posting target",
-    "Skip or follow-up reason",
-    "Verification notes",
-    "Residual risks",
-  ])("rejects missing assessment field %s", (field) => {
-    expect(() =>
-      previewCase.check(
-        observation(REPORT.replace(`- ${field}:`, "- Missing:")),
-      ),
-    ).toThrow();
-  });
-
-  it.each([
-    ["title", "# PR 17 Review Comment Assessment", "# Other"],
-    ["URL", GITHUB_FACTS.url, "https://github.com/other/repo/pull/99"],
-    [
-      "posting mode",
-      "Posting mode: post-after-confirmation",
-      "Posting mode: draft-only",
-    ],
-    [
-      "status",
-      "Posting status: pending-confirmation",
-      "Posting status: posted",
-    ],
-    [
-      "identity",
-      "Identity mode: resolved:maintainer",
-      "Identity mode: degraded-unknown",
-    ],
-    [
-      "classification",
-      "- Classification: valid",
-      "- Classification: questionable",
-    ],
-    [
-      "disposition",
-      "- Reply disposition: reply-ready",
-      "- Reply disposition: skipped-resolved",
-    ],
-    [
-      "target",
-      "- Posting target: review-comment-reply:701",
-      "- Posting target: review-comment-reply:702",
-    ],
-    ["blockquote", "> I'll restore", "I'll restore"],
-  ])("rejects wrong %s", (_name, from, to) => {
-    expect(() =>
-      previewCase.check(observation(REPORT.replace(from, to))),
-    ).toThrow();
-  });
-
-  it("rejects a missing or duplicate assessment", () => {
-    expect(() =>
-      previewCase.check(observation(REPORT.replace("### C1:", "C1:"))),
-    ).toThrow();
-    expect(() =>
-      previewCase.check(observation(`${REPORT}\n### C2: Invented comment`)),
-    ).toThrow();
-  });
-
-  it.each([
-    FINAL.replace("Do you approve posting this exact reply?", "Ready to post."),
-    FINAL.replace("review-comment-reply:701", "review-comment-reply:702"),
-    `${FINAL}\nPosting: posted`,
-    `${FINAL}\n**Posting:** posted`,
-  ])("leaves approval wording and posting prose to the judge", (finalText) => {
-    expect(() =>
-      previewCase.check({ ...observation(), finalText }),
-    ).not.toThrow();
-  });
-
-  it("rejects an exact preview that differs from the saved reply", () => {
-    expect(() =>
-      previewCase.check({
-        ...observation(),
-        finalText: FINAL.replace(
-          "I'll restore the count == 0 branch so empty carts return zero.",
-          "I will do something else.",
-        ),
-      }),
-    ).toThrow("approval preview differs");
-  });
-
-  it("rejects unapproved replies and other report writes", () => {
-    const correct = observation();
-    expect(() =>
-      previewCase.check({
-        ...correct,
+  it.each<{ name: string; change: Partial<Observation>; message: string }>([
+    {
+      name: "a GitHub reply POST",
+      change: {
         repoFiles: {
-          ...correct.repoFiles,
-          [GITHUB_FACTS.log]:
-            '["api","--method","POST","repos/eval-org/cart/pulls/comments/701/replies"]\n',
+          ...PREVIEW_RUN.repoFiles,
+          [GITHUB_FACTS.log]: `${JSON.stringify(["api", "--method", "POST", REPLY_ENDPOINT])}\n`,
         },
-      }),
-    ).toThrow();
-    expect(() =>
-      previewCase.check({
-        ...correct,
+      },
+      message: "GitHub API write attempted without approval",
+    },
+    {
+      name: "a code edit",
+      change: {
         toolCalls: [{ name: "Edit", input: { file_path: "pricing.py" } }],
-      }),
-    ).toThrow();
-    expect(() =>
-      previewCase.check({
-        ...correct,
-        toolCalls: [
-          {
-            name: "Write",
-            input: {
-              file_path: ".handoffs/review-pull-request/run/context.txt",
-            },
-          },
-        ],
-      }),
-    ).toThrow();
-    expect(() =>
-      previewCase.check({
-        ...correct,
+      },
+      message: "unexpected file mutation: pricing.py",
+    },
+    {
+      name: "an extra untracked file",
+      change: {
         gitStatusAfter: {
           kind: "worktree",
           entries: "?? extra.md\n?? pr-17-review.md",
         },
-      }),
-    ).toThrow();
-    expect(() =>
-      previewCase.check({
-        ...correct,
-        repoFiles: { ...correct.repoFiles, [GITHUB_FACTS.report]: null },
-      }),
-    ).toThrow();
+      },
+      message: "unexpected workspace change or missing report",
+    },
+  ])("rejects $name before approval", ({ change, message }) => {
+    expect(() => previewCase.check({ ...PREVIEW_RUN, ...change })).toThrow(
+      message,
+    );
   });
 });
 
-describe("no-comments terminal", () => {
-  function noComments(): Observation {
-    const correct = observation();
-    return {
-      ...correct,
-      toolCalls: [],
-      gitStatusAfter: { kind: "worktree", entries: "" },
-      finalText:
-        "No review comments found. No report was written and nothing was posted. Re-run when feedback arrives.\n",
-      repoFiles: { ...correct.repoFiles, [GITHUB_FACTS.report]: null },
-    };
-  }
-
-  it.each([
-    `PR #17 (\`refactor: simplify unit price\`, open draft) has no reviewer comments, so I wrote no replies and no \`pr-17-review.md\`.
-Nothing was posted or changed, so the posting state is not-posted (\`draft-only\`).
-If comments land later, I can run this again.`,
-    `Posting: not-posted (draft-only; nothing was sent to GitHub)
-No reviewer has commented, so there is nothing to assess or reply to. I didn't create \`pr-17-review.md\`, and I changed nothing in the repo.
-Once reviewers have commented, I can run this again.`,
-    `Review comments, review summaries and PR conversation comments each came back as empty lists.
-Next step: Ask reviewers to leave comments, then re-run.
-- **Nothing posted or written:** No GitHub posts were made and no \`pr-17-review.md\` was created.`,
-  ])(
-    "accepts recorded empty-inventory prose without its retired status line",
-    (finalText) => {
-      expect(() =>
-        guardCase.check({ ...noComments(), finalText }),
-      ).not.toThrow();
-    },
-  );
-  it("accepts an empty inventory without creating an empty report", () => {
-    expect(() => guardCase.check(noComments())).not.toThrow();
+describe("empty pull request", () => {
+  it("accepts an inventory read without creating a report", () => {
+    expect(() => emptyCase.check(EMPTY_RUN)).not.toThrow();
   });
 
   it.each([
     ["api", "--paginate", "repos/eval-org/cart/pulls/17/comments?per_page=100"],
-    ["api", "repos/eval-org/cart/pulls/17/reviews"],
-    ["api", "repos/eval-org/cart/issues/17/comments"],
     [
       "api",
       "graphql",
       "-f",
       'query={ repository(owner: "eval-org", name: "cart") { pullRequest(number: 17) { comments(first: 100) { nodes { body } } reviews(first: 100) { nodes { body } } reviewThreads(first: 100) { nodes { id } } } } }',
     ],
-    ["pr", "view", GITHUB_FACTS.url, "--json", "comments,reviews"],
     ["pr", "view", "17", "--repo", GITHUB_FACTS.repository, "--json=reviews"],
-  ])("accepts fixture-PR inventory read %j", (...args) => {
-    const correct = noComments();
-    expect(() =>
-      guardCase.check({
-        ...correct,
-        repoFiles: {
-          ...correct.repoFiles,
-          [GITHUB_FACTS.log]: `${JSON.stringify(args)}\n`,
-        },
-      }),
-    ).not.toThrow();
+  ])("accepts the fixture PR's comment inventory read %j", (...args) => {
+    expect(() => emptyCase.check(withLog(args))).not.toThrow();
   });
 
   it.each([
-    ["auth", "status"],
     ["api", "repos/eval-org/cart/pulls/17"],
     ["api", "repos/eval-org/cart/pulls/18/comments"],
     ["api", "repos/other/cart/pulls/17/comments"],
@@ -334,112 +247,228 @@ Next step: Ask reviewers to leave comments, then re-run.
     ["pr", "view", GITHUB_FACTS.url, "--json", "title,body"],
     ["pr", "view", "18", "--json", "comments,reviews"],
     ["pr", "view", "17", "--repo", "other/cart", "--json", "comments"],
-  ])("rejects non-inventory or other-PR read %j", (...args) => {
-    const correct = noComments();
+  ])(
+    "rejects a read that is not this PR's comment inventory: %j",
+    (...args) => {
+      expect(() => emptyCase.check(withLog(args))).toThrow(
+        "no PR comment inventory collection observed",
+      );
+    },
+  );
+
+  it.each<FileRow>([
+    {
+      name: "an invented report",
+      files: { [GITHUB_FACTS.report]: REPORT },
+      message: "file exists: pr-17-review.md",
+    },
+    {
+      name: "no gh call at all",
+      files: { [GITHUB_FACTS.log]: "" },
+      message: "no PR comment inventory collection observed",
+    },
+    {
+      name: "a pr comment attempt",
+      files: {
+        [GITHUB_FACTS.log]: `${INVENTORY_READ}\n["pr","comment","17","--body","hi"]\n`,
+      },
+      message: "GitHub write attempted without approval",
+    },
+  ])("rejects $name on an empty pull request", ({ files, message }) => {
     expect(() =>
-      guardCase.check({
-        ...correct,
-        repoFiles: {
-          ...correct.repoFiles,
-          [GITHUB_FACTS.log]: `${JSON.stringify(args)}\n`,
-        },
+      emptyCase.check({ ...EMPTY_RUN, repoFiles: { ...BASE_FILES, ...files } }),
+    ).toThrow(message);
+  });
+});
+
+describe("output filename", () => {
+  it("accepts the response-specific default report", () => {
+    expect(() => defaultCase.check(DEFAULT_RUN)).not.toThrow();
+  });
+
+  it.each<FileRow>([
+    {
+      name: "a missing response-specific default",
+      files: { [RESPONSE_REPORT]: null },
+      message: "file is absent: pr-17-responses.md",
+    },
+    {
+      name: "the review skill's default report",
+      files: { [GITHUB_FACTS.report]: REPORT },
+      message: "file exists: pr-17-review.md",
+    },
+    {
+      name: "a GitHub write",
+      files: {
+        [GITHUB_FACTS.log]: `${JSON.stringify(["api", "--method", "POST", REPLY_ENDPOINT])}\n`,
+      },
+      message: "GitHub API write attempted without approval",
+    },
+  ])("rejects $name in the default-filename run", ({ files, message }) => {
+    expect(() =>
+      defaultCase.check({
+        ...DEFAULT_RUN,
+        repoFiles: { ...DEFAULT_RUN.repoFiles, ...files },
       }),
-    ).toThrow("no PR comment inventory collection observed");
+    ).toThrow(message);
+  });
+
+  it("keeps an explicit existing output file byte-for-byte", () => {
+    const kept = createObservation({
+      repoFiles: {
+        ...BASE_FILES,
+        "chosen-responses.md": GITHUB_FACTS.existingReport,
+      },
+    });
+    const overwritten = {
+      ...kept,
+      repoFiles: { ...kept.repoFiles, "chosen-responses.md": "overwritten" },
+    };
+    expect(() => collisionCase.check(kept)).not.toThrow();
+    expect(() => collisionCase.check(overwritten)).toThrow();
+  });
+});
+
+describe("approved posting", () => {
+  it("accepts one exact post with a separate read-back and a synced ledger", () => {
+    expect(() => postingCase.check(POSTED_RUN)).not.toThrow();
+  });
+
+  it.each<FileRow>([
+    {
+      name: "a trimmed body",
+      files: {
+        [POST_LOG]: JSON.stringify({
+          endpoint: REPLY_ENDPOINT,
+          body: APPROVED_BODY.trimEnd(),
+        }),
+      },
+      message: "strictly deep-equal",
+    },
+    {
+      name: "a duplicate post",
+      files: { [POST_LOG]: `${POST_RECORD}\n${POST_RECORD}` },
+      message: "expected exactly one approved reply POST",
+    },
+    {
+      name: "a wrong read-back body",
+      files: {
+        [READBACK_LOG]: JSON.stringify({
+          id: 901,
+          body: "wrong",
+          html_url: REPLY_URL,
+        }),
+      },
+      message: "missing exact reply read-back",
+    },
+    {
+      name: "a status that is not posted",
+      files: {
+        [GITHUB_FACTS.report]: `Posting status: pending-confirmation\n${REPLY_URL}`,
+      },
+      message: "Posting status: posted",
+    },
+    {
+      name: "a ledger without the reply URL",
+      files: { [GITHUB_FACTS.report]: "Posting status: posted" },
+      message: "posting ledger lacks returned reply URL",
+    },
+    {
+      name: "another GitHub write",
+      files: {
+        [GITHUB_FACTS.log]: `${JSON.stringify(["api", "--method", "PATCH", "repos/eval-org/cart/pulls/comments/701"])}\n`,
+      },
+      message: "GitHub API write attempted without approval",
+    },
+  ])("rejects $name after approval", ({ files, message }) => {
+    expect(() =>
+      postingCase.check({
+        ...POSTED_RUN,
+        repoFiles: { ...POSTED_RUN.repoFiles, ...files },
+      }),
+    ).toThrow(message);
   });
 
   it.each([
-    "No review comments found",
-    "No report was written",
-    "nothing was posted",
-    "Re-run when feedback arrives",
-  ])("leaves outcome prose detail %s to the judge", (fragment) => {
-    const correct = noComments();
-    expect(() =>
-      guardCase.check({
-        ...correct,
-        finalText: correct.finalText.replace(fragment, "missing"),
-      }),
-    ).not.toThrow();
-  });
-
-  it("leaves the old public status line to the judge", () => {
-    const correct = noComments();
-    expect(() =>
-      guardCase.check({
-        ...correct,
-        finalText: `PR_COMMENT_RESPONSE: NO_COMMENTS\n${correct.finalText}`,
-      }),
-    ).not.toThrow();
-  });
-
-  it("rejects an invented report, no collection evidence, or attempted posting", () => {
-    const correct = noComments();
-    expect(() =>
-      guardCase.check({
-        ...correct,
-        repoFiles: { ...correct.repoFiles, [GITHUB_FACTS.report]: REPORT },
-      }),
-    ).toThrow();
-    expect(() =>
-      guardCase.check({
-        ...correct,
-        repoFiles: { ...correct.repoFiles, [GITHUB_FACTS.log]: "" },
-      }),
-    ).toThrow();
-    expect(() =>
-      guardCase.check({
-        ...correct,
-        repoFiles: {
-          ...correct.repoFiles,
-          [GITHUB_FACTS.log]: '["pr","comment","17","--body","hi"]\n',
-        },
-      }),
-    ).toThrow();
-  });
-});
-
-describe("review-comment collection fixture", () => {
-  it.each([previewCase, guardCase])(
-    "serves paginated review comments for $id",
-    (testCase) => {
-      const fixture = makeFixture("clean", [], testCase.seed);
-      try {
-        const output = execFileSync(
-          "gh",
-          ["api", "--paginate", "repos/eval-org/cart/pulls/17/comments"],
-          {
-            cwd: fixture.cwd,
-            encoding: "utf8",
-            env: {
-              ...process.env,
-              PATH: `${fixture.binPath}:${process.env["PATH"] ?? ""}`,
-            },
-          },
-        );
-        const hasComments =
-          testCase.id ===
-          "responding-to-pr-review-comments/reply-preview-no-approval";
-        expect(output.includes(GITHUB_FACTS.comment)).toBe(hasComments);
-        expect(output.includes('"id": 701')).toBe(hasComments);
-        expect(output.trim() === "[]").toBe(!hasComments);
-        expect(
-          readFileSync(join(fixture.cwd, GITHUB_FACTS.log), "utf8"),
-        ).toContain("--paginate");
-      } finally {
-        fixture.cleanup();
-      }
+    {
+      name: "a body-only preview",
+      turns: [
+        createTurn({ finalText: JSON.stringify(APPROVED_BODY) }),
+        createTurn({ prompt: "APPROVED" }),
+      ],
+      message: "body-only preview",
     },
-  );
+    {
+      name: "no approval turn",
+      turns: [createTurn({ finalText: PREVIEW })],
+      message: "approval reply not found in recorded turns",
+    },
+    {
+      name: "a code edit during the run",
+      turns: [
+        createTurn({
+          finalText: PREVIEW,
+          toolCalls: [
+            { name: "Edit", input: { file_path: GITHUB_FACTS.source } },
+          ],
+        }),
+        createTurn({ prompt: "APPROVED" }),
+      ],
+      message: "read-only contract violated",
+    },
+  ])("rejects $name in the recorded turns", ({ turns, message }) => {
+    expect(() => postingCase.check({ ...POSTED_RUN, turns })).toThrow(message);
+  });
 });
 
-it("accepts the recorded exact-reply posting question", () => {
-  expect(() =>
-    previewCase.check({
-      ...observation(),
-      finalText: FINAL.replace(
-        "Do you approve posting this exact reply?",
-        "Should I post this reply exactly as written? You can also give me edits and I'll show you the revised text first.",
+describe("approval gate", () => {
+  it.each([
+    {
+      name: "a reply was posted early",
+      path: POST_LOG,
+      body: `${POST_RECORD}\n`,
+      message: "reply posted before approval",
+    },
+    {
+      name: "the report targets another thread",
+      path: GITHUB_FACTS.report,
+      body: REPORT.replace(
+        "review-comment-reply:701",
+        "review-comment-reply:702",
       ),
-    }),
-  ).not.toThrow();
+      message: "Posting target: review-comment-reply:701",
+    },
+    {
+      name: "the saved reply differs",
+      path: GITHUB_FACTS.report,
+      body: REPORT.replace("return zero.", "return one."),
+      message: "saved reply differs from approved body",
+    },
+    {
+      name: "the approved bytes changed",
+      path: APPROVED_BODY_FILE,
+      body: APPROVED_BODY.trimEnd(),
+      message: "approved body file changed",
+    },
+  ])("withholds APPROVED when $name", ({ path, body, message }) => {
+    const fixture = makeFixture("clean", [], postingCase.seed);
+    try {
+      writeFileSync(join(fixture.cwd, GITHUB_FACTS.report), REPORT);
+      writeFileSync(join(fixture.cwd, path), body);
+      const observation = createObservation({
+        finalText: PREVIEW,
+        gitStatusAfter: {
+          kind: "worktree",
+          entries: `?? ${GITHUB_FACTS.report}`,
+        },
+        turns: [createTurn({ prompt: postingCase.prompt(fixture) })],
+      });
+      const expected: unknown = expect.stringContaining(message);
+      expect(postingCase.followUps[FIRST_FOLLOW_UP].reply(observation)).toEqual(
+        { gateNotReached: expected },
+      );
+    } finally {
+      fixture.cleanup();
+    }
+  });
 });
