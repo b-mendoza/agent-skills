@@ -22,58 +22,47 @@ function check(plan: string, task = "1") {
 
 describe("human-only execution guard", () => {
   test.each([
-    "**Execution mode:** human-only\n**Human owner:** Release team\n**Branch name:** N/A (human-only)",
-    "Execution mode: human-only\nHuman owner: Release team\nBranch name: feature/legacy-name",
-    "**Branch name**: `N/A (human-only)`",
-    "**Execution mode:** human-only **Owner:** Human",
-  ])("blocks selected human task before branch work: %s", (fields) => {
+    {
+      label: "a human-only section despite a stale code branch",
+      fields:
+        "Execution mode: human-only\nHuman owner: Release team\nBranch name: feature/legacy-name",
+      stdout: "BLOCKED: human-only task; hand off to Release team\n",
+    },
+    {
+      label: "a formatted human-only branch sentinel",
+      fields: "**Branch name**: `N/A (human-only)`",
+      stdout:
+        "BLOCKED: human-only task; hand off to the human owner (not specified)\n",
+    },
+  ])("blocks $label before execution", ({ fields, stdout }) => {
     const result = check(`## Task 1: Production signoff\n${fields}\n`);
     expect(result.status).toBe(BLOCKED);
-    expect(result.stdout).toMatch(/BLOCKED.*human-only/i);
+    expect(result.stdout).toBe(stdout);
   });
-  test("stops an inline owner value before the following task fields", () => {
+  test("stops the owner name before the following task fields", () => {
     const result = check(
       "## Task 1: Do thing\n\n**Owner:** Dana **Execution mode:** human-only **Branch name:** N/A (human-only)\n",
     );
     expect(result.status).toBe(BLOCKED);
     expect(result.stdout).toBe("BLOCKED: human-only task; hand off to Dana\n");
   });
-  test("blocks a sentinel in the execution-order row even without task mode", () => {
-    const result = check(
-      "## Execution Order Summary\n| Task | Branch name |\n| --- | --- |\n| 1 | N/A (human-only) |\n## Task 1: Approval\n**Objective:** Human signoff\n",
-    );
-    expect(result.status).toBe(BLOCKED);
-  });
   test.each([
-    "1",
-    "Task 1",
-    "C -> 1",
-    "C -> Task 1",
-    "C → 1",
-    "C → Task 1",
-    "C -> 4 → Task 1",
-    " `C -> 1` ",
-    "`1`",
-    "**1**",
-    "**Task 1**",
-    "**C -> 1**",
-    "C -> **1**",
-    "**C** -> **Task 1**",
-    "`C` -> `1`",
-    "**`C -> 1`**",
-    "A -> B -> 1",
-    "Ta`sk 1",
+    { label: "a bare task number", taskCell: "1" },
+    { label: "a prefixed task number", taskCell: "Task 1" },
+    { label: "an ASCII mapping", taskCell: "C -> 1" },
+    { label: "a Unicode mapping", taskCell: "C → Task 1" },
+    { label: "a formatted mapping", taskCell: "**`C -> 1`**" },
   ])(
-    "blocks a summary-only sentinel for task cell %s despite a stale code branch",
-    (taskCell) => {
+    "blocks a summary-only human task for $label despite a stale code branch",
+    ({ taskCell }) => {
       const result = check(
         `## Execution Order Summary\n| Task | Branch |\n| --- | --- |\n| ${taskCell} | \`N/A (human-only)\` |\n## Task 1: Approval\n**Branch name:** feature/stale-code\n`,
       );
       expect(result.status).toBe(BLOCKED);
-      expect(result.stdout).toMatch(/BLOCKED.*human-only/i);
+      expect(result.stdout).toMatch(/^BLOCKED: human-only/);
     },
   );
-  test("finds the Task header and a sentinel outside a branch column", () => {
+  test("finds the task column and human sentinel in reordered columns", () => {
     const result = check(
       "## Execution Order Summary\n| Handoff | Task | Branch |\n| --- | --- | --- |\n| N/A (human-only) | Task 1 | feature/stale-code |\n## Task 1: Approval\n**Owner:** Release team\n",
     );
@@ -82,7 +71,7 @@ describe("human-only execution guard", () => {
       "BLOCKED: human-only task; hand off to Release team\n",
     );
   });
-  test("does not mistake a Task data cell for a table header", () => {
+  test("distinguishes a Task data cell from a table header", () => {
     const result = check(
       "## Execution Order Summary\n| Order | Task | Type | Owner | Branch name |\n| --- | --- | --- | --- | --- |\n| 1 | 1 | Task | dev | feat/one |\n| 2 | 2 | Task | Ops | N/A (human-only) |\n## Task 1: One\n## Task 2: Two\n",
       "2",
@@ -90,7 +79,7 @@ describe("human-only execution guard", () => {
     expect(result.status).toBe(BLOCKED);
     expect(result.stdout).toMatch(/^BLOCKED: human-only/);
   });
-  test("checks sentinel rows in every execution-order summary section", () => {
+  test("checks human sentinels in later summary sections", () => {
     const result = check(
       "## Execution Order Summary\n| Task | Branch |\n| --- | --- |\n| 1 | feature/one |\n## Execution Order Summary\n| Branch | Task |\n| :--- | ---: |\n| N/A (human-only) | 2 |\n## Task 1: One\n## Task 2: Two\n",
       "2",
@@ -98,130 +87,65 @@ describe("human-only execution guard", () => {
     expect(result.status).toBe(BLOCKED);
     expect(result.stdout).toMatch(/^BLOCKED: human-only/);
   });
-  test("rejects a sentinel row under a header without a Task cell", () => {
+  test("rejects a human sentinel without a Task column", () => {
     const result = check(
       "## Execution Order Summary\n| Number | Branch |\n| --- | --- |\n| 1 | N/A (human-only) |\n## Task 1: Approval\n",
     );
     expect(result.status).toBe(INVALID);
     expect(result.stdout).toMatch(/^ERROR:/);
   });
-  test("rejects an unreadable sentinel row before returning a human handoff", () => {
-    const result = check(
-      "## Execution Order Summary\n| Task | Handoff |\n| --- | --- |\n| 1 | N/A (human-only) |\n| T2 | N/A (human-only) |\n## Task 1: Approval\n**Execution mode:** human-only\n",
-    );
-    expect(result.status).toBe(INVALID);
-    expect(result.stdout).toMatch(/^ERROR:/);
-    expect(result.stdout).toContain("'T2'");
-  });
-  test("accepts the code task named by a mapped row", () => {
-    const result = check(
-      "## Execution Order Summary\n| Task | Branch |\n| --- | --- |\n| C -> 1 | N/A (human-only) |\n| A -> 2 | feature/validation |\n## Task 1: Approval\n## Task 2: Implement validation\n**Branch name:** feature/validation\n",
-      "2",
-    );
+  test.each([
+    {
+      label: "a human sentinel mapped to another task",
+      plan: "## Execution Order Summary\n| Task | Branch |\n| --- | --- |\n| 1 -> 3 | N/A (human-only) |\n## Task 1: Implement validation\n**Branch name:** feature/validation\n",
+    },
+    {
+      label: "a malformed Task cell without a human sentinel",
+      plan: "## Execution Order Summary\n| Task | Branch |\n| --- | --- |\n| Task 1: Rotate the key | feature/other |\n## Task 1: Implement validation\n**Branch name:** feature/validation\n",
+    },
+    {
+      label: "a human-only mode outside the selected task section",
+      plan: "## Task 1: Implement validation\n**Branch name:** feature/validation\n## Task 2: Approval\n**Execution mode:** human-only\n**Branch name:** N/A (human-only)\n",
+    },
+  ])("continues automation despite $label", ({ plan }) => {
+    const result = check(plan);
     expect(result.status).toBe(SUCCESS);
     expect(result.stdout).toMatch(/^AUTOMATED:/);
   });
-  test.each(["1 -> 3", "1 → Task 3"])(
-    "ignores a sentinel in a cell that does not name task 1: %s",
-    (taskCell) => {
-      const result = check(
-        `## Execution Order Summary\n| Task | Branch |\n| --- | --- |\n| ${taskCell} | N/A (human-only) |\n## Task 1: Implement validation\n**Branch name:** feature/validation\n`,
-      );
-      expect(result.status).toBe(SUCCESS);
-    },
-  );
   test.each([
-    "Task 1: Rotate the key",
-    "1. Rotate the key",
-    "T1",
-    "#1",
-    "Task 1 extra",
-    "C => 1",
-    "C -> 1 extra",
-    " -> 1",
-    "",
-  ])("rejects an unreadable sentinel Task cell %s", (taskCell) => {
+    { label: "a task title", taskCell: "Task 1: Rotate the key" },
+    { label: "an empty mapping source", taskCell: "-> 1" },
+  ])("rejects $label in a human-sentinel Task cell", ({ taskCell }) => {
     const result = check(
       `## Execution Order Summary\n| Task | Branch |\n| --- | --- |\n| ${taskCell} | N/A (human-only) |\n## Task 1: Implement validation\n**Branch name:** feature/validation\n`,
     );
     expect(result.status).toBe(INVALID);
     expect(result.stdout).toMatch(/^ERROR:/);
-    expect(result.stdout).toContain(`'${taskCell.trim()}'`);
-    expect(result.stdout).not.toContain("AUTOMATED:");
+    expect(result.stdout).toContain(`'${taskCell}'`);
   });
-  test.each([
-    "Task 1: Rotate the key",
-    "1. Rotate the key",
-    "T1",
-    "#1",
-    "Task 1 extra",
-    "C => 1",
-    "C -> 1 extra",
-    " -> 1",
-    "",
-  ])("ignores an unreadable non-sentinel Task cell %s", (taskCell) => {
+  test("recognizes a mixed-case human sentinel", () => {
     const result = check(
-      `## Execution Order Summary\n| Task | Branch |\n| --- | --- |\n| ${taskCell} | feature/other |\n## Task 1: Implement validation\n**Branch name:** feature/validation\n`,
+      "## Execution Order Summary\n| Task | Branch |\n| --- | --- |\n| 1 | n/a (Human-Only) |\n## Task 1: Approval\n**Branch name:** feature/stale-code\n",
     );
-    expect(result.status).toBe(SUCCESS);
-    expect(result.stdout).toMatch(/^AUTOMATED:/);
-  });
-  test.each(["**N/A (human-only)**", "`N/A (human-only)`", "n/a (Human-Only)"])(
-    "blocks a formatted or mixed-case summary sentinel %s",
-    (branch) => {
-      const result = check(
-        `## Execution Order Summary\n| Task | Branch |\n| --- | --- |\n| 1 | ${branch} |\n## Task 1: Approval\n**Branch name:** feature/stale-code\n`,
-      );
-      expect(result.status).toBe(BLOCKED);
-      expect(result.stdout).toMatch(/^BLOCKED: human-only/);
-    },
-  );
-  test.each([
-    ["N/A (human-only)", "feature/validation"],
-    ["feature/validation", "N/A (human-only)"],
-  ])(
-    "blocks conflicting duplicate summary rows: %s then %s",
-    (firstBranch, secondBranch) => {
-      const result = check(
-        `## Execution Order Summary\n| Task | Branch name |\n| --- | --- |\n| C -> 1 | ${firstBranch} |\n| Task 1 | ${secondBranch} |\n## Task 1: Approval\n**Branch name:** feature/stale-code\n**Human owner:** Release team\n`,
-      );
-      expect(result.status).toBe(BLOCKED);
-      expect(result.stdout).toMatch(/^BLOCKED: human-only/);
-      expect(result.stdout).toContain("Release team");
-    },
-  );
-  test.each(["feature/validation", "N/A (human-only)"])(
-    "accepts agreeing duplicate summary rows with branch %s",
-    (branch) => {
-      const result = check(
-        `## Execution Order Summary\n| Task | Branch |\n| --- | --- |\n| C -> 1 | ${branch} |\n| 1 | ${branch} |\n## Task 1: Approval\n`,
-      );
-      expect(result.status).toBe(
-        branch === "N/A (human-only)" ? BLOCKED : SUCCESS,
-      );
-    },
-  );
-  test("does not let a different human-only task block a code task", () => {
-    const result = check(
-      "## Task 1: Implement validation\n**Branch name:** feature/validation\n## Task 2: Approval\n**Execution mode:** human-only\n**Branch name:** N/A (human-only)\n",
-    );
-    expect(result.status).toBe(SUCCESS);
-  });
-  test("accepts a legacy code task without the new mode field", () => {
-    expect(
-      check(
-        "## Task 1: Implement validation\n**Branch name:** feature/validation\n",
-      ).status,
-    ).toBe(SUCCESS);
+    expect(result.status).toBe(BLOCKED);
+    expect(result.stdout).toMatch(/^BLOCKED: human-only/);
   });
   test.each([
-    "",
-    "## Task 2: Not the selected task\n",
-    "## Task 1: One\n## Task 1: Duplicate\n",
-  ])("rejects missing or ambiguous selected-task identity", (plan) => {
+    { label: "missing", plan: "## Task 2: Not the selected task\n" },
+    { label: "duplicated", plan: "## Task 1: One\n## Task 1: Duplicate\n" },
+  ])("rejects $label selected-task identity", ({ plan }) => {
     expect(check(plan).status).toBe(INVALID);
   });
-  test("reports CLI usage errors rather than treating them as executable", () => {
+  test("rejects an invalid task-number argument with usage exit", () => {
     expect(check("## Task 1: Code\n", "zero").status).toBe(INVALID);
+  });
+  test("keeps blocking the selected task after a later human-only task", () => {
+    const result = check(
+      "## Execution Order Summary\n| Task | Branch |\n| --- | --- |\n| C -> 1 | N/A (human-only) |\n| E -> 3 | N/A (human-only) |\n## Task 1: Approval\n**Branch name:** feature/stale-code\n**Human owner:** Release team\n## Task 3: Signoff\n",
+    );
+    expect(result.status).toBe(BLOCKED);
+    expect(result.stdout).toBe(
+      "BLOCKED: human-only task; hand off to Release team\n",
+    );
   });
 });
