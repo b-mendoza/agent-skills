@@ -41,7 +41,8 @@ def check(plan, number):
                 task_column = None
                 continue
             cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
-            separator = lines[index + 1].strip().strip("|").split("|") if index + 1 < len(lines) else []
+            following = lines[index + 1].strip() if index + 1 < len(lines) else ""
+            separator = following.strip("|").split("|") if following.startswith("|") else []
             if separator and all(re.fullmatch(r"\s*:?-+:?\s*", cell) for cell in separator):
                 task_column = cells.index("Task") if "Task" in cells else None
                 continue
