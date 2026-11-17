@@ -59,7 +59,7 @@ Each artifact must follow its matching template in `./artifact-templates.md`. Fo
 
 ## Executable plan boundary
 
-Implementation Approach, command blocks, test instructions, and refactoring sequencing must contain no actionable staging, commit, push, rebase, reset, cherry-pick, or other history-rewrite step. Read-only `git status`, `git diff`, and `git log` are allowed. A negative note such as "Do not commit" is allowed; a future directive such as "Stage and commit after tests pass" is not. A negative note naming several commands must join them with `or`, and its prohibition must begin its clause. Apply the same boundary during repairs, even when an old plan or task input asks for a commit. Separate authorized commit work from Phase 7 execution; do not delegate it to the executor or mark it part of the task definition of done.
+Implementation Approach, command blocks, test instructions, and refactoring sequencing must contain no actionable staging, commit, push, rebase, reset, cherry-pick, or other history-rewrite step. Read-only `git status`, `git diff`, and `git log` are allowed. A negative note such as "Do not commit" is allowed; a future directive such as "Stage and commit after tests pass" is not. A negative note must begin its clause with the prohibition (`Do not`, `Don't`, `Never`, `Must not`, or `No`), followed directly by the git command or by `run` or `use` and the command; join several commands with `or`, since commas and `and` do not continue a prohibition. Apply the same boundary during repairs, even when an old plan or task input asks for a commit. Separate authorized commit work from Phase 7 execution; do not delegate it to the executor or mark it part of the task definition of done.
 
 ## Mutation Ownership
 

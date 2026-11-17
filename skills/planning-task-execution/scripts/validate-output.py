@@ -2,13 +2,17 @@
 r"""Check selected-task planning outputs, without changing files.
 
 Usage: python3 validate-output.py <plan|PREP|PLAN|TEST_SPEC|REFACTORING> < payload
-plan checks each git word followed by whitespace, through the next backtick or
-line end. Tokenize with shlex.split, falling back to str.split on ValueError.
-Skip leading options; -C, -c, --git-dir, --work-tree and --config-env take a value.
-Reject a first remaining token in FORBIDDEN after stripping trailing ;,.:
-Exempt commands whose clause begins do not, don't, never, must not or no,
-ignoring leading punctuation and list markers. Clauses start after sentence
-ends, semicolons, and, then or but; prohibitions do not carry across and.
+plan checks each git word, in any case, followed by whitespace, through the next
+backtick or line end. Tokenize with shlex.split, falling back to str.split on
+ValueError. Skip leading options; -C, -c, --git-dir, --work-tree, --namespace,
+--config-env and --attr-source take a value. Reject when the first remaining
+token's first run of letters and hyphens, lowercased, is in FORBIDDEN.
+Clauses start after sentence ends, semicolons, and, then or but outside double
+quotes. Exempt a command whose clause, after leading punctuation and list
+markers, is exactly a prohibition (do not, don't, never, must not, no), an
+optional run or use, and optional earlier git commands joined to it by or.
+A comma or the word and does not continue a prohibition.
+Quote, code, emphasis and bracket marks around these words are allowed.
 Prose directives require model review. Uppercase modes validate handoff fields.
 Exit: 0 valid, 1 contract findings (repair), 2 usage error (ERROR).
 Side effects: none; stdlib only, no filesystem writes, git, or network.
@@ -26,17 +30,24 @@ FIELDS = {
     "REFACTORING": ["Refactoring plan", "Verdict", "References fetched", "Summary", "Blockers"],
 }
 FORBIDDEN = {"add", "stage", "commit", "push", "rebase", "reset", "cherry-pick", "revert", "merge", "am", "filter-branch", "filter-repo"}
-PROHIBITION = re.compile(r"^(?:do not|don't|never|must not|no)\b", re.I)
+VALUE_OPTIONS = {"-C", "-c", "--git-dir", "--work-tree", "--namespace", "--config-env", "--attr-source"}
+QUOTED = re.compile(r'"[^"]*"')
 CLAUSE_SEPARATOR = re.compile(r"(?<=\S[.!?])\s+|;|\b(?:and|then|but)\b", re.I)
+MARKUP = r"[`*_\"'(\[]*"
+GOVERNED = re.compile(
+    rf"(?:do not|don't|never|must not|no){MARKUP}\s+(?:(?:run|use)\s+)?(?:{MARKUP}git\b.*\bor\s*)?{MARKUP}",
+    re.I,
+)
 
 
 def action_findings(payload):
     findings = []
     for n, line in enumerate(payload.splitlines(), 1):
-        for command in re.finditer(r"\bgit\s+", line):
-            clause = CLAUSE_SEPARATOR.split(line[:command.start()])[-1]
-            clause = re.sub(r"^[\W\d_]+", "", clause)
-            if PROHIBITION.match(clause):
+        for command in re.finditer(r"\bgit\s+", line, re.I):
+            prefix = line[:command.start()]
+            tail = CLAUSE_SEPARATOR.split(QUOTED.sub(lambda quote: "_" * len(quote[0]), prefix))[-1]
+            clause = re.sub(r"^[\W\d_]+", "", prefix[len(prefix) - len(tail):])
+            if GOVERNED.fullmatch(clause):
                 continue
             arguments = line[command.end():].split("`", 1)[0]
             try:
@@ -45,13 +56,10 @@ def action_findings(payload):
                 tokens = arguments.split()
             index = 0
             while index < len(tokens) and tokens[index].startswith("-"):
-                option = tokens[index]
-                index += 1
-                if option in {"-C", "-c", "--git-dir", "--work-tree", "--config-env"}:
-                    index += 1
+                index += 2 if tokens[index] in VALUE_OPTIONS else 1
             if index < len(tokens):
-                subcommand = tokens[index].rstrip(";,.:")
-                if subcommand in FORBIDDEN:
+                subcommand = re.search(r"[a-z][a-z-]*", tokens[index].lower())
+                if subcommand and subcommand[0] in FORBIDDEN:
                     findings.append(f"line {n}: git {tokens[index]} is outside the execution boundary")
     return findings
 
