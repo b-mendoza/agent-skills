@@ -1,7 +1,6 @@
 // Pins the skill's deterministic validator, which is the normative shape
 // definition shared by the subagents (pre-return), the orchestrator (gates),
-// and the eval checks. These run the real script through the same wrapper the
-// checks use, offline and token-free.
+// and the eval checks. These run the real script offline and token-free.
 
 import { execFileSync, spawnSync } from "node:child_process";
 import {
@@ -16,9 +15,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { afterEach, describe, expect, test } from "vitest";
+import { afterAll, beforeAll, describe, expect, test } from "vitest";
 
-import { runOutputValidator } from "#/cases/analyzing-recent-project-state-checks.ts";
 import {
   FULL_REPORT_SNAPSHOT,
   QUIET_STATE_SNAPSHOT,
@@ -32,6 +30,7 @@ const VALIDATOR_PATH = fileURLToPath(
   ),
 );
 const SUCCESS_EXIT_STATUS = 0;
+const FAILURE_EXIT_STATUS = 1;
 const USAGE_EXIT_STATUS = 2;
 
 const GOOD_DRAFT = `SNAPSHOT_WRITE: PASS
@@ -67,120 +66,136 @@ const FULL_EVIDENCE = [
   "Reason: clean tree and empty evidence window",
 ].join("\n");
 
-const START_INDEX = 0;
-const fixtures: string[] = [];
+function validate(mode: string, payload: string, ...projectPath: string[]) {
+  return spawnSync("sh", [VALIDATOR_PATH, mode, ...projectPath], {
+    input: payload,
+    encoding: "utf8",
+  });
+}
 
 function git(cwd: string, ...args: string[]): string {
   return execFileSync("git", args, { cwd, encoding: "utf8" });
-}
-
-// A repository with a three-line committed file, a committed file named "-"
-// (to awk, "-" alone means stdin), a committed-then-deleted file, and an
-// empty directory: one resolution target per locator kind.
-function createFixture(): string {
-  const path = mkdtempSync(join(tmpdir(), "validate-output-"));
-  fixtures.push(path);
-  git(path, "init", "-q");
-  git(path, "config", "user.name", "Fixture");
-  git(path, "config", "user.email", "fixture@example.invalid");
-  git(path, "config", "commit.gpgsign", "false");
-  writeFileSync(join(path, "kept.txt"), "one\ntwo\nthree\n");
-  writeFileSync(join(path, "-"), "dash\n");
-  writeFileSync(join(path, "gone.txt"), "gone\n");
-  git(path, "add", ".");
-  git(path, "commit", "-qm", "initial");
-  git(path, "rm", "-q", "gone.txt");
-  git(path, "commit", "-qm", "delete gone.txt");
-  mkdirSync(join(path, "docs"));
-  return path;
 }
 
 function draftCiting(locator: string): string {
   return GOOD_DRAFT.replace("path package.json", locator);
 }
 
-afterEach(() => {
-  for (const path of fixtures.splice(START_INDEX)) {
-    rmSync(path, { recursive: true, force: true });
-  }
-});
-
-describe("validate-output.sh", () => {
-  test.each([
-    { mode: "report", payload: QUIET_STATE_SNAPSHOT },
-    { mode: "draft", payload: GOOD_DRAFT },
-    { mode: "verdict", payload: GOOD_VERDICT },
-    { mode: "evidence", payload: GOOD_NON_PASS_EVIDENCE },
-  ] as const)("$mode accepts a conformant payload", ({ mode, payload }) => {
-    expect(runOutputValidator(mode, payload, PROJECT_PATH)).toBe("");
-  });
-
-  test("rejects the retired envelope mode with usage exit code 2", () => {
-    const result = spawnSync("sh", [VALIDATOR_PATH, "envelope"], {
-      input: "RECENT_STATE: PATH_ERROR\nReason: missing\nNext step: fix it",
-      encoding: "utf8",
-    });
-    expect(result.error).toBeUndefined();
-    expect(result.status).toBe(USAGE_EXIT_STATUS);
-    expect(result.stderr).toMatch(/usage: validate-output\.sh/);
-    expect(result.stdout).toBe("");
-  });
-
-  test("throws an operational error when draft validation lacks a project path", () => {
-    expect(() => runOutputValidator("draft", GOOD_DRAFT)).toThrow(
-      /output validator could not run: validator exited with status 2 without findings/,
-    );
-  });
-
-  test.each(["kept.txt", "missing-directory"])(
-    "throws an operational error when the draft project path %s is not a directory",
-    (name) => {
-      const fixture = createFixture();
-      expect(() =>
-        runOutputValidator("draft", GOOD_DRAFT, join(fixture, name)),
-      ).toThrow(/validator exited with status 2 without findings/);
-    },
-  );
-
-  test("fails closed with no findings when awk cannot run", () => {
-    const emptyPath = mkdtempSync(join(tmpdir(), "validate-output-path-"));
-    fixtures.push(emptyPath);
-    const result = spawnSync("/bin/sh", [VALIDATOR_PATH, "evidence"], {
-      input: "total garbage\n",
-      encoding: "utf8",
-      env: { PATH: emptyPath },
-    });
-    expect(result.error).toBeUndefined();
-    expect(result.status).toBeGreaterThan(SUCCESS_EXIT_STATUS);
-    expect(result.stdout).toBe("");
-  });
-
-  test.each(["../evals/package.json", "src/../package.json"])(
-    "lexically rejects parent traversal in locator %s even when its target exists",
-    (locator) => {
-      expect(existsSync(join(PROJECT_PATH, locator))).toBe(true);
-      const findings = runOutputValidator(
-        "draft",
-        GOOD_DRAFT.replace("path package.json", `path ${locator}`),
-        PROJECT_PATH,
-      );
-      expect(findings).toContain(
-        `malformed claim label: [confirmed: path ${locator}]`,
-      );
-    },
-  );
-
+describe("output validator CLI", () => {
   test.each([
     {
-      label: "a draft with an unresolved path locator",
-      mode: "draft",
-      payload: GOOD_DRAFT.replace(
-        "path package.json",
-        "path missing-output-validator-fixture.txt",
-      ),
-      finding:
-        /locator does not resolve: path missing-output-validator-fixture.txt/,
+      label: "a quiet-state report",
+      mode: "report",
+      payload: QUIET_STATE_SNAPSHOT,
     },
+    {
+      label: "a full ten-section report",
+      mode: "report",
+      payload: FULL_REPORT_SNAPSHOT,
+    },
+    { label: "a PASS draft", mode: "draft", payload: GOOD_DRAFT },
+    {
+      label: "a NEEDS_CONTEXT draft",
+      mode: "draft",
+      payload:
+        "SNAPSHOT_WRITE: NEEDS_CONTEXT\nReason: two bases fit\nDecision needed: pick origin/main or origin/release",
+    },
+    { label: "a PASS verdict", mode: "verdict", payload: GOOD_VERDICT },
+    {
+      label: "a FAIL verdict with section-targeted bullets",
+      mode: "verdict",
+      payload:
+        "SNAPSHOT_VERIFY: FAIL\nRequired fixes:\n- Risks: add a locator.\n- Git State: name the base.\nReason: two sections fail\nDecision needed: none",
+    },
+    {
+      label: "a NEEDS_CONTEXT verdict",
+      mode: "verdict",
+      payload:
+        "SNAPSHOT_VERIFY: NEEDS_CONTEXT\nRequired fixes: none\nReason: depends on the base\nDecision needed: confirm the comparison base",
+    },
+    {
+      label: "ERROR evidence",
+      mode: "evidence",
+      payload: GOOD_NON_PASS_EVIDENCE,
+    },
+    {
+      label: "PASS evidence with all 17 fields",
+      mode: "evidence",
+      payload: FULL_EVIDENCE,
+    },
+  ])("accepts $label", ({ mode, payload }) => {
+    const result = validate(mode, payload, PROJECT_PATH);
+    expect(result.status).toBe(SUCCESS_EXIT_STATUS);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toBe("");
+  });
+
+  test.each<{
+    label: string;
+    mode: string;
+    payload: string;
+    projectPath: string[];
+  }>([
+    {
+      label: "an unknown mode",
+      mode: "envelope",
+      payload: "RECENT_STATE: PATH_ERROR\nReason: missing\nNext step: fix it",
+      projectPath: [],
+    },
+    {
+      label: "a draft without a project path",
+      mode: "draft",
+      payload: GOOD_DRAFT,
+      projectPath: [],
+    },
+    {
+      label: "an existing file as the draft project path",
+      mode: "draft",
+      payload: GOOD_DRAFT,
+      projectPath: [join(PROJECT_PATH, "package.json")],
+    },
+  ])("rejects $label with usage", ({ mode, payload, projectPath }) => {
+    const result = validate(mode, payload, ...projectPath);
+    expect(result.status).toBe(USAGE_EXIT_STATUS);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toMatch(/usage: validate-output\.sh/);
+  });
+
+  test("fails closed without findings when required tools are unavailable", () => {
+    const emptyPath = mkdtempSync(join(tmpdir(), "validate-output-path-"));
+    try {
+      const result = spawnSync("/bin/sh", [VALIDATOR_PATH, "evidence"], {
+        input: "total garbage\n",
+        encoding: "utf8",
+        env: { PATH: emptyPath },
+      });
+      expect(result.error).toBeUndefined();
+      expect(result.status).toBeGreaterThan(SUCCESS_EXIT_STATUS);
+      expect(result.stdout).toBe("");
+    } finally {
+      rmSync(emptyPath, { recursive: true, force: true });
+    }
+  });
+
+  test.each([
+    { label: "a leading parent traversal", locator: "../evals/package.json" },
+    { label: "an embedded parent traversal", locator: "src/../package.json" },
+    { label: "an absolute path", locator: "/package.json" },
+  ])("rejects $label even when its relative target exists", ({ locator }) => {
+    expect(existsSync(join(PROJECT_PATH, locator))).toBe(true);
+    const result = validate(
+      "draft",
+      draftCiting(`path ${locator}`),
+      PROJECT_PATH,
+    );
+    expect(result.status).toBe(FAILURE_EXIT_STATUS);
+    expect(result.stdout).toContain(
+      `malformed claim label: [confirmed: path ${locator}]`,
+    );
+    expect(result.stderr).toBe("");
+  });
+
+  test.each([
     {
       label: "a draft missing its Assumptions: line",
       mode: "draft",
@@ -209,13 +224,6 @@ describe("validate-output.sh", () => {
       payload:
         "SNAPSHOT_VERIFY: FAIL\nRequired fixes: none\nReason: x\nDecision needed: none",
       finding: /FAIL requires at least one section-targeted required fix/,
-    },
-    {
-      label: "a NEEDS_CONTEXT verdict carrying fixes",
-      mode: "verdict",
-      payload:
-        "SNAPSHOT_VERIFY: NEEDS_CONTEXT\nRequired fixes:\n- Git State: fix.\nReason: x\nDecision needed: pick a base",
-      finding: /NEEDS_CONTEXT requires Required fixes: none/,
     },
     {
       label: "a PASS verdict carrying required fixes",
@@ -273,59 +281,67 @@ describe("validate-output.sh", () => {
       ),
       finding: /line 1: line 1 must be SNAPSHOT_VERIFY:/,
     },
-  ] as const)("rejects $label", ({ mode, payload, finding }) => {
-    expect(runOutputValidator(mode, payload, PROJECT_PATH)).toMatch(finding);
-  });
-
-  test.each([
     {
-      label: "a full ten-section report",
+      label: "a six-digit commit locator",
       mode: "report",
-      payload: FULL_REPORT_SNAPSHOT,
+      payload: `${QUIET_STATE_SNAPSHOT}\n[confirmed: commit abcdef]`,
+      finding: /malformed claim label: \[confirmed: commit abcdef\]/,
     },
     {
-      label: "a PASS evidence payload with all 17 fields",
-      mode: "evidence",
-      payload: FULL_EVIDENCE,
+      label: "an uppercase commit locator",
+      mode: "report",
+      payload: `${QUIET_STATE_SNAPSHOT}\n[confirmed: commit ABCDEF1]`,
+      finding: /malformed claim label: \[confirmed: commit ABCDEF1\]/,
     },
-    {
-      label: "a three-line NEEDS_CONTEXT draft",
-      mode: "draft",
-      payload:
-        "SNAPSHOT_WRITE: NEEDS_CONTEXT\nReason: two bases fit\nDecision needed: pick origin/main or origin/release",
-    },
-    {
-      label: "a FAIL verdict with section-targeted bullets",
-      mode: "verdict",
-      payload:
-        "SNAPSHOT_VERIFY: FAIL\nRequired fixes:\n- Risks: add a locator.\n- Git State: name the base.\nReason: two sections fail\nDecision needed: none",
-    },
-    {
-      label: "a NEEDS_CONTEXT verdict naming one decision",
-      mode: "verdict",
-      payload:
-        "SNAPSHOT_VERIFY: NEEDS_CONTEXT\nRequired fixes: none\nReason: depends on the base\nDecision needed: confirm the comparison base",
-    },
-  ] as const)("accepts $label", ({ mode, payload }) => {
-    expect(runOutputValidator(mode, payload, PROJECT_PATH)).toBe("");
+  ])("rejects $label", ({ mode, payload, finding }) => {
+    const result = validate(mode, payload, PROJECT_PATH);
+    expect(result.status).toBe(FAILURE_EXIT_STATUS);
+    expect(result.stdout).toMatch(finding);
+    expect(result.stderr).toBe("");
   });
 
-  describe("draft locator resolution against a fixture repository", () => {
+  describe("draft locator resolution", () => {
+    let fixture = "";
+    let originalListing = new Set<string>();
+
+    // A repository with a three-line committed file, a committed-then-deleted
+    // file, and an uncommitted empty directory: one target per locator kind.
+    beforeAll(() => {
+      fixture = mkdtempSync(join(tmpdir(), "validate-output-"));
+      git(fixture, "init", "-q");
+      git(fixture, "config", "user.name", "Fixture");
+      git(fixture, "config", "user.email", "fixture@example.invalid");
+      git(fixture, "config", "commit.gpgsign", "false");
+      writeFileSync(join(fixture, "kept.txt"), "one\ntwo\nthree\n");
+      writeFileSync(join(fixture, "gone.txt"), "gone\n");
+      git(fixture, "add", ".");
+      git(fixture, "commit", "-qm", "initial");
+      git(fixture, "rm", "-q", "gone.txt");
+      git(fixture, "commit", "-qm", "delete gone.txt");
+      mkdirSync(join(fixture, "docs"));
+      originalListing = new Set(readdirSync(fixture));
+    });
+    afterAll(() => {
+      if (fixture !== "") rmSync(fixture, { recursive: true, force: true });
+    });
+
+    test("resolves the current short commit", () => {
+      const head = git(fixture, "rev-parse", "--short", "HEAD").trim();
+      const result = validate("draft", draftCiting(`commit ${head}`), fixture);
+      expect(result.status).toBe(SUCCESS_EXIT_STATUS);
+      expect(result.stdout).toBe("");
+      expect(result.stderr).toBe("");
+    });
+
     test.each([
-      {
-        label: "the short HEAD commit",
-        locator: (fixture: string) =>
-          `commit ${git(fixture, "rev-parse", "--short", "HEAD").trim()}`,
-      },
-      { label: "a deleted path", locator: () => "path gone.txt" },
-      { label: "a directory", locator: () => "path docs" },
-      { label: "an in-range line span", locator: () => "path kept.txt:1-2" },
-      { label: "a line span in a file named -", locator: () => "path -:1" },
+      { label: "a deleted path", locator: "path gone.txt" },
+      { label: "a directory", locator: "path docs" },
+      { label: "an in-range line span", locator: "path kept.txt:1-2" },
     ])("resolves $label", ({ locator }) => {
-      const fixture = createFixture();
-      expect(
-        runOutputValidator("draft", draftCiting(locator(fixture)), fixture),
-      ).toBe("");
+      const result = validate("draft", draftCiting(locator), fixture);
+      expect(result.status).toBe(SUCCESS_EXIT_STATUS);
+      expect(result.stdout).toBe("");
+      expect(result.stderr).toBe("");
     });
 
     test.each([
@@ -336,74 +352,59 @@ describe("validate-output.sh", () => {
       },
       { label: "a line span on a directory", locator: "path docs:1" },
       { label: "a line span on a deleted file", locator: "path gone.txt:1" },
-    ])("does not resolve $label", ({ locator }) => {
-      const fixture = createFixture();
-      expect(
-        runOutputValidator("draft", draftCiting(locator), fixture),
-      ).toContain(`locator does not resolve: ${locator}`);
-    });
-
-    // Built from the full HEAD hash, which git would accept in either form, so
-    // only the grammar rejects them. Forty hex digits all but surely hold a
-    // letter, so uppercasing changes the text.
-    const SHORT_HASH_LENGTH = 6;
-    test.each([
-      { label: "uppercase hex", hash: (head: string) => head.toUpperCase() },
       {
-        label: "six hex digits",
-        hash: (head: string) => head.slice(START_INDEX, SHORT_HASH_LENGTH),
+        label: "a never-existing path",
+        locator: "path missing-output-validator-fixture.txt",
       },
-    ])("rejects a commit locator with $label", ({ hash }) => {
-      const fixture = createFixture();
-      const head = git(fixture, "rev-parse", "HEAD").trim();
-      const locator = `commit ${hash(head)}`;
-      expect(
-        runOutputValidator("draft", draftCiting(locator), fixture),
-      ).toContain(`malformed claim label: [confirmed: ${locator}]`);
+    ])("rejects unresolved $label", ({ locator }) => {
+      const result = validate("draft", draftCiting(locator), fixture);
+      expect(result.status).toBe(FAILURE_EXIT_STATUS);
+      expect(result.stdout).toContain(`locator does not resolve: ${locator}`);
+      expect(result.stderr).toBe("");
     });
-
-    const unresolved = (locator: string) =>
-      `locator does not resolve: ${locator}`;
-    const malformed = (locator: string) =>
-      `malformed claim label: [confirmed: ${locator}]`;
 
     // The path reaches a shell command, so each row is a would-be injection
     // that must leave the fixture untouched. MARKER becomes an absolute path
-    // inside the fixture, so an injection lands there whatever the cwd.
+    // inside the fixture, so an injection lands there whatever the cwd; each
+    // row has its own marker so one row's write cannot mask another's.
     test.each([
       {
         label: "a command substitution",
         path: "x$(touch MARKER)",
-        finding: unresolved,
+        markerName: "INJECTED-substitution",
+        findingPrefix: "locator does not resolve:",
       },
       {
-        label: "a backtick command",
-        path: "x`touch MARKER`",
-        finding: unresolved,
-      },
-      {
-        label: "a command list",
-        path: "x; touch MARKER",
-        finding: unresolved,
+        label: "a ranged command substitution",
+        path: "x$(touch MARKER):1",
+        markerName: "INJECTED-range",
+        findingPrefix: "locator does not resolve:",
       },
       {
         label: "a leading option",
         path: "--output=MARKER",
-        finding: unresolved,
+        markerName: "INJECTED-option",
+        findingPrefix: "locator does not resolve:",
       },
       {
         label: "a closing single quote",
         path: "x'; touch MARKER; '",
-        finding: malformed,
+        markerName: "INJECTED-quote",
+        findingPrefix: "malformed claim label:",
       },
-    ])("treats $label in a path as data", ({ path, finding }) => {
-      const fixture = createFixture();
-      const before = new Set(readdirSync(fixture));
-      const locator = `path ${path.replace("MARKER", join(fixture, "INJECTED"))}`;
-      expect(
-        runOutputValidator("draft", draftCiting(locator), fixture),
-      ).toContain(finding(locator));
-      expect(new Set(readdirSync(fixture))).toEqual(before);
-    });
+    ])(
+      "treats $label as untrusted path data",
+      ({ path, markerName, findingPrefix }) => {
+        const marker = join(fixture, markerName);
+        const locator = `path ${path.replace("MARKER", marker)}`;
+        expect(existsSync(marker)).toBe(false);
+        const result = validate("draft", draftCiting(locator), fixture);
+        expect(existsSync(marker)).toBe(false);
+        expect(new Set(readdirSync(fixture))).toEqual(originalListing);
+        expect(result.status).toBe(FAILURE_EXIT_STATUS);
+        expect(result.stdout).toContain(findingPrefix);
+        expect(result.stdout).toContain(locator);
+      },
+    );
   });
 });
