@@ -46,18 +46,23 @@ const stageOne = plan
 const STAGE_ONE_NAME = "acme-app-42-stage-1-detailed.md";
 
 describe("planning task contracts", () => {
-  it("validates lettered Stage 1 tasks without requiring premature branches", () => {
+  it("accepts lettered Stage 1 tasks without code branches", () => {
     expect(validate(stageOne, STAGE_ONE_NAME).status).toBe(SUCCESS);
   });
-  it("still rejects a human-only Stage 1 task without a human owner", () => {
-    expect(
-      validate(stageOne.replace("**Owner:** Human", ""), STAGE_ONE_NAME).status,
-    ).toBe(FAILURE);
+  it("rejects Stage 1 human tasks without a human owner", () => {
+    const result = validate(
+      stageOne.replace("**Owner:** Human", ""),
+      STAGE_ONE_NAME,
+    );
+    expect(result.status).toBe(FAILURE);
+    expect(result.stderr).toMatch(/^PLAN: FAIL /);
   });
-  it("does not let the Stage 1 shape bypass a final-plan check", () => {
-    expect(validate(stageOne, "acme-app-42-tasks.md").status).toBe(FAILURE);
+  it("rejects lettered tasks under a final-plan filename", () => {
+    const result = validate(stageOne, "acme-app-42-tasks.md");
+    expect(result.status).toBe(FAILURE);
+    expect(result.stderr).toMatch(/^PLAN: FAIL /);
   });
-  it("preserves the branch field without fabricating a human branch", () => {
+  it("accepts real code branches and the human branch sentinel", () => {
     expect(validate(plan).status).toBe(SUCCESS);
   });
   it("accepts the bundled template's inline metadata and old-task annotation", () => {
@@ -76,17 +81,33 @@ describe("planning task contracts", () => {
     [
       "invented human branch",
       plan.replace("N/A (human-only)", "feature/manual"),
+      "plan.md",
     ],
-    ["missing human owner", plan.replace("**Owner:** Human", "")],
-    ["lost normal-run decision", plan.replace(decision, "Migrate provider")],
+    ["missing human owner", plan.replace("**Owner:** Human", ""), "plan.md"],
+    [
+      "lost normal-run decision",
+      plan.replace(decision, "Migrate provider"),
+      "plan.md",
+    ],
     [
       "no code branch",
       plan.replace(
         "feature/acme-app-42-task-1-update-timeout-validation",
         "N/A (human-only)",
       ),
+      "plan.md",
     ],
-  ])("rejects %s", (_label, text) => {
-    expect(validate(text).status).toBe(FAILURE);
+    [
+      "Stage 1 code branch",
+      stageOne.replace(
+        "### Task A: Update timeout validation\n",
+        "### Task A: Update timeout validation\n**Branch name:** feature/premature\n",
+      ),
+      STAGE_ONE_NAME,
+    ],
+  ])("rejects %s", (_label, text, filename) => {
+    const result = validate(text, filename);
+    expect(result.status).toBe(FAILURE);
+    expect(result.stderr).toMatch(/^PLAN: FAIL /);
   });
 });

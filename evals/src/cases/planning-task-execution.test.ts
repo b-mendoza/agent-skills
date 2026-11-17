@@ -1,3 +1,4 @@
+import { AssertionError } from "node:assert";
 import { execFileSync } from "node:child_process";
 
 import { describe, expect, test } from "vitest";
@@ -22,8 +23,8 @@ import type { Observation } from "#/observation/agent-query.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
 import { snapshotRepoFiles } from "#/observation/repo-files.ts";
 
-const HEADING_START = 0;
-const [BRIEF_ARTIFACT, , , REFACTORING_ARTIFACT] = ARTIFACTS;
+const [BRIEF_ARTIFACT, PLAN_ARTIFACT, , REFACTORING_ARTIFACT] = ARTIFACTS;
+const [FIRST_BRIEF_HEADING] = BRIEF_ARTIFACT.headings;
 
 function getCase(suffix: string) {
   const selected = cases.find((entry) => entry.id === `${SKILL}/${suffix}`);
@@ -77,236 +78,12 @@ function failedObservation(): Observation {
   });
 }
 
-describe("valid observations", () => {
-  test("accepts four selected-task planning artifacts", () => {
-    expect(() =>
-      getCase("selected-task-artifacts").check(completedObservation()),
-    ).not.toThrow();
-  });
-  test("accepts unsatisfied dependency without writes", () => {
-    expect(() =>
-      getCase("unfinished-dependency").check(failedObservation()),
-    ).not.toThrow();
-  });
-});
+const selectedTask = getCase("selected-task-artifacts");
+const unfinishedDependency = getCase("unfinished-dependency");
+const plainReply = completedObservation().finalText;
+const validBrief = artifactContent(BRIEF_ARTIFACT, "No refactoring needed");
 
-describe("selected-task-artifacts", () => {
-  test("accepts bold labels and directory-factored filenames", () => {
-    const observation = completedObservation();
-    const filenames = OUTPUT_PATHS.map(
-      (path) => `- \`${path.slice("docs/".length)}\``,
-    ).join("\n");
-    const finalText = observation.finalText
-      .replace(
-        OUTPUT_PATHS.join("\n"),
-        `Artifacts, all in docs/ and left unstaged:\n${filenames}`,
-      )
-      .replace("References fetched:", "**References fetched:**");
-    expect(() =>
-      getCase("selected-task-artifacts").check({ ...observation, finalText }),
-    ).not.toThrow();
-    expect(() =>
-      getCase("selected-task-artifacts").check({
-        ...observation,
-        finalText: finalText.replace("all in docs/", "all in elsewhere/"),
-      }),
-    ).toThrow();
-  });
-  test("rejects the old public completion status line", () => {
-    const observation = completedObservation();
-    expect(() =>
-      getCase("selected-task-artifacts").check({
-        ...observation,
-        finalText: `${observation.finalText}\nCompletion: PASS`,
-      }),
-    ).toThrow(/public status line/);
-  });
-  test.each(ARTIFACTS)(
-    "rejects missing, wrong-identity and malformed $title",
-    (artifact) => {
-      const observation = completedObservation();
-      const content = observation.repoFiles?.[artifact.path];
-      if (typeof content !== "string") {
-        throw new Error("synthetic artifact missing");
-      }
-      for (const changed of [
-        null,
-        content.replace("Task 2:", "Task 3:"),
-        content.replace(
-          `## ${artifact.headings.at(HEADING_START)}`,
-          "## Wrong heading",
-        ),
-      ]) {
-        expect(() =>
-          getCase("selected-task-artifacts").check({
-            ...observation,
-            repoFiles: { ...observation.repoFiles, [artifact.path]: changed },
-          }),
-        ).toThrow();
-      }
-    },
-  );
-  test.each([
-    ["extra task output", OTHER_TASK_PATH, "unwanted Task 3 brief"],
-    ["implemented product code", "src/timeout.js", "new implementation"],
-    ["changed tests", "test/timeout.test.js", "new test"],
-    ["rewritten upstream plan", INPUT_PATH, "different task plan"],
-    [
-      "missing refactoring verdict",
-      REFACTORING_ARTIFACT.path,
-      artifactContent(REFACTORING_ARTIFACT, "Something else."),
-    ],
-    ["commit", HEAD_LOG, "commit: implemented timeout\n"],
-  ])("rejects %s", (_label, path, value) => {
-    const observation = completedObservation();
-    expect(() =>
-      getCase("selected-task-artifacts").check({
-        ...observation,
-        repoFiles: { ...observation.repoFiles, [path]: value },
-      }),
-    ).toThrow();
-  });
-  test.each([
-    ["incomplete handoff", { finalText: "Planning completed." }],
-    [
-      "missing reference disclosure",
-      {
-        finalText: completedObservation().finalText.replace(
-          "References fetched: none",
-          "",
-        ),
-      },
-    ],
-    [
-      "missing completion",
-      {
-        finalText: completedObservation().finalText.replace(
-          "Planning completed.",
-          "",
-        ),
-      },
-    ],
-    [
-      "ignored write",
-      {
-        toolCalls: [
-          { name: "Edit", input: { file_path: ".claude/config.json" } },
-        ],
-      },
-    ],
-    [
-      "unexpected file",
-      { gitStatusAfter: { kind: "worktree", entries: "?? extra.md" } },
-    ],
-  ] satisfies ReadonlyArray<readonly [string, Partial<Observation>]>)(
-    "rejects %s",
-    (_label, overrides) => {
-      expect(() =>
-        getCase("selected-task-artifacts").check({
-          ...completedObservation(),
-          ...overrides,
-        }),
-      ).toThrow();
-    },
-  );
-});
-
-describe("unfinished-dependency", () => {
-  test("rejects the old public prep status line", () => {
-    const observation = failedObservation();
-    expect(() =>
-      getCase("unfinished-dependency").check({
-        ...observation,
-        finalText: `PREP: FAIL\n${observation.finalText}`,
-      }),
-    ).toThrow(/public status line/);
-  });
-  test.each([
-    [
-      "claims success",
-      { finalText: "Task 2 planning completed successfully." },
-    ],
-    [
-      "omits prerequisite",
-      {
-        finalText:
-          "Planning stopped because an unknown dependency is unfinished.",
-      },
-    ],
-    [
-      "created brief",
-      {
-        repoFiles: {
-          ...failedObservation().repoFiles,
-          [BRIEF_ARTIFACT.path]: "brief",
-        },
-      },
-    ],
-    [
-      "changed input",
-      {
-        repoFiles: {
-          ...failedObservation().repoFiles,
-          [INPUT_PATH]: TASK_PLAN,
-        },
-      },
-    ],
-    [
-      "mutating tool",
-      {
-        toolCalls: [
-          { name: "Write", input: { file_path: BRIEF_ARTIFACT.path } },
-        ],
-      },
-    ],
-  ] satisfies ReadonlyArray<readonly [string, Partial<Observation>]>)(
-    "rejects %s",
-    (_label, overrides) => {
-      expect(() =>
-        getCase("unfinished-dependency").check({
-          ...failedObservation(),
-          ...overrides,
-        }),
-      ).toThrow();
-    },
-  );
-});
-
-test.each(["selected-task-artifacts", "unfinished-dependency"])(
-  "%s seeds task scope and tracked code",
-  (suffix) => {
-    const entry = getCase(suffix);
-    const fixture = makeFixture(
-      "clean",
-      [SKILL],
-      "seed" in entry ? entry.seed : undefined,
-    );
-    try {
-      const snapshots = snapshotRepoFiles(
-        fixture.cwd,
-        Object.keys(INPUT_FILES),
-      );
-      expect(snapshots[INPUT_PATH]).toBe(
-        suffix === "unfinished-dependency" ? BLOCKED_PLAN : TASK_PLAN,
-      );
-      expect(snapshots["src/timeout.js"]).toBe(INPUT_FILES["src/timeout.js"]);
-      expect(snapshots["test/timeout.test.js"]).toBe(
-        INPUT_FILES["test/timeout.test.js"],
-      );
-      expect(
-        execFileSync("git", ["status", "--short"], {
-          cwd: fixture.cwd,
-          encoding: "utf8",
-        }),
-      ).toBe("");
-    } finally {
-      fixture.cleanup();
-    }
-  },
-);
-
-test("accepts the recorded planned completion without its retired status line", () => {
-  const finalText = `Task 2 ("Reject invalid timeout values") of acme-timer-42 is planned. All four stages returned PASS and I checked each artifact's headings. I did not implement anything, and the files are left unstaged and uncommitted.
+const PLANNED_REPLY = `Task 2 ("Reject invalid timeout values") of acme-timer-42 is planned. All four stages returned PASS and I checked each artifact's headings. I did not implement anything, and the files are left unstaged and uncommitted.
 
 **Artifacts**
 - \`docs/acme-timer-42-task-2-brief.md\`
@@ -332,125 +109,240 @@ Lower-priority tests cover the full valid range and numeric strings. Every defin
 
 **References fetched:** none. Nothing was fetched from GitHub or the web.
 `;
-  expect(() =>
-    getCase("selected-task-artifacts").check({
-      ...completedObservation(),
-      finalText,
-    }),
-  ).not.toThrow();
-});
+const GROUPED_REPLY =
+  'Planning for Task 2 of `acme-timer-42`, "Reject invalid timeout values", is complete. All four stages returned `PASS` and every artifact passed validation. I didn\'t implement anything, and nothing is staged or committed.\n\n**Artifacts** (untracked, in `docs/`):\n- `acme-timer-42-task-2-brief.md`\n- `acme-timer-42-task-2-execution-plan.md`\n- `acme-timer-42-task-2-test-spec.md`\n- `acme-timer-42-task-2-refactoring-plan.md`\n\n**Refactoring verdict:** No refactoring needed.\n\n**References fetched:** none.';
 
-describe("executable plan actions", () => {
+describe("selected-task completion", () => {
   test.each([
-    "4. Run `git add -A`, then `git commit -m fix`.",
-    "4. Run `git add . && git commit -m fix && git push`.",
-    "4. `git rebase main` before handoff.",
-  ])("rejects a future action despite unchanged HEAD: %s", (directive) => {
-    const observation = completedObservation();
-    const [, plan] = ARTIFACTS;
+    ["plain full paths", plainReply],
+    ["planned full-path bullets", PLANNED_REPLY],
+    ["bold labels and grouped filenames", GROUPED_REPLY],
+  ])("accepts %s completion replies", (_label, finalText) => {
     expect(() =>
-      getCase("selected-task-artifacts").check({
-        ...observation,
-        repoFiles: {
-          ...observation.repoFiles,
-          [plan.path]: `${observation.repoFiles?.[plan.path] ?? ""}\n${directive}\n`,
-        },
-      }),
-    ).toThrow(/execution boundary/);
-  });
-});
-
-test("rejects a commit directive smuggled through the execution brief", () => {
-  const observation = completedObservation();
-  expect(() =>
-    getCase("selected-task-artifacts").check({
-      ...observation,
-      repoFiles: {
-        ...observation.repoFiles,
-        [BRIEF_ARTIFACT.path]: `${observation.repoFiles?.[BRIEF_ARTIFACT.path] ?? ""}\n4. Run \`git commit -am implementation\`.\n`,
-      },
-    }),
-  ).toThrow(/execution boundary/);
-});
-
-describe("recorded baseline inspection", () => {
-  const recordedReply =
-    'Planning for Task 2 of `acme-timer-42`, "Reject invalid timeout values", is complete. All four stages returned `PASS` and every artifact passed validation. I didn\'t implement anything, and nothing is staged or committed.\n\n**Artifacts** (untracked, in `docs/`):\n- `acme-timer-42-task-2-brief.md`\n- `acme-timer-42-task-2-execution-plan.md`\n- `acme-timer-42-task-2-test-spec.md`\n- `acme-timer-42-task-2-refactoring-plan.md`\n\n**Refactoring verdict:** No refactoring needed.\n\n**References fetched:** none.';
-  const CAPTURED_BASELINE_TAIL = 512;
-  const recordedSentence =
-    "Its sole current test covers the explicit `undefined` default; the baseline run passed (1 test).";
-  function baselineClaim(): Observation {
-    const observation = completedObservation();
-    const [, plan] = ARTIFACTS;
-    return {
-      ...observation,
-      repoFiles: {
-        ...observation.repoFiles,
-        [plan.path]: `${observation.repoFiles?.[plan.path] ?? ""}\n${recordedSentence}\n`,
-      },
-    };
-  }
-  test("accepts the recorded claim with a successful captured baseline tail", () => {
-    const entry = getCase("selected-task-artifacts");
-    const fixture = makeFixture(
-      "clean",
-      [SKILL],
-      "seed" in entry ? entry.seed : undefined,
-    );
-    try {
-      const output = execFileSync("node", ["--test", "test/timeout.test.js"], {
-        cwd: fixture.cwd,
-        encoding: "utf8",
-      });
-      expect(() =>
-        getCase("selected-task-artifacts").check({
-          ...baselineClaim(),
-          finalText: recordedReply,
-          toolCalls: [
-            {
-              name: "Bash",
-              input: { command: "node --test test/timeout.test.js" },
-              result: {
-                content: `Earlier output omitted\n${output.slice(-CAPTURED_BASELINE_TAIL)}`,
-                isError: false,
-                truncated: true,
-              },
-            },
-          ],
-        }),
-      ).not.toThrow();
-    } finally {
-      fixture.cleanup();
-    }
+      selectedTask.check({ ...completedObservation(), finalText }),
+    ).not.toThrow();
   });
   test.each([
-    { toolCalls: [] },
-    {
-      toolCalls: [
-        {
-          name: "Bash",
-          input: { command: "node --test test/timeout.test.js" },
-        },
-      ],
+    ["missing brief", BRIEF_ARTIFACT.path, null],
+    [
+      "wrong task identity",
+      BRIEF_ARTIFACT.path,
+      validBrief.replace("Task 2:", "Task 3:"),
+    ],
+    [
+      "wrong first heading",
+      BRIEF_ARTIFACT.path,
+      validBrief.replace(`## ${FIRST_BRIEF_HEADING}`, "## Wrong heading"),
+    ],
+    ["extra task artifact", OTHER_TASK_PATH, "unwanted Task 3 brief"],
+    ["changed product code", "src/timeout.js", "new implementation"],
+    [
+      "invalid refactoring verdict",
+      REFACTORING_ARTIFACT.path,
+      artifactContent(REFACTORING_ARTIFACT, "Something else."),
+    ],
+    ["changed HEAD", HEAD_LOG, "commit: implemented timeout\n"],
+  ] satisfies ReadonlyArray<readonly [string, string, string | null]>)(
+    "rejects %s in captured planning files",
+    (_label, path, content) => {
+      const observation = completedObservation();
+      expect(() =>
+        selectedTask.check({
+          ...observation,
+          repoFiles: { ...observation.repoFiles, [path]: content },
+        }),
+      ).toThrow(AssertionError);
     },
-    {
-      toolCalls: [
-        {
-          name: "Bash",
-          input: { command: "node --test test/timeout.test.js" },
-          result: {
-            content: "# pass 0\n# fail 1\n",
-            isError: true,
-            truncated: false,
+  );
+  test.each([
+    ["public status line", `${plainReply}\nCompletion: PASS`],
+    ["omitted artifact paths", plainReply.replace(OUTPUT_PATHS.join("\n"), "")],
+    [
+      "missing reference disclosure",
+      plainReply.replace("References fetched: none", ""),
+    ],
+    ["missing completion", plainReply.replace("Planning completed.", "")],
+    [
+      "grouped filenames outside docs/",
+      GROUPED_REPLY.replace("in `docs/`", "in `elsewhere/`"),
+    ],
+  ])("rejects %s in completion replies", (_label, finalText) => {
+    expect(() =>
+      selectedTask.check({ ...completedObservation(), finalText }),
+    ).toThrow(AssertionError);
+  });
+  test.each([
+    [
+      "ignored-file Edit",
+      {
+        toolCalls: [
+          { name: "Edit", input: { file_path: ".claude/config.json" } },
+        ],
+      },
+    ],
+    [
+      "unexpected status delta",
+      { gitStatusAfter: { kind: "worktree", entries: "?? extra.md" } },
+    ],
+  ] satisfies ReadonlyArray<readonly [string, Partial<Observation>]>)(
+    "rejects %s outside declared planning writes",
+    (_label, overrides) => {
+      expect(() =>
+        selectedTask.check({ ...completedObservation(), ...overrides }),
+      ).toThrow(AssertionError);
+    },
+  );
+  test.each([
+    ["execution plan", PLAN_ARTIFACT],
+    ["execution brief", BRIEF_ARTIFACT],
+  ] satisfies ReadonlyArray<readonly [string, (typeof ARTIFACTS)[number]]>)(
+    "rejects a git directive in the %s despite unchanged HEAD",
+    (_label, artifact) => {
+      const observation = completedObservation();
+      const directive = "4. Run `git add -A`, then `git commit -m fix`.";
+      expect(() =>
+        selectedTask.check({
+          ...observation,
+          repoFiles: {
+            ...observation.repoFiles,
+            [artifact.path]: `${artifactContent(artifact, "No refactoring needed")}\n${directive}\n`,
           },
-        },
-      ],
+        }),
+      ).toThrow(/line \d+: git add\b/);
     },
-    {
-      toolCalls: [
+  );
+});
+
+describe("unfinished dependency", () => {
+  test("accepts an unfinished dependency without writes", () => {
+    expect(() => unfinishedDependency.check(failedObservation())).not.toThrow();
+  });
+  test.each([
+    [
+      "public prep status line",
+      { finalText: `PREP: FAIL\n${failedObservation().finalText}` },
+    ],
+    [
+      "completion without a stop",
+      {
+        finalText:
+          "Task 1 is an unfinished dependency, but Task 2 planning completed successfully.",
+      },
+    ],
+    [
+      "omitted Task 1",
+      {
+        finalText:
+          "Planning stopped because an unknown dependency is unfinished.",
+      },
+    ],
+    [
+      "written brief",
+      {
+        repoFiles: {
+          ...failedObservation().repoFiles,
+          [BRIEF_ARTIFACT.path]: "brief",
+        },
+      },
+    ],
+    [
+      "changed input",
+      {
+        repoFiles: {
+          ...failedObservation().repoFiles,
+          [INPUT_PATH]: TASK_PLAN,
+        },
+      },
+    ],
+    [
+      "mutating tool",
+      {
+        toolCalls: [
+          { name: "Write", input: { file_path: BRIEF_ARTIFACT.path } },
+        ],
+      },
+    ],
+  ] satisfies ReadonlyArray<readonly [string, Partial<Observation>]>)(
+    "rejects %s when a dependency is unfinished",
+    (_label, overrides) => {
+      expect(() =>
+        unfinishedDependency.check({ ...failedObservation(), ...overrides }),
+      ).toThrow(AssertionError);
+    },
+  );
+});
+
+describe("planning input seeds", () => {
+  test.each([
+    ["selected-task-artifacts", TASK_PLAN],
+    ["unfinished-dependency", BLOCKED_PLAN],
+  ])(
+    "seeds %s with tracked inputs and a clean worktree",
+    (suffix, expectedPlan) => {
+      const entry = getCase(suffix);
+      const fixture = makeFixture(
+        "clean",
+        [SKILL],
+        "seed" in entry ? entry.seed : undefined,
+      );
+      try {
+        const snapshots = snapshotRepoFiles(
+          fixture.cwd,
+          Object.keys(INPUT_FILES),
+        );
+        expect(snapshots[INPUT_PATH]).toBe(expectedPlan);
+        expect(snapshots["src/timeout.js"]).toBe(INPUT_FILES["src/timeout.js"]);
+        expect(snapshots["test/timeout.test.js"]).toBe(
+          INPUT_FILES["test/timeout.test.js"],
+        );
+        expect(
+          execFileSync("git", ["status", "--short"], {
+            cwd: fixture.cwd,
+            encoding: "utf8",
+          }),
+        ).toBe("");
+      } finally {
+        fixture.cleanup();
+      }
+    },
+  );
+});
+
+describe("baseline evidence", () => {
+  const baselineCommand = "node --test test/timeout.test.js";
+  const claimingObservation: Observation = {
+    ...completedObservation(),
+    repoFiles: {
+      ...completedObservation().repoFiles,
+      [PLAN_ARTIFACT.path]: `${artifactContent(PLAN_ARTIFACT, "No refactoring needed")}\nThe baseline run passed (1 test).\n`,
+    },
+  };
+  test("accepts a baseline claim backed by a captured passing tail", () => {
+    expect(() =>
+      selectedTask.check({
+        ...claimingObservation,
+        toolCalls: [
+          {
+            name: "Bash",
+            input: { command: baselineCommand },
+            result: {
+              content:
+                "Earlier output omitted\nℹ tests 1\nℹ pass 1\nℹ fail 0\n",
+              isError: false,
+              truncated: true,
+            },
+          },
+        ],
+      }),
+    ).not.toThrow();
+  });
+  test.each([
+    [
+      "an echo command",
+      [
         {
           name: "Bash",
-          input: { command: "echo node --test test/timeout.test.js" },
+          input: { command: `echo ${baselineCommand}` },
           result: {
             content: "# pass 1\n# fail 0\n",
             isError: false,
@@ -458,13 +350,31 @@ describe("recorded baseline inspection", () => {
           },
         },
       ],
+    ],
+    [
+      "no captured result",
+      [{ name: "Bash", input: { command: baselineCommand } }],
+    ],
+    [
+      "an error result",
+      [
+        {
+          name: "Bash",
+          input: { command: baselineCommand },
+          result: {
+            content: "# pass 1\n# fail 0\n",
+            isError: true,
+            truncated: false,
+          },
+        },
+      ],
+    ],
+  ] satisfies ReadonlyArray<readonly [string, Observation["toolCalls"]]>)(
+    "rejects baseline claims with %s",
+    (_label, toolCalls) => {
+      expect(() =>
+        selectedTask.check({ ...claimingObservation, toolCalls }),
+      ).toThrow(/baseline.*evidence/i);
     },
-  ])("rejects unsupported baseline success evidence", ({ toolCalls }) => {
-    expect(() =>
-      getCase("selected-task-artifacts").check({
-        ...baselineClaim(),
-        toolCalls,
-      }),
-    ).toThrow(/baseline.*evidence/i);
-  });
+  );
 });
