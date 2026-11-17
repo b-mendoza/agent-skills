@@ -44,6 +44,9 @@ describe("execution-plan action boundary", () => {
     ["-C", "```sh\ngit -C /repo add src/timeout.js\n```"],
     ["-c", "```sh\ngit -c user.name=Tester push origin HEAD\n```"],
     ["--no-pager", "```sh\ngit --no-pager commit -m fix\n```"],
+    ["--git-dir", "```sh\ngit --git-dir /srv/repo push\n```"],
+    ["--work-tree", "```sh\ngit --work-tree /srv/repo commit -m fix\n```"],
+    ["--config-env", "```sh\ngit --config-env user.name=AUTHOR_NAME push\n```"],
   ])("rejects forbidden commands after %s", (_label, payload) => {
     const result = validate("plan", `${payload}\n`);
     expect(result.status).toBe(BLOCKED);
