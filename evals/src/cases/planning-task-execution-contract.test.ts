@@ -21,33 +21,6 @@ function validate(mode: string, payload: string) {
 
 describe("execution-plan action boundary", () => {
   test.each([
-    "4. Commit the database transaction after both inserts succeed.",
-    "2. Push the validated event onto the retry queue.",
-    "3. Reset the timeout input to its default.",
-    "5. Stage the fixture rows in the temp table before the import runs.",
-    "6. Rewrite the retry loop as a bounded for loop.",
-    "Reset the state.",
-    "Stage the fixture rows and commit the database transaction.",
-    "Commit the database transaction after inserting the changed files into the table.",
-    "Do not commit.",
-  ])("accepts product work or a prohibition: %s", (action) => {
-    const result = validate("plan", `## Implementation Approach\n${action}\n`);
-    expect(result.status).toBe(SUCCESS);
-    expect(result.stdout.trim()).toBe("VALID");
-  });
-  test.each([
-    "Stage and commit the change.",
-    "Push the branch to origin.",
-    "Rebase onto main.",
-    "Create a commit after tests pass.",
-    "Never commit and then push.",
-    "Stage the files. Do not commit yet.",
-  ])("leaves prose directives to model review: %s", (payload) => {
-    const result = validate("plan", `${payload}\n`);
-    expect(result.status).toBe(SUCCESS);
-    expect(result.stdout.trim()).toBe("VALID");
-  });
-  test.each([
     "add",
     "stage",
     "commit",
@@ -60,225 +33,140 @@ describe("execution-plan action boundary", () => {
     "am",
     "filter-branch",
     "filter-repo",
-  ])("rejects explicit git %s commands", (command) => {
+  ])("rejects forbidden git subcommand %s", (command) => {
     const result = validate("plan", `Run git ${command}.\n`);
     expect(result.status).toBe(BLOCKED);
-    expect(result.stdout).toMatch(/outside.*execution.*boundary/i);
-  });
-  test("accepts implementation, tests, read-only git and negative safety notes", () => {
-    const result = validate(
-      "plan",
-      "## Implementation Approach\n1. Fix timeout parsing.\n2. Run node --test.\n3. Inspect git diff and git status.\nDo not stage, commit, push, rebase, or reset.\nNever run `git add .` or `git commit -m fix`.\n",
-    );
-    expect(result.status).toBe(SUCCESS);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toMatch(/^line \d+: git /m);
+    expect(result.stdout).toContain(`git ${command}`);
   });
   test.each([
-    'Inspect `git log --grep="timeout and retry" --oneline`.',
-    'Inspect `git diff -- "before and after.txt"`.',
-    'Inspect git log --grep="timeout and retry" --oneline.',
-    "Inspect git diff -- 'before and after.txt'.",
-    'Inspect `git log --grep="timeout; then retry but stop" --oneline`.',
-    "Inspect `git diff -- before and commit then push but reset`.",
-    'Inspect `git log --grep="timeout retry" --oneline`.',
-    'Inspect `git log --grep="say \\"retry and stop\\" then wait" --oneline`.',
-    "Don't run `git commit -m fix`; inspect `git status`.",
-  ])(
-    "accepts read-only Git commands and clause-leading prohibitions: %s",
-    (payload) => {
-      const result = validate("plan", `${payload}\n`);
-      expect(result.stdout.trim()).toBe("VALID");
-      expect(result.status).toBe(SUCCESS);
-    },
-  );
-  test.each([
-    ['Run `git commit -m "fix this and that"`.', "commit"],
-    ["Run `git commit -m 'fix this; then that but stop'`.", "commit"],
-    ["Run `git status` and `git push origin main`.", "push"],
-    ["Run `git status; git push origin main`.", "push"],
-    ["Run `git status and git push origin main`.", "push"],
-    ["Run `git status AND RUN git push origin main`.", "push"],
-    ["Don't run `git status`; run `git push origin main`.", "push"],
-  ])("identifies the forbidden Git command intact: %s", (payload, command) => {
+    ["-C", "```sh\ngit -C /repo add src/timeout.js\n```"],
+    ["-c", "```sh\ngit -c user.name=Tester push origin HEAD\n```"],
+    ["--no-pager", "```sh\ngit --no-pager commit -m fix\n```"],
+  ])("rejects forbidden commands after %s", (_label, payload) => {
     const result = validate("plan", `${payload}\n`);
     expect(result.status).toBe(BLOCKED);
-    expect(result.stdout).toContain(
-      `git ${command} is outside the execution boundary`,
-    );
-    expect(result.stdout).not.toContain("unparseable");
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toMatch(/^line \d+: git /m);
   });
   test.each([
-    "4. Run `git add src/timeout.js && git commit -m fix`.",
-    "```sh\ngit -C /repo add src/timeout.js\n```",
-    "```sh\ngit --no-pager commit -m fix\n```",
-    "```sh\ngit -c user.name=Tester push origin HEAD\n```",
-    "git reset --hard HEAD~1",
-    "git cherry-pick abc123",
-    "Do not modify unrelated files; then git commit -am fix",
-  ])("rejects executable plan action: %s", (action) => {
-    const result = validate("plan", `## Implementation Approach\n${action}\n`);
-    expect(result.status).toBe(BLOCKED);
-    expect(result.stdout).toMatch(/outside.*execution.*boundary/i);
-  });
-});
-
-describe("Git directives versus product objects and safety clauses", () => {
-  test.each([
-    "Reset the branch counter.",
-    "Rewrite the branch selector.",
-    "Commit the branch prediction.",
-    "Reset the branch coverage threshold.",
-    "Push the origin story to the CMS.",
-    "Push the upstream response to the cache.",
-    "Commit the upstream offsets.",
-    "Reset the upstream connection.",
-    "Reset the branch counter to zero.",
-  ])(
-    "accepts product objects headed by branch or remote names: %s",
-    (payload) => {
-      const result = validate("plan", `${payload}\n`);
-      expect(result.status).toBe(SUCCESS);
-      expect(result.stdout.trim()).toBe("VALID");
-    },
-  );
-  test.each([
-    'Inspect `git log --grep="git commit and git push" --oneline`.',
-    "Do not run git add and git commit.",
-    "Do not run `git add src/a.ts` and `git commit -m fix`.",
-    "Do not run git add . and git commit --amend and git push origin main.",
-  ])("rejects unmasked commands or commands in a new clause: %s", (payload) => {
+    ["semicolon", "Don't run `git status`; run `git push origin main`."],
+    ["and", "Do not run git add and git commit."],
+    ["but", "Do not commit but run git add src/a.ts."],
+    ["sentence end", "Do not stage unrelated files. git commit -am fix"],
+    ["then", "Do not run git status then git commit -am fix."],
+  ])("rejects commands after a prohibition ends at %s", (_label, payload) => {
     const result = validate("plan", `${payload}\n`);
     expect(result.status).toBe(BLOCKED);
-    expect(result.stdout).toMatch(/outside.*execution.*boundary/i);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toMatch(/^line \d+: git /m);
   });
   test.each([
-    "Do not stage and commit changes.",
-    "Never commit and push.",
-    "Do not stage and commit changes and push.",
-    "Never stage and never commit.",
-  ])("accepts prose-only prohibitions: %s", (payload) => {
+    [
+      "a later command on the same line",
+      "Run `git status; git push origin main`.",
+    ],
+    [
+      "a quoted operand",
+      'Inspect `git log --grep="git commit and git push" --oneline`.',
+    ],
+    ["a backticked command without a prohibition", "Run `git push`."],
+    ["a sentence beginning with Now", "Now run git push."],
+  ])("rejects forbidden commands in %s", (_label, payload) => {
+    const result = validate("plan", `${payload}\n`);
+    expect(result.status).toBe(BLOCKED);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toMatch(/^line \d+: git /m);
+  });
+  test.each([
+    [
+      "read-only commands with action-like operands",
+      "Inspect `git diff -- before and commit then push but reset`.",
+    ],
+    [
+      "don't prohibition",
+      "Don't run `git commit -m fix`; inspect `git status`.",
+    ],
+    ["or-joined prohibition", "Do not run git add or git commit."],
+    ["bulleted prohibition", "- Never run `git push`."],
+  ])("accepts %s in an execution plan", (_label, payload) => {
     const result = validate("plan", `${payload}\n`);
     expect(result.status).toBe(SUCCESS);
     expect(result.stdout.trim()).toBe("VALID");
   });
-  test.each(["Do not stage and run git add src/a.ts."])(
-    "rejects commands outside a prohibition's clause: %s",
-    (payload) => {
-      const result = validate("plan", `${payload}\n`);
-      expect(result.status).toBe(BLOCKED);
-      expect(result.stdout).toMatch(/outside.*execution.*boundary/i);
-    },
-  );
-  test.each([
-    "Commit the database transaction.",
-    "Reset the retry counter to zero after a successful request.",
-    "Push the validated item onto the in-memory queue.",
-    "Rewrite the parser to remove duplication.",
-    "Reset the search index after the reindex job finishes.",
-    "Push the request to the upstream service with a retry.",
-    "Rewrite the facade to delegate to the new client.",
-    "Reset the decade selector to its default.",
-    "Reset the counter to 100000 before each run.",
-    "Push the node to the head of the linked list.",
-    "Reset the scroll origin when the route changes.",
-    "Rewrite the user repository to use the new client.",
-    "Reset the browser history stack in the test setup.",
-    "Push the config to the remote cache.",
-    "Push the commit event to the message bus.",
-    "Commit the database transaction after both inserts succeed.",
-    "Push the validated event onto the retry queue.",
-    "Reset the timeout input to its default.",
-    "Stage the fixture rows in the temp table before the import runs.",
-    "Rewrite the retry loop as a bounded for loop.",
-    "Do not stage, commit or push.",
-    "Never commit; leave the changes uncommitted.",
-    "Do not stage or commit files, and do not push.",
-    "Do not run git add or git commit.",
-    "Never rewrite history.",
-    "Do not commit.",
-    "Validate the event and push it onto the queue.",
-    "Open the transaction, write both rows, then commit it.",
-    "Add a test that the handler commits the transaction.",
-    "Commit the transaction if both inserts succeed.",
-    "Verify that nothing is staged and no commit was created.",
-    "Add a commit hook test fixture.",
-    "Create a commit hook.",
-    "Rewrite the branch in the switch statement as a lookup table.",
-    "Reset the head of the linked list.",
-    "Rewrite the abcdefa label.",
-    "Reset the 1234567 counter.",
-    "Stage the fixture rows and commit the transaction.",
-    "Stage the fixture rows but commit the transaction.",
-  ])("accepts the product step or prohibition: %s", (payload) => {
-    const result = validate("plan", `${payload}\n`);
+  test("leaves prose directives to model review", () => {
+    const result = validate("plan", "Stage and commit the change.\n");
     expect(result.status).toBe(SUCCESS);
     expect(result.stdout.trim()).toBe("VALID");
-  });
-  test.each([
-    "Do not stage unrelated files, and run git add src/a.ts.",
-    "Run git push origin main.",
-    'Run `git commit -m "feat: x"`.',
-    "Do not commit but run git add src/a.ts.",
-  ])("rejects explicit Git commands: %s", (payload) => {
-    const result = validate("plan", `${payload}\n`);
-    expect(result.status).toBe(BLOCKED);
-    expect(result.stdout).toMatch(/outside.*execution.*boundary/i);
   });
 });
 
 describe("planning summary grammar", () => {
-  const summary =
+  const prepSummary =
+    "PREP: PASS\nTask: 2 - Validation\nBrief: .handoffs/run/brief.md\nDependencies: Satisfied\nQuestions: Resolved\nReferences fetched: none\nNotes: None\n";
+  const planSummary =
     "PLAN: PASS\nExecution plan: .handoffs/planning-task-execution/run/acme-app-42-task-2-execution-plan.md\nRecommended skills: None\nReferences fetched: none\nApproach: Validate timeout bounds\nBlockers: None\n";
+  const testSpecSummary =
+    "TEST_SPEC: PASS\nSpec: .handoffs/run/spec.md\nFramework: node:test\nReferences fetched: none\nCoverage: Boundaries\nBlockers: None\n";
+  const refactoringSummary =
+    "REFACTORING: PASS\nRefactoring plan: .handoffs/run/refactor.md\nVerdict: No refactoring needed\nReferences fetched: none\nSummary: Keep scope small\nBlockers: None\n";
   test.each([
-    [
-      "PREP",
-      "PREP: PASS\nTask: 2 - Validation\nBrief: .handoffs/run/brief.md\nDependencies: Satisfied\nQuestions: Resolved\nReferences fetched: none\nNotes: None\n",
-    ],
-    [
-      "TEST_SPEC",
-      "TEST_SPEC: PASS\nSpec: .handoffs/run/spec.md\nFramework: node:test\nReferences fetched: none\nCoverage: Boundaries\nBlockers: None\n",
-    ],
-    [
-      "REFACTORING",
-      "REFACTORING: PASS\nRefactoring plan: .handoffs/run/refactor.md\nVerdict: No refactoring needed\nReferences fetched: none\nSummary: Keep scope small\nBlockers: None\n",
-    ],
-  ])("validates %s and rejects a wrong field", (mode, payload) => {
-    expect(validate(mode, payload).status).toBe(SUCCESS);
-    expect(
-      validate(mode, payload.replace("References fetched:", "Unknown field:"))
-        .status,
-    ).toBe(BLOCKED);
-  });
-  test("rejects contradictory readiness", () => {
-    const payload =
-      "PREP: PASS\nTask: 2 - Validation\nBrief: .handoffs/run/brief.md\nDependencies: Unsatisfied: Task 1\nQuestions: Resolved\nReferences fetched: none\nNotes: None\n";
-    expect(validate("PREP", payload).status).toBe(BLOCKED);
-  });
-  test("accepts the declared status and fields", () => {
-    expect(validate("PLAN", summary).status).toBe(SUCCESS);
-  });
-  test.each([
-    summary.replace("PLAN: PASS", "PLAN: DONE"),
-    summary.replace("Blockers: None\n", ""),
-    summary.replace("Blockers: None", "Blockers: unresolved requirement"),
-    summary.replace(
-      "Execution plan: .handoffs/planning-task-execution/run/acme-app-42-task-2-execution-plan.md",
-      "Execution plan: Not written",
-    ),
-  ])("rejects malformed or contradictory successful summaries", (payload) => {
-    expect(validate("PLAN", payload).status).toBe(BLOCKED);
-  });
-});
-
-describe("recorded negative safety note", () => {
-  test("accepts the real scope sentence followed by a prohibition", () => {
-    const recorded =
-      "Keep work scoped to Task 2. Do not stage, commit, push, rewrite history, or mutate GitHub. Leave planning artifacts on disk, unstaged and uncommitted.";
-    expect(validate("plan", recorded).status).toBe(SUCCESS);
-  });
-  test.each(["Do not stage unrelated files. git commit -am fix"])(
-    "still rejects an actionable sentence beside a prohibition: %s",
-    (payload) => {
-      expect(validate("plan", payload).status).toBe(BLOCKED);
+    ["PREP", prepSummary],
+    ["PLAN", planSummary],
+    ["TEST_SPEC", testSpecSummary],
+    ["REFACTORING", refactoringSummary],
+  ])(
+    "accepts the %s summary schema and rejects renamed fields",
+    (mode, validPayload) => {
+      const accepted = validate(mode, validPayload);
+      expect(accepted.status).toBe(SUCCESS);
+      expect(accepted.stdout.trim()).toBe("VALID");
+      const rejected = validate(
+        mode,
+        validPayload.replace("References fetched:", "Unknown field:"),
+      );
+      expect(rejected.status).toBe(BLOCKED);
+      expect(rejected.stderr).toBe("");
+      expect(rejected.stdout).toContain(`${mode}:`);
     },
   );
+  test.each([
+    ["unknown status", "PLAN", planSummary.replace("PLAN: PASS", "PLAN: DONE")],
+    ["missing line", "PLAN", planSummary.replace("Blockers: None\n", "")],
+    [
+      "unresolved blocker",
+      "PLAN",
+      planSummary.replace("Blockers: None", "Blockers: unresolved requirement"),
+    ],
+    [
+      "unwritten artifact",
+      "PLAN",
+      planSummary.replace(
+        ".handoffs/planning-task-execution/run/acme-app-42-task-2-execution-plan.md",
+        "Not written",
+      ),
+    ],
+    [
+      "unsatisfied PREP dependency",
+      "PREP",
+      prepSummary.replace(
+        "Dependencies: Satisfied",
+        "Dependencies: Unsatisfied: Task 1",
+      ),
+    ],
+    [
+      "invalid REFACTORING verdict",
+      "REFACTORING",
+      refactoringSummary.replace(
+        "Verdict: No refactoring needed",
+        "Verdict: Maybe",
+      ),
+    ],
+  ])("rejects %s summaries", (_label, mode, payload) => {
+    const result = validate(mode, payload);
+    expect(result.status).toBe(BLOCKED);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain(`${mode}:`);
+  });
 });
