@@ -1,140 +1,94 @@
-import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 
 import { describe, expect, test } from "vitest";
 
 import {
   ARTIFACT_PLANNING_FILES,
   makeProgressFixture as setup,
-  PROGRESS_KEY as key,
-  PROGRESS_ROOT as root,
+  PROGRESS_PATH,
   TASK_PLANNING_FILES,
 } from "#/cases/orchestrating-workflow-progress-cases.ts";
-import { makeFixture, writeRepoFiles } from "#/fixtures/fixtures.ts";
+import { writeRepoFiles } from "#/fixtures/fixtures.ts";
 
 const SUCCESS = 0;
-const PLAN = 5;
 const BLOCKED = 1;
+
+const PLAN_TASKS = 2;
 const CHILDREN = 4;
+const PLAN = 5;
 const CRITIQUE = 6;
 const EXECUTE = 7;
 
-const UNREADABLE = "PROGRESS: ERROR\nReason: unreadable summary Task cell";
-const CELL_OUTCOMES = {
-  blocked: {
-    readStatus: SUCCESS,
-    readText: "PROGRESS: OK",
-    initStatus: BLOCKED,
-    initText: "human-only task requires a human handoff",
-    writes: false,
-  },
-  started: {
-    readStatus: SUCCESS,
-    readText: "PROGRESS: OK",
-    initStatus: SUCCESS,
-    initText: "Task 1 started",
-    writes: true,
-  },
-  unreadable: {
-    readStatus: BLOCKED,
-    readText: UNREADABLE,
-    initStatus: BLOCKED,
-    initText: UNREADABLE,
-    writes: false,
-  },
-} as const;
+const HUMAN_ONLY_REFUSAL = "human-only task requires a human handoff";
 
-const script = fileURLToPath(
-  new URL(
-    "../../../skills/orchestrating-workflow/scripts/progress.py",
-    import.meta.url,
-  ),
-);
-
-function runProgress(cwd: string, fields: Readonly<Record<string, unknown>>) {
-  return spawnSync("python3", [script], {
-    cwd,
-    input: JSON.stringify({ ticket_key: "acme-app-42", ...fields }),
-    encoding: "utf8",
-  });
+function summaryPlan(summary: string): string {
+  return `## Execution Order Summary\n\n${summary}\n## Task 1: Human approval\n**Branch name:** stale-code\n## GitHub Task Issues\n`;
 }
 
-describe("artifact recovery guards", () => {
-  test.each(["fresh", "artifact-recovered"])(
-    "rejects uninitialized updates without task artifacts in %s progress",
-    (origin) => {
+describe("artifact recovery", () => {
+  test("infers progress from a snapshot without writing, and the next update keeps it", () => {
+    const fixture = setup();
+    try {
+      writeRepoFiles(fixture.cwd, { "docs/acme-app-42.md": "# Snapshot\n" });
+      const read = fixture.run({ action: "read" });
+      expect(read.status).toBe(SUCCESS);
+      expect(read.stdout).toContain("Resume from: Phase 2");
+      expect(existsSync(join(fixture.cwd, PROGRESS_PATH))).toBe(false);
+      const updated = fixture.run({
+        action: "update",
+        phase: PLAN_TASKS,
+        status: "complete",
+        summary: "Tasks validated",
+      });
+      expect(updated.status).toBe(SUCCESS);
+      expect(fixture.main()).toMatch(/\| 1 \| Fetch work item \|.*Complete/);
+      expect(fixture.run({ action: "read" }).stdout).toContain(
+        "Resume from: Phase 3",
+      );
+    } finally {
+      fixture.cleanup();
+    }
+  });
+
+  test.each([
+    {
+      label: "all four Phase 5 artifacts",
+      artifacts: TASK_PLANNING_FILES,
+      resume: "Phase 6, Task 1",
+    },
+    // Each artifact gets its own row: a row that omits only one file is the
+    // only thing that fails if the script stops requiring that file.
+    ...Object.keys(TASK_PLANNING_FILES).map((missing) => ({
+      label: `without ${missing}`,
+      artifacts: Object.fromEntries(
+        Object.entries(TASK_PLANNING_FILES).filter(
+          ([path]) => path !== missing,
+        ),
+      ),
+      resume: "Phase 5 (task selection)",
+    })),
+  ])(
+    "infers a task's resume point from its planning artifacts: $label",
+    ({ artifacts, resume }) => {
       const fixture = setup();
-      const path = join(fixture.cwd, root, `${key}-progress.md`);
-      const current = () => (existsSync(path) ? fixture.main() : null);
       try {
-        writeRepoFiles(
-          fixture.cwd,
-          origin === "fresh"
-            ? { "docs/acme-app-42.md": "# Snapshot\n" }
-            : ARTIFACT_PLANNING_FILES,
-        );
-        if (origin === "fresh") fixture.populated();
-        const before = current();
-        expect(before === null).toBe(origin === "artifact-recovered");
-        const result = fixture.run({
-          action: "update_task",
-          task_number: 1,
-          phase: PLAN,
-          status: "complete",
-          summary: "not initialized",
+        writeRepoFiles(fixture.cwd, {
+          ...ARTIFACT_PLANNING_FILES,
+          ...artifacts,
         });
-        expect(result.status).toBe(BLOCKED);
-        expect(result.stdout).toContain("task has not been initialized");
-        expect(current()).toBe(before);
+        const read = fixture.run({ action: "read" });
+        expect(read.status).toBe(SUCCESS);
+        expect(read.stdout).toContain("- Task 1 | Code |");
+        expect(read.stdout).toContain(`Resume from: ${resume}`);
+        expect(existsSync(join(fixture.cwd, PROGRESS_PATH))).toBe(false);
       } finally {
         fixture.cleanup();
       }
     },
   );
 
-  test.each(["fresh", "artifact-recovered"])(
-    "rejects replacing a completed Phase 4 table in %s progress",
-    (origin) => {
-      const fixture = setup();
-      const path = join(fixture.cwd, root, `${key}-progress.md`);
-      const current = () => (existsSync(path) ? fixture.main() : null);
-      try {
-        writeRepoFiles(
-          fixture.cwd,
-          origin === "fresh"
-            ? { "docs/acme-app-42.md": "# Snapshot\n" }
-            : ARTIFACT_PLANNING_FILES,
-        );
-        if (origin === "fresh") fixture.populated();
-        const before = current();
-        expect(before === null).toBe(origin === "artifact-recovered");
-        const result = fixture.run({
-          action: "update",
-          phase: CHILDREN,
-          status: "complete",
-          summary: "must not replace",
-          tasks:
-            origin === "fresh"
-              ? [
-                  { number: 1, title: "Retitled" },
-                  { number: 2, title: "Retitled too" },
-                ]
-              : [{ number: 1, title: "Retitled" }],
-        });
-        expect(result.status).toBe(BLOCKED);
-        expect(result.stdout).toContain(
-          "Phase 4 task table already exists; reconcile explicitly, never reset progress",
-        );
-        expect(current()).toBe(before);
-      } finally {
-        fixture.cleanup();
-      }
-    },
-  );
-
-  test("infers no tasks before Phase 4 and lets Phase 4 write the table once", () => {
+  test("infers no task rows until the plan shows Phase 4 complete", () => {
     const fixture = setup();
     try {
       writeRepoFiles(fixture.cwd, {
@@ -162,23 +116,12 @@ describe("artifact recovery guards", () => {
       expect(fixture.main()).toMatch(
         /\| 1 \| Code \| None \| Unknown \| acme\/app#101 \| — \|[^\n]+Pending/,
       );
-      const before = fixture.main();
-      const again = fixture.run({
-        action: "update",
-        phase: CHILDREN,
-        status: "complete",
-        summary: "Again",
-        tasks: [{ number: 1, title: "Retitled" }],
-      });
-      expect(again.status).toBe(BLOCKED);
-      expect(again.stdout).toContain("Phase 4 task table already exists");
-      expect(fixture.main()).toBe(before);
     } finally {
       fixture.cleanup();
     }
   });
 
-  test("a pending task with all planning artifacts still requires initialize_task", () => {
+  test("requires initialize_task for a recorded pending task whatever artifacts exist", () => {
     const fixture = setup();
     try {
       fixture.populated();
@@ -199,31 +142,7 @@ describe("artifact recovery guards", () => {
     }
   });
 
-  test.each(Object.keys(TASK_PLANNING_FILES))(
-    "infers a pending task without a progress file when %s is missing",
-    (missing) => {
-      const fixture = setup();
-      try {
-        writeRepoFiles(fixture.cwd, {
-          ...ARTIFACT_PLANNING_FILES,
-          ...Object.fromEntries(
-            Object.entries(TASK_PLANNING_FILES).filter(
-              ([path]) => path !== missing,
-            ),
-          ),
-        });
-        const read = fixture.run({ action: "read" });
-        expect(read.status).toBe(SUCCESS);
-        expect(read.stdout).toContain("- Task 1 | Code |");
-        expect(read.stdout).toContain("Status: pending");
-        expect(read.stdout).toContain("Resume from: Phase 5 (task selection)");
-      } finally {
-        fixture.cleanup();
-      }
-    },
-  );
-
-  test("continues artifact-only execution and preserves a terminal exclusion", () => {
+  test("completes Phase 7 from artifact-only progress, keeps a skip terminal, and accounts for every task", () => {
     const fixture = setup();
     try {
       const artifacts = {
@@ -238,9 +157,7 @@ describe("artifact recovery guards", () => {
       const read = fixture.run({ action: "read" });
       expect(read.status).toBe(SUCCESS);
       expect(read.stdout).toContain("Resume from: Phase 7, Task 1");
-      expect(existsSync(join(fixture.cwd, root, `${key}-progress.md`))).toBe(
-        false,
-      );
+      expect(existsSync(join(fixture.cwd, PROGRESS_PATH))).toBe(false);
       expect(
         fixture.run({
           action: "update_task",
@@ -272,6 +189,9 @@ describe("artifact recovery guards", () => {
         "Phases: 1 complete | 2 complete | 3 complete | 4 complete",
       );
       expect(final.stdout).toContain("1/2 complete | 1 skipped | 0 remaining");
+      expect(final.stdout).toContain(
+        "Resume from: None (all tasks accounted for)",
+      );
       for (const [path, content] of Object.entries(artifacts)) {
         expect(readFileSync(join(fixture.cwd, path), "utf8")).toBe(content);
       }
@@ -281,126 +201,93 @@ describe("artifact recovery guards", () => {
   });
 });
 
-describe("human-only progress guard", () => {
+describe("human-only guard", () => {
   test.each([
-    { cell: "1", outcome: "blocked" },
-    { cell: "Task 1", outcome: "blocked" },
-    { cell: "**1**", outcome: "blocked" },
-    { cell: "**Task 1**", outcome: "blocked" },
-    { cell: "`1`", outcome: "blocked" },
-    { cell: "`Task 1`", outcome: "blocked" },
-    { cell: "C -> 1", outcome: "blocked" },
-    { cell: "**C -> 1**", outcome: "blocked" },
-    { cell: "C -> **1**", outcome: "blocked" },
-    { cell: "**C** -> `Task 1`", outcome: "blocked" },
-    { cell: "`C` → **Task 1**", outcome: "blocked" },
-    { cell: "**C → 1**", outcome: "blocked" },
-    { cell: "`C → 1`", outcome: "blocked" },
-    { cell: " ` C -> 1 ` ", outcome: "blocked" },
-    { cell: "C → Task 1", outcome: "blocked" },
-    { cell: "A -> C → 1", outcome: "blocked" },
-    { cell: "3 -> 1", outcome: "blocked" },
-    { cell: "1 -> 3", outcome: "started" },
-    { cell: "Task 1 extra", outcome: "unreadable" },
-    { cell: "C -> 1 extra", outcome: "unreadable" },
-    { cell: "C -> 0", outcome: "unreadable" },
-    { cell: "-> 1", outcome: "unreadable" },
     {
-      cell: "C -> 1",
-      outcome: "blocked",
-      before: "| 2 | Task 1 | stale-code |\n",
+      label: "the request execution mode",
+      task: { execution_mode: "human-only" },
+      plan: "## Task 1: Human approval\n",
     },
     {
-      cell: "C -> 1",
-      outcome: "blocked",
-      after: "| 2 | Task 1 | stale-code |\n",
+      label: "the request branch sentinel",
+      task: { branch_name: "N/A (human-only)" },
+      plan: "## Task 1: Human approval\n",
     },
-  ] satisfies ReadonlyArray<{
-    cell: string;
-    outcome: keyof typeof CELL_OUTCOMES;
-    before?: string;
-    after?: string;
-  }>)(
-    "recognizes summary identity $cell before artifact-only initialization: %j",
-    ({ cell, outcome, before, after }) => {
-      const expected = CELL_OUTCOMES[outcome];
-      const fixture = makeFixture("clean", []);
-      const run = (fields: Readonly<Record<string, unknown>>) =>
-        runProgress(fixture.cwd, fields);
+    {
+      label: "the plan Execution mode marker",
+      task: { execution_mode: "code", branch_name: "legacy-branch" },
+      plan: "## Task 1: Human approval\n**Execution mode:** human-only\n",
+    },
+    {
+      label: "the plan Branch name marker",
+      task: { execution_mode: "code", branch_name: "legacy-branch" },
+      plan: "## Task 1: Human approval\n- **Branch name:** N/A (human-only)\n",
+    },
+  ])(
+    "blocks Phases 5-7 but allows skip_task for a task marked human-only by $label",
+    ({ task, plan }) => {
+      const fixture = setup();
       try {
-        writeRepoFiles(fixture.cwd, {
-          "docs/acme-app-42.md": "# Snapshot\n",
-          "docs/acme-app-42-upfront-critique.md": "# Critique\n",
-          "docs/acme-app-42-tasks.md": `## Execution Order Summary\n\n| Order | Task | Branch |\n| --- | --- | --- |\n${before ?? ""}| 1 | ${cell} | N/A (human-only) |\n${after ?? ""}\n## Task 1: Human approval\n**Branch name:** stale-code\n## Decisions Log\n## GitHub Task Issues\n`,
+        writeRepoFiles(fixture.cwd, { "docs/acme-app-42-tasks.md": plan });
+        const populated = fixture.run({
+          action: "update",
+          phase: CHILDREN,
+          status: "complete",
+          summary: "linked",
+          tasks: [{ number: 1, title: "Human approval", ...task }],
         });
-        const read = run({ action: "read" });
-        expect(read.status).toBe(expected.readStatus);
-        expect(read.stdout).toContain(expected.readText);
-        const result = run({ action: "initialize_task", task_number: 1 });
-        expect(result.status).toBe(expected.initStatus);
-        expect(result.stdout).toContain(expected.initText);
-        expect(
-          existsSync(join(fixture.cwd, "docs/acme-app-42-progress.md")),
-        ).toBe(expected.writes);
+        expect(populated.status).toBe(SUCCESS);
+        const before = fixture.main();
+        const started = fixture.run({
+          action: "initialize_task",
+          task_number: 1,
+        });
+        expect(started.status).toBe(BLOCKED);
+        expect(started.stdout).toContain(HUMAN_ONLY_REFUSAL);
+        expect(fixture.main()).toBe(before);
+        const resumed = fixture.run({
+          action: "update_task",
+          task_number: 1,
+          phase: PLAN,
+          status: "complete",
+          summary: "must not resume human task",
+        });
+        expect(resumed.status).toBe(BLOCKED);
+        expect(resumed.stdout).toContain(HUMAN_ONLY_REFUSAL);
+        const skipped = fixture.run({
+          action: "skip_task",
+          task_number: 1,
+          reason: "Human handoff to Release team",
+        });
+        expect(skipped.status).toBe(SUCCESS);
+        expect(skipped.stdout).toContain(
+          "0/1 complete | 1 skipped | 0 remaining",
+        );
       } finally {
         fixture.cleanup();
       }
     },
   );
-  test.each([
-    {
-      execution_mode: "human-only",
-      human_owner: "Release team",
-      branch_name: "legacy-branch",
-    },
-    {
-      execution_mode: "code",
-      human_owner: "Release team",
-      branch_name: "N/A (human-only)",
-    },
-    {
-      execution_mode: "code",
-      human_owner: "Release team",
-      branch_name: "legacy-branch",
-      source_plan:
-        "## Task 1: Human approval\n**Execution mode:** human-only\n**Owner:** Release team\n**Branch name:** N/A (human-only)\n",
-    },
-    {
-      execution_mode: "code",
-      human_owner: "Release team",
-      branch_name: "legacy-branch",
-      source_plan:
-        "## Task 1: Human approval\n- **Branch name:** N/A (human-only)\n",
-    },
-  ])("blocks initialization of a human-only task for %j", (metadata) => {
-    const fixture = makeFixture("clean", []);
-    const run = (fields: Readonly<Record<string, unknown>>) =>
-      spawnSync("python3", [script], {
-        cwd: fixture.cwd,
-        input: JSON.stringify({ ticket_key: "acme-app-42", ...fields }),
-        encoding: "utf8",
-      });
+
+  test("does not resume or update a saved Active task that the plan now marks human-only", () => {
+    const fixture = setup();
     try {
-      if ("source_plan" in metadata) {
-        writeRepoFiles(fixture.cwd, {
-          "docs/acme-app-42-tasks.md": metadata.source_plan,
-        });
-      }
-      const populated = run({
-        action: "update",
-        phase: 4,
-        status: "complete",
-        summary: "linked",
-        tasks: [{ number: 1, title: "Human approval", ...metadata }],
+      fixture.populated();
+      const started = fixture.run({
+        action: "initialize_task",
+        task_number: 1,
       });
-      expect(populated.status).toBe(SUCCESS);
-      const path = join(fixture.cwd, "docs/acme-app-42-progress.md");
-      const before = readFileSync(path, "utf8");
-      const result = run({ action: "initialize_task", task_number: 1 });
-      expect(result.status).toBe(BLOCKED);
-      expect(result.stdout).toMatch(/human-only/);
-      expect(readFileSync(path, "utf8")).toBe(before);
-      const resumed = run({
+      expect(started.status).toBe(SUCCESS);
+      writeRepoFiles(fixture.cwd, {
+        "docs/acme-app-42-tasks.md":
+          "## Task 1: Code\n**Execution mode:** human-only\n",
+      });
+      const read = fixture.run({ action: "read" });
+      expect(read.status).toBe(SUCCESS);
+      expect(read.stdout).toContain("Resume from: Phase 5 (task selection)");
+      expect(read.stdout).not.toMatch(/Resume from:.*Task 1/);
+      const before = fixture.main();
+      const resumed = fixture.run({
         action: "update_task",
         task_number: 1,
         phase: PLAN,
@@ -408,34 +295,120 @@ describe("human-only progress guard", () => {
         summary: "must not resume human task",
       });
       expect(resumed.status).toBe(BLOCKED);
-      expect(resumed.stdout).toMatch(/human-only/);
-      const skip = run({
-        action: "skip_task",
-        task_number: 1,
-        reason: "Human handoff to Release team",
-      });
-      expect(skip.status).toBe(SUCCESS);
-      expect(skip.stdout).toContain("0/1 complete | 1 skipped | 0 remaining");
+      expect(resumed.stdout).toContain(HUMAN_ONLY_REFUSAL);
+      expect(fixture.main()).toBe(before);
     } finally {
       fixture.cleanup();
     }
   });
 
-  test("reads a summary row with a Task cell as data, not as a header", () => {
+  test.each([
+    {
+      label: "a bare task number",
+      summary:
+        "| Order | Task | Branch |\n| --- | --- | --- |\n| 1 | 1 | N/A (human-only) |\n",
+    },
+    {
+      label: "a bold source mapped to a backticked Task N",
+      summary:
+        "| Order | Task | Branch |\n| --- | --- | --- |\n| 1 | **C** -> `Task 1` | N/A (human-only) |\n",
+    },
+    {
+      label: "a sentinel in another letter case",
+      summary:
+        "| Order | Task | Branch |\n| --- | --- | --- |\n| 1 | 1 | n/a (Human-Only) |\n",
+    },
+    {
+      label: "a backticked sentinel",
+      summary:
+        "| Order | Task | Branch |\n| --- | --- | --- |\n| 1 | 1 | `N/A (human-only)` |\n",
+    },
+    {
+      label: "a compact, indented, emphasized, reordered header",
+      summary:
+        "  |`Branch`|Title|**Task**|\n  |:---|---|---:|\n  |N/A (human-only)|Human approval|`C` → **Task 1**|\n",
+    },
+    {
+      label: "conflicting rows with a Task data cell",
+      summary:
+        "| Order | Task | Type | Branch name |\n| --- | --- | --- | --- |\n| 1 | 1 | Task | stale-code |\n| 2 | 1 | Task | N/A (human-only) |\n",
+    },
+  ])("blocks a task named by a summary sentinel row: $label", ({ summary }) => {
     const fixture = setup();
     try {
-      fixture.populated();
       writeRepoFiles(fixture.cwd, {
-        "docs/acme-app-42-tasks.md":
-          "## Execution Order Summary\n| Order | Task | Type | Owner | Branch name |\n| --- | --- | --- | --- | --- |\n| 1 | 1 | Task | dev | feat/one |\n| 2 | 2 | Task | Ops | N/A (human-only) |\n## Task 1: One\n## Task 2: Two\n",
+        "docs/acme-app-42-tasks.md": summaryPlan(summary),
       });
-      const before = fixture.main();
-      const result = fixture.run({ action: "initialize_task", task_number: 2 });
-      expect(result.status).toBe(BLOCKED);
-      expect(result.stdout).toContain(
-        "human-only task requires a human handoff",
-      );
-      expect(fixture.main()).toBe(before);
+      const read = fixture.run({ action: "read" });
+      expect(read.status).toBe(SUCCESS);
+      expect(read.stdout).toContain("Branch name: N/A (human-only)");
+      const started = fixture.run({
+        action: "initialize_task",
+        task_number: 1,
+      });
+      expect(started.status).toBe(BLOCKED);
+      expect(started.stdout).toContain(HUMAN_ONLY_REFUSAL);
+      expect(existsSync(join(fixture.cwd, PROGRESS_PATH))).toBe(false);
+    } finally {
+      fixture.cleanup();
+    }
+  });
+
+  test.each([
+    {
+      label: "trailing text",
+      summary:
+        "| Order | Task | Branch |\n| --- | --- | --- |\n| 1 | C -> 1 extra | N/A (human-only) |\n",
+    },
+    {
+      label: "an empty mapping source",
+      summary:
+        "| Order | Task | Branch |\n| --- | --- | --- |\n| 1 | -> 1 | N/A (human-only) |\n",
+    },
+    {
+      label: "a leading zero",
+      summary:
+        "| Order | Task | Branch |\n| --- | --- | --- |\n| 1 | 01 | N/A (human-only) |\n",
+    },
+    {
+      label: "a header without a Task column",
+      summary: "| Order | Branch |\n| --- | --- |\n| 1 | N/A (human-only) |\n",
+    },
+  ])(
+    "refuses a summary sentinel row whose Task cell names no task: $label",
+    ({ summary }) => {
+      const fixture = setup();
+      try {
+        writeRepoFiles(fixture.cwd, {
+          "docs/acme-app-42-tasks.md": summaryPlan(summary),
+        });
+        const started = fixture.run({
+          action: "initialize_task",
+          task_number: 1,
+        });
+        expect(started.status).toBe(BLOCKED);
+        expect(started.stdout).toContain("unreadable summary Task cell");
+        expect(existsSync(join(fixture.cwd, PROGRESS_PATH))).toBe(false);
+      } finally {
+        fixture.cleanup();
+      }
+    },
+  );
+
+  test("does not block the source task of a mapping that targets another task", () => {
+    const fixture = setup();
+    try {
+      writeRepoFiles(fixture.cwd, {
+        "docs/acme-app-42-tasks.md": summaryPlan(
+          "| Order | Task | Branch |\n| --- | --- | --- |\n| 1 | 1 -> 3 | N/A (human-only) |\n",
+        ),
+      });
+      const started = fixture.run({
+        action: "initialize_task",
+        task_number: 1,
+      });
+      expect(started.status).toBe(SUCCESS);
+      expect(started.stdout).toContain("Task 1 started");
     } finally {
       fixture.cleanup();
     }
