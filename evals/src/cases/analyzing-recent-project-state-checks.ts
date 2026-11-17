@@ -1,6 +1,4 @@
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
-import { fileURLToPath } from "node:url";
 
 import {
   assertNoMutation,
@@ -10,50 +8,9 @@ import {
 } from "#/cases/shared-checks.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 
-// The skill's own deterministic validator is the normative shape definition;
-// reusing it here means test-time and runtime check the same thing.
-const OUTPUT_VALIDATOR_PATH = fileURLToPath(
-  new URL(
-    "../../../skills/analyzing-recent-project-state/scripts/validate-output.sh",
-    import.meta.url,
-  ),
-);
-
-export type ValidatorMode = "evidence" | "draft" | "verdict" | "report";
-
-const SUCCESS_EXIT_STATUS = 0;
 const HEREDOC_BODY =
   /(?<opening><<-?[ \t]*(?<quote>["']?)(?<delimiter>[^\s"'<>]+)\k<quote>(?:[ \t][^\n]*)?\n)(?:[^\n]*\n)*?\t*\k<delimiter>(?:\n|$)/g;
 const COMMAND_SEGMENT = /(?:"[^"]*"|'[^']*'|[^;&|\n"'])+/g;
-
-/** Runs the skill's validator; returns its findings, empty when conformant. */
-export function runOutputValidator(
-  mode: ValidatorMode,
-  payload: string,
-  ...projectPath: [] | [string]
-): string {
-  const result = spawnSync(
-    "sh",
-    [OUTPUT_VALIDATOR_PATH, mode, ...projectPath],
-    {
-      input: payload,
-      encoding: "utf8",
-    },
-  );
-  if (result.error !== undefined) {
-    throw new Error(`output validator could not run: ${String(result.error)}`, {
-      cause: result.error,
-    });
-  }
-  if (result.status === SUCCESS_EXIT_STATUS) return "";
-
-  const findings = result.stdout.trim();
-  if (findings !== "") return findings;
-
-  throw new Error(
-    `output validator could not run: validator exited with status ${String(result.status)} without findings`,
-  );
-}
 
 /** The run must have invoked the skill's deterministic validator. */
 export function assertValidatorInvoked(observation: Observation): void {
