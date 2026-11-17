@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 
 const SUCCESS = 0;
 const FAILURE = 1;
+const USAGE_ERROR = 2;
 
 const script = fileURLToPath(
   new URL(
@@ -12,6 +13,7 @@ const script = fileURLToPath(
     import.meta.url,
   ),
 );
+const canonicalParent = "https://github.com/acme/app/issues/42";
 const task = {
   title: "Preserve empty export header",
   objective: "Keep the header for empty exports.",
@@ -22,13 +24,10 @@ const task = {
   done: "Empty exports contain the header.",
   artifacts: "CSV exporter and tests.",
 };
-function validate(
-  childTask: unknown,
-  parent = "https://github.com/acme/app/issues/42",
-) {
+function validate(childTask: unknown, parent = canonicalParent) {
   return spawnSync("python3", ["-I", script], {
     input: JSON.stringify({
-      parent: "https://github.com/acme/app/issues/42",
+      parent: canonicalParent,
       task,
       child: { parent, task: childTask },
     }),
@@ -37,34 +36,29 @@ function validate(
 }
 
 describe("child task content identity", () => {
-  it("prints usage and rejects arguments", () => {
+  it("rejects arguments with usage exit", () => {
     const result = spawnSync("python3", ["-I", script, "-h"], {
       encoding: "utf8",
     });
-    const USAGE_ERROR = 2;
     expect(result.status).toBe(USAGE_ERROR);
     expect(result.stdout).toContain("Usage: python3 -I validate-identity.py");
   });
-  it("accepts complete matching content independently of mutable task numbering", () => {
+  it("accepts a child whose parent and content match the plan", () => {
     const result = validate(task);
     expect(result.status).toBe(SUCCESS);
     expect(result.stdout).toMatch(/^IDENTITY: PASS\n$/);
   });
   it.each([
-    [
-      "renumbered stale scope",
-      { ...task, objective: "Delete the CSV exporter." },
-    ],
-    [
-      "same title but different implementation",
-      { ...task, implementation: "Disable filtering." },
-    ],
-    ["unproven legacy body", { title: task.title }],
-    ["missing acceptance evidence", { ...task, done: "" }],
-  ])("rejects %s even with the same parent and index", (_name, childTask) => {
+    {
+      label: "changed implementation",
+      childTask: { ...task, implementation: "Disable filtering." },
+    },
+    { label: "missing identity fields", childTask: { title: task.title } },
+    { label: "empty acceptance evidence", childTask: { ...task, done: "" } },
+  ])("rejects $label with the same parent", ({ childTask }) => {
     expect(validate(childTask).status).toBe(FAILURE);
   });
-  it("rejects a different parent", () => {
+  it("rejects a child from another parent", () => {
     expect(validate(task, "https://github.com/acme/app/issues/99").status).toBe(
       FAILURE,
     );
