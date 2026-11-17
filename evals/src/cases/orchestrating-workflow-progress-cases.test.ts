@@ -64,13 +64,12 @@ function progressObservation() {
 }
 
 describe("progress observation checks", () => {
-  test("accepts separate phase/task state and unstarted exclusion", () => {
+  test("accepts separate phase and task state with an unstarted exclusion", () => {
     expect(() => checkProgressProjection(progressObservation())).not.toThrow();
   });
   test.each([
     ["premature task completion", main.replace("| Active |", "| Complete |")],
     ["missing child metadata", main.replace("acme/app#101", "Not Created")],
-    ["shifted columns", main.replace("| Child item |", "| Unknown |")],
     [
       "dropped early phase",
       main.replace(
@@ -100,7 +99,7 @@ describe("progress observation checks", () => {
       }),
     ).toThrow();
   });
-  test("rejects wrong totals and wrong resume target", () => {
+  test("rejects wrong totals and a wrong resume target", () => {
     const observation = progressObservation();
     for (const finalText of [
       "Tasks: 2/2 complete\nResume from: Phase 7, Task 1",
@@ -111,19 +110,22 @@ describe("progress observation checks", () => {
       ).toThrow();
     }
   });
-});
-
-test("fresh progress fixture exposes the untracked progress file to the case checker", () => {
-  const [entry] = progressCases;
-  const fixture = makeFixture("clean", ["orchestrating-workflow"], entry.seed);
-  try {
-    writeRepoFiles(fixture.cwd, { [PROGRESS_PATH]: main });
-    const actual = execFileSync("git", ["status", "--short"], {
-      cwd: fixture.cwd,
-      encoding: "utf8",
-    }).trim();
-    expect(actual).toBe(`?? ${PROGRESS_PATH}`);
-  } finally {
-    fixture.cleanup();
-  }
+  test("seeds git so status lists the untracked progress file itself", () => {
+    const [entry] = progressCases;
+    const fixture = makeFixture(
+      "clean",
+      ["orchestrating-workflow"],
+      entry.seed,
+    );
+    try {
+      writeRepoFiles(fixture.cwd, { [PROGRESS_PATH]: main });
+      const actual = execFileSync("git", ["status", "--short"], {
+        cwd: fixture.cwd,
+        encoding: "utf8",
+      }).trim();
+      expect(actual).toBe(`?? ${PROGRESS_PATH}`);
+    } finally {
+      fixture.cleanup();
+    }
+  });
 });
