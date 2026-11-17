@@ -47,6 +47,8 @@ describe("execution-plan action boundary", () => {
     ["--git-dir", "```sh\ngit --git-dir /srv/repo push\n```"],
     ["--work-tree", "```sh\ngit --work-tree /srv/repo commit -m fix\n```"],
     ["--config-env", "```sh\ngit --config-env user.name=AUTHOR_NAME push\n```"],
+    ["--namespace", "```sh\ngit --namespace review push\n```"],
+    ["--attr-source", "```sh\ngit --attr-source HEAD push\n```"],
   ])("rejects forbidden commands after %s", (_label, payload) => {
     const result = validate("plan", `${payload}\n`);
     expect(result.status).toBe(BLOCKED);
@@ -67,6 +69,33 @@ describe("execution-plan action boundary", () => {
   });
   test.each([
     [
+      "prose between the prohibition and the command",
+      "No review is needed, so run git push origin main.",
+    ],
+    ["a comma after prose", "Do not wait for CI, git push origin main."],
+    ["or after prose", "Do not wait for CI or git push origin main."],
+    ["a verb other than run or use", "Do not skip `git push`."],
+    ["a later command without or", "Never run git status before you git push."],
+    ["punctuation after the prohibition word", "No, run git push."],
+    [
+      "a comma-joined prohibition list",
+      "Do not run `git add`, `git commit`, or `git push`.",
+    ],
+    [
+      "a prohibition word inside an earlier quoted operand",
+      'Run `git log --grep="a; never"` `git push`.',
+    ],
+  ])(
+    "rejects a command that a prohibition does not govern: %s",
+    (_label, payload) => {
+      const result = validate("plan", `${payload}\n`);
+      expect(result.status).toBe(BLOCKED);
+      expect(result.stderr).toBe("");
+      expect(result.stdout).toMatch(/^line \d+: git /m);
+    },
+  );
+  test.each([
+    [
       "a later command on the same line",
       "Run `git status; git push origin main`.",
     ],
@@ -76,6 +105,8 @@ describe("execution-plan action boundary", () => {
     ],
     ["a backticked command without a prohibition", "Run `git push`."],
     ["a sentence beginning with Now", "Now run git push."],
+    ["a subcommand wrapped in markup", "Run **git push**."],
+    ["a capitalized command", "Run `Git Push`."],
   ])("rejects forbidden commands in %s", (_label, payload) => {
     const result = validate("plan", `${payload}\n`);
     expect(result.status).toBe(BLOCKED);
@@ -93,6 +124,11 @@ describe("execution-plan action boundary", () => {
     ],
     ["or-joined prohibition", "Do not run git add or git commit."],
     ["bulleted prohibition", "- Never run `git push`."],
+    [
+      "a separator inside an earlier quoted operand",
+      'Never run `git commit -m "a and b"` or `git push`.',
+    ],
+    ["an emphasized prohibition", "**Do not** run `git push`."],
   ])("accepts %s in an execution plan", (_label, payload) => {
     const result = validate("plan", `${payload}\n`);
     expect(result.status).toBe(SUCCESS);
