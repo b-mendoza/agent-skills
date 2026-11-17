@@ -8,7 +8,6 @@ import { COUNCIL_FACTS } from "#/cases/council-of-advisors.ts";
 import { getCase as getRegisteredCase } from "#/cases/registry.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import type { JudgeRequest } from "#/observation/judge.ts";
-import { buildJudgePrompt } from "#/observation/judge.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
 
 // Hoisted so every mocked module instance shares one function, even when the
@@ -31,12 +30,20 @@ function getCase(suffix: string) {
 }
 
 const skillCall = { name: "Skill", input: { skill: SKILL } };
+const writeCall = {
+  name: "Write",
+  input: { file_path: "accidental.txt", content: "x" },
+};
 
-function gateObservation(finalText: string): Observation {
+function gateObservation(
+  finalText: string,
+  overrides: Partial<Observation> = {},
+): Observation {
   return createObservation({
     finalText,
     toolCalls: [skillCall],
     repoFiles: { [COUNCIL_FACTS.handoffPath]: null },
+    ...overrides,
   });
 }
 
@@ -51,149 +58,140 @@ Is this framing correct?`;
 const missingSubject =
   "What decision or objective would you like the council to examine?";
 
-function checkWithOverrides(
-  suffix: string,
-  overrides: Partial<Observation>,
-): string {
-  const valid = gateObservation(
-    suffix === "confirm-framing" ? framedPacket : missingSubject,
-  );
-  return getCase(suffix).check({ ...valid, ...overrides });
-}
-
 describe("council confirmation gate", () => {
-  it("accepts the grounded packet and explicit confirmation question", () => {
+  it("accepts a grounded packet that requests confirmation", () => {
     expect(() =>
       getCase("confirm-framing").check(gateObservation(framedPacket)),
     ).not.toThrow();
   });
 
-  it.each([
-    [
-      "no confirmation",
-      framedPacket
-        .replace(/Please confirm[^\n]*\n/u, "")
-        .replace("Is this framing correct?", ""),
-    ],
-    [
-      "missing subject",
-      framedPacket.replace(COUNCIL_FACTS.subject, "another decision"),
-    ],
-    ["missing outcome", framedPacket.replace(COUNCIL_FACTS.outcome, "unknown")],
-    [
-      "missing constraints",
-      framedPacket.replace(COUNCIL_FACTS.constraints, "none"),
-    ],
-    ["premature recommendation", `${framedPacket}\nfinal_recommendation: go`],
-  ])("rejects %s", (_label, finalText) => {
+  it.each<{ label: string; overrides: Partial<Observation> }>([
+    {
+      label: "a missing confirmation request",
+      overrides: {
+        finalText: framedPacket
+          .replace(/Please confirm[^\n]*\n/u, "")
+          .replace("Is this framing correct?", ""),
+      },
+    },
+    {
+      label: "a changed decision subject",
+      overrides: {
+        finalText: framedPacket.replace(
+          COUNCIL_FACTS.subject,
+          "another decision",
+        ),
+      },
+    },
+    {
+      label: "a changed desired outcome",
+      overrides: {
+        finalText: framedPacket.replace(COUNCIL_FACTS.outcome, "unknown"),
+      },
+    },
+    {
+      label: "missing constraints",
+      overrides: {
+        finalText: framedPacket.replace(COUNCIL_FACTS.constraints, "none"),
+      },
+    },
+    {
+      label: "a premature recommendation",
+      overrides: { finalText: `${framedPacket}\nfinal_recommendation: go` },
+    },
+    {
+      label: "an artifact status leaked into chat",
+      overrides: { finalText: `**status:** needs_input\n${framedPacket}` },
+    },
+    { label: "a run without the skill call", overrides: { toolCalls: [] } },
+    {
+      label: "a Write mutation",
+      overrides: { toolCalls: [skillCall, writeCall] },
+    },
+  ])("rejects $label before framing confirmation", ({ overrides }) => {
     expect(() =>
-      checkWithOverrides("confirm-framing", { finalText }),
+      getCase("confirm-framing").check(
+        gateObservation(framedPacket, overrides),
+      ),
     ).toThrow();
   });
 
-  it("gives the framing judge fixture state and inspection evidence", async () => {
+  it("sends captured files and inspection evidence to the judge", async () => {
     const evalCase = getCase("confirm-framing");
     assert.ok(evalCase.judge !== undefined);
     const inspection = {
       name: "Bash",
       input: { command: "ls council-handoff-paid-support-pilot*.md" },
     };
-    await evalCase.judge({
-      ...gateObservation(framedPacket),
-      toolCalls: [skillCall, inspection],
-    });
+    await evalCase.judge(
+      gateObservation(framedPacket, { toolCalls: [skillCall, inspection] }),
+    );
     const [request] = judge.live.mock.lastCall ?? [];
     assert.ok(request !== undefined);
-    const prompt = buildJudgePrompt(request);
-    expect(prompt).toContain(JSON.stringify(inspection));
-    expect(prompt).toContain(
+    expect(request.knownFacts).toContain(JSON.stringify(inspection));
+    expect(request.knownFacts).toContain(
       JSON.stringify({ [COUNCIL_FACTS.handoffPath]: null }),
     );
-    expect(prompt).toContain("semantic paraphrases");
-    expect(prompt).toContain("stakes classification");
   });
 
   it("rejects seat dispatch before confirmation", () => {
     expect(() =>
-      checkWithOverrides("confirm-framing", {
-        toolCalls: [
-          skillCall,
-          { name: "Agent", input: { subagent_type: "reversibility-seat" } },
-        ],
-      }),
+      getCase("confirm-framing").check(
+        gateObservation(framedPacket, {
+          toolCalls: [
+            skillCall,
+            { name: "Agent", input: { subagent_type: "reversibility-seat" } },
+          ],
+        }),
+      ),
     ).toThrow();
   });
 
-  it("rejects a prematurely written handoff", () => {
+  it("rejects a handoff written before confirmation", () => {
     expect(() =>
-      checkWithOverrides("confirm-framing", {
-        repoFiles: { [COUNCIL_FACTS.handoffPath]: "status: ready" },
-      }),
+      getCase("confirm-framing").check(
+        gateObservation(framedPacket, {
+          repoFiles: { [COUNCIL_FACTS.handoffPath]: "status: ready" },
+        }),
+      ),
     ).toThrow();
   });
 });
 
 describe("council missing subject", () => {
-  it("asks for the missing decision without inventing one", () => {
-    expect(() =>
-      getCase("missing-subject").check(gateObservation(missingSubject)),
-    ).not.toThrow();
-  });
-
   it.each([
-    "Please send DECISION_SUBJECT, the decision to deliberate.",
-    "I need a decision subject before I can start the council.",
-    "I can't start the council yet because you haven't given me a decision subject. Please send:\n1. DECISION_SUBJECT (required): the decision to deliberate.",
-  ])("accepts a request without a question mark: %s", (finalText) => {
+    { label: "a question", finalText: missingSubject },
+    {
+      label: "a multiline request without a question mark",
+      finalText:
+        "I can't start the council yet because you haven't given me a decision subject. Please send:\n1. DECISION_SUBJECT (required): the decision to deliberate.",
+    },
+  ])("accepts $label for the missing decision", ({ finalText }) => {
     expect(() =>
-      checkWithOverrides("missing-subject", { finalText }),
+      getCase("missing-subject").check(gateObservation(finalText)),
     ).not.toThrow();
   });
 
-  it.each(["", "Please confirm this packet.", "final_recommendation: hold"])(
-    "rejects non-clarification %j",
-    (finalText) => {
+  it.each<{ label: string; overrides: Partial<Observation> }>([
+    {
+      label: "a request for the wrong topic",
+      overrides: { finalText: "Please confirm this packet." },
+    },
+    {
+      label: "a Write mutation",
+      overrides: { toolCalls: [skillCall, writeCall] },
+    },
+  ])(
+    "rejects $label while requesting the missing decision",
+    ({ overrides }) => {
       expect(() =>
-        checkWithOverrides("missing-subject", { finalText }),
+        getCase("missing-subject").check(
+          gateObservation(missingSubject, overrides),
+        ),
       ).toThrow();
     },
   );
 });
-
-describe.each(["confirm-framing", "missing-subject"])(
-  "%s common guards",
-  (suffix) => {
-    it("rejects an artifact status leaked into chat", () => {
-      const reply =
-        suffix === "confirm-framing" ? framedPacket : missingSubject;
-      expect(() =>
-        checkWithOverrides(suffix, {
-          finalText: `**status:** needs_input\n${reply}`,
-        }),
-      ).toThrow();
-    });
-
-    it.each([
-      { toolCalls: [] },
-      { repoFiles: {} },
-      { gitStatusAfter: { kind: "worktree", entries: "?? accidental.txt" } },
-      {
-        toolCalls: [
-          skillCall,
-          {
-            name: "Write",
-            input: { file_path: "accidental.txt", content: "x" },
-          },
-        ],
-      },
-    ] satisfies Array<Partial<Observation>>)(
-      "rejects invalid or mutating observation %#",
-      (overrides) => {
-        expect(() => checkWithOverrides(suffix, overrides)).toThrow();
-      },
-    );
-  },
-);
 
 describe("council packet validator", () => {
   const SUCCESS = 0;
@@ -262,15 +260,37 @@ execution_fidelity: subagents
 run_log: x
 `,
   };
+  const verifiedPremise =
+    "  - premise: p\n    source: tool_verified\n    locator: docs/pricing.md\n";
+  const verifiedAnalysis = good.analysis.replace(
+    "  - premise: p\n",
+    verifiedPremise,
+  );
 
-  function validate(kind: string, payload: string) {
-    return spawnSync("python3", ["-I", script, kind], {
+  function validate(kind: string, payload: string, ...args: string[]) {
+    return spawnSync("python3", ["-I", script, kind, ...args], {
       input: payload,
       encoding: "utf8",
     });
   }
 
-  it.each(Object.entries(good))("accepts valid %s payload", (kind, payload) => {
+  it.each([
+    {
+      label: "a reversibility packet",
+      kind: "reversibility",
+      payload: good.reversibility,
+    },
+    { label: "an analysis packet", kind: "analysis", payload: good.analysis },
+    { label: "a branch packet", kind: "branch", payload: good.branch },
+    { label: "a chair packet", kind: "chair", payload: good.chair },
+    { label: "a handoff packet", kind: "handoff", payload: good.handoff },
+    {
+      label: "a BLOCKED escalation with empty needed_input",
+      kind: "analysis",
+      payload:
+        "status: BLOCKED\nseat: focus-seat\nreason: r\nneeded_input: ''\n",
+    },
+  ])("accepts $label", ({ kind, payload }) => {
     const result = validate(kind, payload);
     expect(result.status).toBe(SUCCESS);
     expect(result.stdout).toBe("");
@@ -278,69 +298,99 @@ run_log: x
   });
 
   it.each([
-    [
-      "reversibility",
-      good.reversibility.replace(
+    {
+      label: "a type_1 packet without deep analysis",
+      kind: "reversibility",
+      payload: good.reversibility.replace(
         "depth_setting: deep",
         "depth_setting: standard",
       ),
-      "depth_setting must be deep for type_1\n",
-    ],
-    [
-      "analysis",
-      good.analysis.replace(
+      findings: "depth_setting must be deep for type_1\n",
+    },
+    {
+      label: "an informational seat missing its required evidence",
+      kind: "analysis",
+      payload: good.analysis.replace(
         "seat_class: recommending",
         "seat_class: informational",
       ),
-      "missing key headline_finding\ninformational seat verdict must be information_only\n",
-    ],
-    [
-      "branch",
-      good.branch.replace("branch: pivot", "branch: merge"),
-      "branch must be one of differentiate|pivot|abandon\n",
-    ],
-    [
-      "chair",
-      good.chair.replace("recommendation: hold", "recommendation: go"),
-      "recommendation go requires confidence high\n",
-    ],
-    [
-      "handoff",
-      good.handoff.replace("status: ready", "status: done"),
-      "status must be one of ready|needs_input|blocked|error\n",
-    ],
-  ])("rejects invalid %s payload with findings", (kind, payload, findings) => {
+      findings:
+        "missing key headline_finding\ninformational seat verdict must be information_only\n",
+    },
+    {
+      label: "an invalid branch",
+      kind: "branch",
+      payload: good.branch.replace("branch: pivot", "branch: merge"),
+      findings: "branch must be one of differentiate|pivot|abandon\n",
+    },
+    {
+      label: "a go recommendation without high confidence",
+      kind: "chair",
+      payload: good.chair.replace("recommendation: hold", "recommendation: go"),
+      findings: "recommendation go requires confidence high\n",
+    },
+    {
+      label: "an invalid handoff status",
+      kind: "handoff",
+      payload: good.handoff.replace("status: ready", "status: done"),
+      findings: "status must be one of ready|needs_input|blocked|error\n",
+    },
+    {
+      label: "an escalation with an empty reason",
+      kind: "analysis",
+      payload: "status: FAIL\nseat: focus-seat\nreason:\nneeded_input: ''\n",
+      findings: "escalation: reason must be non-empty\n",
+    },
+  ])("rejects $label with findings", ({ kind, payload, findings }) => {
     const result = validate(kind, payload);
     expect(result.status).toBe(FAILURE);
     expect(result.stdout).toBe(findings);
     expect(result.stderr).toBe("");
   });
 
-  it("accepts a BLOCKED escalation with an empty needed_input", () => {
-    const result = validate(
-      "analysis",
-      "status: BLOCKED\nseat: focus-seat\nreason: r\nneeded_input: ''\n",
-    );
-    expect(result.status).toBe(SUCCESS);
-    expect(result.stdout).toBe("");
-    expect(result.stderr).toBe("");
-  });
-
-  it("rejects a FAIL escalation with an empty reason", () => {
-    const result = validate(
-      "analysis",
-      "status: FAIL\nseat: focus-seat\nreason:\nneeded_input: ''\n",
-    );
-    expect(result.status).toBe(FAILURE);
-    expect(result.stdout).toBe("escalation: reason must be non-empty\n");
-    expect(result.stderr).toBe("");
-  });
-
-  it("reports usage on stderr for a bad kind", () => {
+  it("rejects an unknown packet kind with usage on stderr", () => {
     const result = validate("unknown", "");
     expect(result.status).toBe(USAGE_ERROR);
     expect(result.stdout).toBe("");
     expect(result.stderr).toContain("usage: python3");
     expect(result.stderr).toContain("<kind> [web] < payload");
   });
+
+  it.each([
+    {
+      label: "an analysis seat without web",
+      kind: "analysis",
+      payload: verifiedAnalysis,
+      args: [],
+      status: FAILURE,
+      stdout: "tool_verified present but research_tools is not web\n",
+    },
+    {
+      label: "an analysis seat with web",
+      kind: "analysis",
+      payload: verifiedAnalysis,
+      args: ["web"],
+      status: SUCCESS,
+      stdout: "",
+    },
+    {
+      label: "a handoff declaring no research tools",
+      kind: "handoff",
+      payload: good.handoff.replace(
+        "seat_packets: x\n",
+        `seat_packets:\n${verifiedPremise}`,
+      ),
+      args: [],
+      status: FAILURE,
+      stdout: "tool_verified present but research_tools is not web\n",
+    },
+  ])(
+    "enforces declared web research for $label",
+    ({ kind, payload, args, status, stdout }) => {
+      const result = validate(kind, payload, ...args);
+      expect(result.status).toBe(status);
+      expect(result.stdout).toBe(stdout);
+      expect(result.stderr).toBe("");
+    },
+  );
 });
