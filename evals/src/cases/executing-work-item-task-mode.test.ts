@@ -62,6 +62,13 @@ describe("human-only execution guard", () => {
       expect(result.stdout).toMatch(/^BLOCKED: human-only/);
     },
   );
+  test("blocks a sentinel row followed by a thematic break", () => {
+    const result = check(
+      "## Task 1: Rotate the key\n- **Branch name:** feature/rotate\n\n## Execution Order Summary\n\n| Order | Task | Branch |\n| --- | --- | --- |\n| C | 1 | N/A (human-only) |\n---\nNotes follow.\n",
+    );
+    expect(result.status).toBe(BLOCKED);
+    expect(result.stdout).toMatch(/^BLOCKED: human-only/);
+  });
   test("finds the task column and human sentinel in reordered columns", () => {
     const result = check(
       "## Execution Order Summary\n| Handoff | Task | Branch |\n| --- | --- | --- |\n| N/A (human-only) | Task 1 | feature/stale-code |\n## Task 1: Approval\n**Owner:** Release team\n",
