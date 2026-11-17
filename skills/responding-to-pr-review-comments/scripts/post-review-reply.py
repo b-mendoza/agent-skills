@@ -20,7 +20,10 @@ args = sys.argv[1:]
 if args == ["-h"]:
     print(__doc__)
     sys.exit(0)
-if len(args) != 4 or any(re.fullmatch(r"[1-9][0-9]*", n) is None for n in args[1:3]):
+if (len(args) != 4
+        or re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", args[0]) is None
+        or any(segment in (".", "..") for segment in args[0].split("/"))
+        or any(re.fullmatch(r"[1-9][0-9]*", n) is None for n in args[1:3])):
     print(__doc__, file=sys.stderr)
     sys.exit(64)
 repo, number, root_id, body_file = args
