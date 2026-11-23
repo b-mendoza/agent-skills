@@ -204,3 +204,73 @@ describe("reviewer report consistency", () => {
     },
   );
 });
+
+const regression = implementer.text
+  .replace("IMPLEMENTATION: PASS", "IMPLEMENTATION: FAIL")
+  .replace("Result: pass", "Result: fail")
+  .replace("Exit code: 0", "Exit code: 1");
+const warning = regression.replace(
+  "IMPLEMENTATION: FAIL",
+  "IMPLEMENTATION: PASS_WITH_WARNINGS",
+);
+const preExisting = warning.replace(
+  "Result: fail",
+  "Result: pre-existing failure",
+);
+
+describe("serial validation evidence", () => {
+  test("FAIL requires a recorded exit code", () => {
+    const bad = regression.replace("Exit code: 1", "Exit code: not run");
+    expect(checkReport(bad, implementer.role).status).toBe(FAILURE);
+    expect(checkReport(regression, implementer.role).status).toBe(SUCCESS);
+  });
+});
+
+describe("implementer post-edit validation", () => {
+  test("FAIL reports a contract regression", () => {
+    expect(checkReport(regression, implementer.role)).toMatchObject(
+      validated("FAIL"),
+    );
+  });
+
+  test.each([
+    [
+      "FAIL without failure",
+      regression.replace("Result: fail", "Result: pass"),
+    ],
+    [
+      "FAIL without execution",
+      regression.replace("Command: node --test", "Command: not run"),
+    ],
+    ["warning on regression", warning],
+    [
+      "pre-existing failure after passing baseline",
+      preExisting.replace("checkpoint: pass", "checkpoint: pass; 1 test"),
+    ],
+  ])("rejects %s", (_, payload) => {
+    expect(checkReport(payload, implementer.role).status).toBe(FAILURE);
+  });
+
+  test.each([
+    ["Command: node --test", "Command: not run"],
+    ["Exit code: 1", "Exit code: not run"],
+  ])(
+    "pre-existing failure rejects %s replaced with %s",
+    (oldField, newField) => {
+      const payload = preExisting
+        .replace("checkpoint: pass", "checkpoint: skipped (warning path)")
+        .replace(oldField, newField);
+      expect(checkReport(payload, implementer.role).status).toBe(FAILURE);
+    },
+  );
+
+  test("accepts a failure already present at baseline", () => {
+    const payload = preExisting.replace(
+      "checkpoint: pass",
+      "checkpoint: fail (pre-existing)",
+    );
+    expect(checkReport(payload, implementer.role)).toMatchObject(
+      validated("PASS_WITH_WARNINGS"),
+    );
+  });
+});

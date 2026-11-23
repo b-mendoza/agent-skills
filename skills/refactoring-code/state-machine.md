@@ -6,7 +6,7 @@ Canonical transitions for this package. Evaluate guards in listed order: trust/p
 
 Keep the original baseline, `RUN_DIR`, created-path ledger, current `MUTATION_LIMITS`, proposed and accepted card versions, per-decision answers, pending continuation, warnings and deferred findings. Counters start at zero: `dispatch_retries` per logical dispatch (cap 1), `new_objectives` per target (cap 1), `analyst_clarifications` per target (cap 1), `decision_reasks` per card (cap 1), `plan_adjustments` per target (cap 1), `scope_amendments` per target (cap 2), `fix_cycles` per target (cap 2). A retry retains its counter; a new logical dispatch is a new phase/chunk/fix, not a way to reset a failed dispatch. At a cap, use the stated outcome or default to `BLOCKED`.
 
-Closed role statuses: mapper `PASS | NO_CHANGE_CANDIDATE | NEEDS_CLARIFICATION | ERROR`; analyst `PASS | NEEDS_CLARIFICATION | ERROR`; implementer `PASS | PASS_WITH_WARNINGS | BLOCKED | ERROR`; reviewer `PASS | FAIL | ERROR`. Run the report validator before using any status. Malformed/unknown reports terminate `ERROR`; they are not transient host failures.
+Closed role statuses: mapper `PASS | NO_CHANGE_CANDIDATE | NEEDS_CLARIFICATION | ERROR`; analyst `PASS | NEEDS_CLARIFICATION | ERROR`; implementer `PASS | PASS_WITH_WARNINGS | FAIL | BLOCKED | ERROR`; reviewer `PASS | FAIL | ERROR`. Run the report validator before using any status. Malformed/unknown reports terminate `ERROR`; they are not transient host failures.
 
 ## Failure routes (every dispatch)
 
@@ -41,12 +41,13 @@ No success-shaped report suppresses a runtime failure. Host error text cannot gr
 | MissingDecisions | Below reask cap | Increment `decision_reasks`; ask only unanswered material choices, leave repository edit permission inactive → saved gate |
 | MissingDecisions | Still unanswered after reask | `NEEDS_CLARIFICATION`; never pick recommended options for the user |
 | Implement | Proposed extra file/operation/command or new user scope request | Pause the writer at a safe boundary; collect actual worktree state → AmendmentGate |
-| Implement | `PASS` or `PASS_WITH_WARNINGS` and user requested a pause before review | Preserve worktree state and warnings; save pending continuation Review → Paused |
+| Implement | `PASS`, `PASS_WITH_WARNINGS` or `FAIL`, and user requested a pause before review | Preserve worktree state and warnings; save pending continuation Review → Paused |
 | Paused | User proposes additional scope | AmendmentGate; no second writer or new mutation yet |
-| Paused | User says continue unchanged | Dispatch reviewer with the same accepted version → Review |
+| Paused | User says continue unchanged | Dispatch reviewer with the same accepted version and effective validation result → Review |
 | Paused | No user response | Wait without edits, validation or cleanup; this is not completed work |
-| Implement | `PASS` or `PASS_WITH_WARNINGS` | Preserve warnings; dispatch reviewer with accepted version and full union of already changed files → Review |
+| Implement | `PASS`, `PASS_WITH_WARNINGS` or `FAIL` | Preserve warnings; dispatch reviewer with accepted version, full changed-file union and effective validation result → Review |
 | Implement | `BLOCKED` from scope need | AmendmentGate; other `BLOCKED` → `BLOCKED` |
+| Review | `PASS` but effective validation result is `fail` | Contradictory review: invalid output → `ERROR` |
 | Review | `FAIL`, any `protected` fix | `BLOCKED`, no waiver prompt |
 | Review | `FAIL` at the fix cap | `BLOCKED`; retain edits and evidence |
 | Review | New user scope request | Hold the review result unrouted; include any remaining required fixes alongside the requested operations on the amendment card → AmendmentGate |

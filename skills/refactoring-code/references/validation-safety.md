@@ -38,7 +38,7 @@ Validation evidence must include:
 
 Zero tests executed is `not run` even when exit code is 0. A refactor with any validation warning can complete only as `PASS_WITH_WARNINGS`, never bare `PASS`.
 
-Pre-existing failures must be identified by evidence from before the refactor (the baseline checkpoint when one ran) or by a rerun that demonstrates the same failure is unrelated. If that evidence is missing, report the validation result as warning or fail, not pass.
+Report `pre-existing failure` only if baseline evidence identifies the same failure or, when the checkpoint was skipped, a rerun demonstrates it is unrelated. For any other post-edit failure, including one after a passing checkpoint, report `Result: fail`.
 
 ## Claim-to-Evidence Rule
 

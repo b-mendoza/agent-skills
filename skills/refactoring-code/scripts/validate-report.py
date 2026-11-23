@@ -11,7 +11,7 @@ MAX_FINDINGS = 12
 STATUSES = {
     "behavior-mapper": {"PASS", "NO_CHANGE_CANDIDATE", "NEEDS_CLARIFICATION", "ERROR"},
     "chunk-analyst": {"PASS", "NEEDS_CLARIFICATION", "ERROR"},
-    "refactor-implementer": {"PASS", "PASS_WITH_WARNINGS", "BLOCKED", "ERROR"},
+    "refactor-implementer": {"PASS", "PASS_WITH_WARNINGS", "FAIL", "BLOCKED", "ERROR"},
     "refactor-reviewer": {"PASS", "FAIL", "ERROR"},
 }
 PREFIXES = {
@@ -170,6 +170,16 @@ def text_status(role, text):
             require(fields["Exit code"] == "0", "PASS contradicts validation Exit code: " + fields["Exit code"])
             require(fields["Safety class"] != "warning path", "PASS contradicts validation Safety class: warning path")
             require(fields["Command"] != "not run" and fields["Coverage evidence"] != "not run", "PASS needs command and coverage")
+        elif status == "FAIL":
+            require(fields["Result"] == "fail", "FAIL needs Result: fail")
+            require(fields["Command"] != "not run", "FAIL needs an executed command")
+            require(fields["Exit code"] != "not run", "FAIL needs an exit code")
+        elif status == "PASS_WITH_WARNINGS":
+            require(fields["Result"] != "fail", "PASS_WITH_WARNINGS contradicts Result: fail")
+        if fields["Result"] == "pre-existing failure":
+            require(fields["Command"] != "not run", "pre-existing failure needs an executed command")
+            require(fields["Exit code"] != "not run", "pre-existing failure needs an exit code")
+            require(not fields["Baseline checkpoint"].startswith("pass"), "pre-existing failure contradicts passing baseline")
     if role == "behavior-mapper" and status == "PASS":
         chunks = re.findall(r"^- .+", fields["Proposed chunks"], re.MULTILINE)
         require(2 <= len(chunks) <= 5, "PASS requires 2-5 analysis chunks")
