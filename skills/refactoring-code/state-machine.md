@@ -20,8 +20,21 @@ No success-shaped report suppresses a runtime failure. Host error text cannot gr
 
 ## Transitions
 
+After validation, apply the bounded checks in [`references/claims-and-disputes.md`](./references/claims-and-disputes.md) before acting on claims. Apply the Implement check row first if relevant, then the Any dispute guard before executing the ordinary status route. Process each disputed point once; resume the saved route only when all are resolved.
+
+In dispute routes, “ask the user” means ask one question with both positions and the evidence or failure reason. Apply the answer (a card change requires PlanGate before approval or AmendmentGate afterward), then resume the saved route; no answer → `NEEDS_CLARIFICATION`.
+
+Before executing or resuming a route, remove any reviewer-required fix rejected by C3, a dispute decision or the user; record the resolution. Once all disputed points are settled, re-evaluate the saved route using only the remaining fixes. If rejection leaves none, redispatch the reviewer instead → Review (increment `fix_cycles` on dispatch; at the cap stop `BLOCKED`). Pass all recorded resolutions as binding input on every subsequent reviewer dispatch.
+
 | State | Guard / event | Action → next |
 | --- | --- | --- |
+| Implement | Validated `PASS`, `PASS_WITH_WARNINGS` or `FAIL` | Run C1 and applicable C2 once before pause or review. Use the measured union. Classify a refuted C2 under [validation safety](./references/validation-safety.md) for routing and reviewer input: no execution or no target coverage → `not run` with a warning; failure identified by the baseline → `pre-existing failure` with a warning; only an executed, unexplained failure → `fail` on the implementer `FAIL` route |
+| Any | Two validated reports conflict on a route-deciding claim, or C3 left a material claim `unchecked` | Save the status route without executing it; classify each disputed point → Dispute |
+| Dispute | C3 confirms the point | Record it; submit any card change to PlanGate or AmendmentGate, otherwise resume the saved route |
+| Dispute | C3 refutes the point | Record the evidence and resume the saved route; a measured fact takes precedence over agreement |
+| Dispute | Scope or product intent | Before approval, carry a numbered choice onto the card for PlanGate; after approval, ask the user |
+| Dispute | Material design or risk | Ask the user |
+| Dispute | Non-material point | Orchestrator accepts or rejects it, records both positions for the handoff and resumes the saved route |
 | Intake | Missing/vague target | Ask only which file/path to refactor; defer optional-input questions and repo-scan offers. One re-ask at most; absent answer → `NEEDS_CLARIFICATION`; answered → Intake |
 | Intake | Protected change requested | Apply [the boundary](./references/protected-surfaces.md) to the whole request. Explain each clear violation (including an E2 test removal described as unique or without a retained equivalent) → `BLOCKED`, even if another item is a candidate. Ambiguous intent → `NEEDS_CLARIFICATION`. Otherwise carry a requested test or internal-export removal as an exception candidate through valid-target setup → Map |
 | Intake | Valid target or target group (count the group as one target for all counters) | Establish ignored run ownership and empty repository mutation set → Map; failure → `BLOCKED` |
@@ -44,7 +57,7 @@ No success-shaped report suppresses a runtime failure. Host error text cannot gr
 | Implement | Proposed extra file/operation/command or new user scope request | Pause the writer at a safe boundary; collect actual worktree state → AmendmentGate |
 | Implement | `PASS`, `PASS_WITH_WARNINGS` or `FAIL`, and user requested a pause before review | Preserve worktree state and warnings; save pending continuation Review → Paused |
 | Paused | User proposes additional scope | AmendmentGate; no second writer or new mutation yet |
-| Paused | User says continue unchanged | Dispatch reviewer with the same accepted version and effective validation result → Review |
+| Paused | User says continue unchanged | Dispatch reviewer with the same accepted version, measured union and effective validation result → Review |
 | Paused | No user response | Wait without edits, validation or cleanup; this is not completed work |
 | Implement | `PASS`, `PASS_WITH_WARNINGS` or `FAIL` | Preserve warnings; dispatch reviewer with accepted version, full changed-file union and effective validation result → Review |
 | Implement | `BLOCKED` from scope need | AmendmentGate; other `BLOCKED` → `BLOCKED` |
