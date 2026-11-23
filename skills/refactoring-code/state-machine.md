@@ -47,11 +47,11 @@ No success-shaped report suppresses a runtime failure. Host error text cannot gr
 | Paused | No user response | Wait without edits, validation or cleanup; this is not completed work |
 | Implement | `PASS` or `PASS_WITH_WARNINGS` | Preserve warnings; dispatch reviewer with accepted version and full union of already changed files → Review |
 | Implement | `BLOCKED` from scope need | AmendmentGate; other `BLOCKED` → `BLOCKED` |
+| Review | `FAIL`, any `protected` fix | `BLOCKED`, no waiver prompt |
+| Review | `FAIL` at the fix cap | `BLOCKED`; retain edits and evidence |
 | Review | `PASS`, both verdicts pass | `PASS` or `PASS_WITH_WARNINGS` depending on accumulated warnings |
-| Review | `FAIL`, required fix crosses protected boundary | `BLOCKED`, no waiver prompt |
-| Review | `FAIL`, required fix outside accepted map | AmendmentGate with pending continuation Fix |
-| Review | `FAIL`, in-scope required fixes and below cap | Increment `fix_cycles`; dispatch implementer with intersection of accepted map and required fixes → Implement |
-| Review | `FAIL` at cap | `BLOCKED`; retain edits and evidence |
+| Review | `FAIL` below the fix cap, any `out-of-map` fix | AmendmentGate with pending continuation Fix |
+| Review | `FAIL` below the fix cap, all fixes `in-map` | Increment `fix_cycles`; dispatch implementer with intersection of accepted map and required fixes → Implement |
 | AmendmentGate | AUTO_APPROVE, or a protected change outside E1 in [the boundary](./references/protected-surfaces.md) | `BLOCKED` |
 | AmendmentGate | Below amendment cap | Read-only inspect added files, record their pre-edit contents and behavior as a supplement to (never a reset of) the original baseline. Present next card version: old and added/removed paths, exact operations/commands, retained work, baseline and risks; increment `scope_amendments` → AmendmentDecision |
 | AmendmentDecision | Merely naming a file, partial reply or request to proceed | Not approval; use MissingDecisions with continuation AmendmentDecision, then stop if unresolved |

@@ -113,8 +113,17 @@ def validate_review(status, fields):
     require(all(value in allowed for value in verdicts), "invalid reviewer verdict")
     if status == "ERROR":
         return
+    fixes = fields["Required fixes"]
+    no_fixes = fixes.removeprefix("- ") == "none"
+    material_finding = re.search(r"^[ \t]*(?:-[ \t]+)?(?:Critical|Important)\b", fields["Findings"], re.MULTILINE)
     if status == "PASS":
         require(verdicts == ["pass", "pass"], "PASS contradicts reviewer verdicts")
+    else:
+        require(not no_fixes, "FAIL needs required fixes")
+        require("fail" in verdicts or material_finding, "FAIL needs a failed verdict or a Critical or Important finding")
+        for line in fixes.splitlines():
+            require(re.fullmatch(r"- (Critical|Important); (in-map|out-of-map|protected); [^;\s][^;]*; \S.*", line),
+                    "invalid required fix: " + line)
 
 
 def text_status(role, text):
