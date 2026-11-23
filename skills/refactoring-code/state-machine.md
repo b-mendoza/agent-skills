@@ -49,14 +49,15 @@ No success-shaped report suppresses a runtime failure. Host error text cannot gr
 | Implement | `BLOCKED` from scope need | AmendmentGate; other `BLOCKED` → `BLOCKED` |
 | Review | `FAIL`, any `protected` fix | `BLOCKED`, no waiver prompt |
 | Review | `FAIL` at the fix cap | `BLOCKED`; retain edits and evidence |
+| Review | New user scope request | Hold the review result unrouted; include any remaining required fixes alongside the requested operations on the amendment card → AmendmentGate |
 | Review | `PASS`, both verdicts pass | `PASS` or `PASS_WITH_WARNINGS` depending on accumulated warnings |
 | Review | `FAIL` below the fix cap, any `out-of-map` fix | AmendmentGate with pending continuation Fix |
 | Review | `FAIL` below the fix cap, all fixes `in-map` | Increment `fix_cycles`; dispatch implementer with intersection of accepted map and required fixes → Implement |
 | AmendmentGate | AUTO_APPROVE, or a protected change outside E1 in [the boundary](./references/protected-surfaces.md) | `BLOCKED` |
 | AmendmentGate | Below amendment cap | Read-only inspect added files, record their pre-edit contents and behavior as a supplement to (never a reset of) the original baseline. Present next card version: old and added/removed paths, exact operations/commands, retained work, baseline and risks; increment `scope_amendments` → AmendmentDecision |
 | AmendmentDecision | Merely naming a file, partial reply or request to proceed | Not approval; use MissingDecisions with continuation AmendmentDecision, then stop if unresolved |
-| AmendmentDecision | Decline | `BLOCKED`, preserve accepted edits |
-| AmendmentDecision | Displayed version accepted under decision rules | Replace accepted version and `MUTATION_LIMITS`; pass both unchanged to implementer and reviewer; for pending Fix, increment `fix_cycles` on dispatch → Implement |
+| AmendmentDecision | Decline | If holding a review result, resume its normal Review route without the declined request; otherwise `BLOCKED`, preserve accepted edits |
+| AmendmentDecision | Displayed version accepted under decision rules | Replace accepted version and `MUTATION_LIMITS`; pass both unchanged to implementer and reviewer. For a held `FAIL` with required fixes, stop `BLOCKED` for a protected fix or at the fix cap; otherwise send the fixes and approved new operations together as one pending Fix. Increment `fix_cycles` on dispatch for a pending Fix only. Dispatch serial implementer → Implement, then Review |
 | Any terminal | Always | Preserve requested deliverables; clean only ledgered ephemeral files; report outcome and remaining decision |
 
 `MissingDecisions` returns to its saved gate, not automatically to PlanGate. Each new card resets its per-card `decision_reasks`; an unchanged card never resets it. An adjusted card still obeys the target's adjustment/amendment cap.
