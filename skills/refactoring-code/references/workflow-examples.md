@@ -45,11 +45,10 @@ Validation contract:
 Non-goals:
 - Preserve all protected surfaces per `references/protected-surfaces.md`.
 
-Decision ids: D-code = steps and file map; D-validation = the safe command above.
-Decision: approve this card, adjust, or decline. If other choices are listed
-(size waivers, non-safe commands, boundary entries, deferred dimensions), answer
-those ids too. “Approve code only” leaves them unanswered; no edits or undecided
-commands run until resolved. See state-machine.md for partial-answer and amendment routes.
+Numbered card choices:
+1. D-code: steps and file map.
+2. D-validation: the safe command above.
+Decision: approve card v1 (D-code, D-validation), adjust, or decline?
 ```
 
 ## Failure Cleanup Block

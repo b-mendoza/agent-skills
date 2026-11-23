@@ -37,8 +37,8 @@ No success-shaped report suppresses a runtime failure. Host error text cannot gr
 | PlanGate | Adjust, below cap | Increment `plan_adjustments`, synthesize a new version from same reports → PlanGate |
 | PlanGate | AUTO_APPROVE eligible | Accept exact card and all its safe choices → Implement |
 | PlanGate | AUTO_APPROVE ineligible | `NEEDS_CLARIFICATION`, not implicit waiver/command consent |
-| PlanGate | Human reply | Apply the decision rules below; complete accepted card → Implement; incomplete → MissingDecisions |
-| MissingDecisions | Below reask cap | Increment `decision_reasks`; ask only unanswered material choices, leave repository edit permission inactive → PlanGate |
+| PlanGate | Human reply | Apply the decision rules below; complete accepted card → Implement; if incomplete, save PlanGate → MissingDecisions |
+| MissingDecisions | Below reask cap | Increment `decision_reasks`; ask only unanswered material choices, leave repository edit permission inactive → saved gate |
 | MissingDecisions | Still unanswered after reask | `NEEDS_CLARIFICATION`; never pick recommended options for the user |
 | Implement | Proposed extra file/operation/command or new user scope request | Pause the writer at a safe boundary; collect actual worktree state → AmendmentGate |
 | Implement | `PASS` or `PASS_WITH_WARNINGS` and user requested a pause before review | Preserve worktree state and warnings; save pending continuation Review → Paused |
@@ -56,14 +56,14 @@ No success-shaped report suppresses a runtime failure. Host error text cannot gr
 | AmendmentGate | Below amendment cap | Read-only inspect added files, record their pre-edit contents and behavior as a supplement to (never a reset of) the original baseline. Present next card version: old and added/removed paths, exact operations/commands, retained work, baseline and risks; increment `scope_amendments` → AmendmentDecision |
 | AmendmentDecision | Merely naming a file, partial reply or request to proceed | Not approval; use MissingDecisions with continuation AmendmentDecision, then stop if unresolved |
 | AmendmentDecision | Decline | `BLOCKED`, preserve accepted edits |
-| AmendmentDecision | Explicit approval of displayed version and all material choices | Replace accepted version and `MUTATION_LIMITS`; pass both unchanged to implementer and reviewer; pending Fix increments its fix counter only on dispatch → Implement |
+| AmendmentDecision | Displayed version accepted under decision rules | Replace accepted version and `MUTATION_LIMITS`; pass both unchanged to implementer and reviewer; for pending Fix, increment `fix_cycles` on dispatch → Implement |
 | Any terminal | Always | Preserve requested deliverables; clean only ledgered ephemeral files; report outcome and remaining decision |
 
 `MissingDecisions` returns to its saved gate, not automatically to PlanGate. Each new card resets its per-card `decision_reasks`; an unchanged card never resets it. An adjusted card still obeys the target's adjustment/amendment cap.
 
 ## Decision rules
 
-Cards number every material choice: code steps/file map, each named size waiver, each exact non-safe command, each boundary-config preservation update, and acceptance of any unanalyzed/deferred dimension. Record which displayed version the answer covers. An unqualified “approve this card” after display approves all listed choices; “approve code cuts only” does not approve other choices. A request, recommendation, target name, initial pre-approval, or silence is not an answer to a separate choice.
+Cards number every material choice: code steps/file map, each named size waiver, the validation contract, each exact non-safe command, each boundary-config preservation update, and acceptance of any unanalyzed/deferred dimension. List the covered decision ids in the approval prompt and record the displayed version with the answer. Unqualified approval accepts every numbered choice on that version. A qualified reply such as “approve code cuts only” leaves the other choices unanswered → MissingDecisions. A request, recommendation, target name, initial pre-approval, or silence is not approval.
 
 If a command or waiver is declined, revise to an explicit no-command warning path or compliant smaller plan and show the new card before accepting it; do not silently replace the contract. Until material choices are resolved, execute neither the edits nor the undecided commands. A post-approval request for another file is an amendment proposal, not approval of an unseen amended map. This rule applies outside fix cycles too.
 
