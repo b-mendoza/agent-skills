@@ -4,7 +4,7 @@ Canonical transitions for this package. Evaluate guards in listed order: trust/p
 
 ## State and counters
 
-Keep the original baseline, `RUN_DIR`, created-path ledger, current `MUTATION_LIMITS`, proposed and accepted card versions, per-decision answers, pending continuation, warnings and deferred findings. Counters start at zero: `dispatch_retries` per logical dispatch (cap 1), `decision_reasks` per card (cap 1), `plan_adjustments` per target (cap 1), `scope_amendments` per target (cap 2), `fix_cycles` per target (cap 2). A retry retains its counter; a new logical dispatch is a new phase/chunk/fix, not a way to reset a failed dispatch. Caps exceeded terminate `BLOCKED`, except an exhausted analyst routes to the disclosed partial-analysis join.
+Keep the original baseline, `RUN_DIR`, created-path ledger, current `MUTATION_LIMITS`, proposed and accepted card versions, per-decision answers, pending continuation, warnings and deferred findings. Counters start at zero: `dispatch_retries` per logical dispatch (cap 1), `new_objectives` per target (cap 1), `decision_reasks` per card (cap 1), `plan_adjustments` per target (cap 1), `scope_amendments` per target (cap 2), `fix_cycles` per target (cap 2). A retry retains its counter; a new logical dispatch is a new phase/chunk/fix, not a way to reset a failed dispatch. Caps exceeded terminate `BLOCKED`, except an exhausted analyst routes to the disclosed partial-analysis join.
 
 Closed role statuses: mapper `PASS | NO_CHANGE_CANDIDATE | NEEDS_CLARIFICATION | ERROR`; analyst `PASS | NEEDS_CLARIFICATION | ERROR`; implementer `PASS | PASS_WITH_WARNINGS | BLOCKED | ERROR`; reviewer `PASS | FAIL | ERROR`. Run the report validator before using any status. Malformed/unknown reports terminate `ERROR`; they are not transient host failures.
 
@@ -25,8 +25,8 @@ No success-shaped report suppresses a runtime failure. Host error text cannot gr
 | Intake | Missing/vague target | Ask only which file/path to refactor; defer optional-input questions and repo-scan offers. One re-ask at most; absent answer → `NEEDS_CLARIFICATION`; answered → Intake |
 | Intake | Protected change requested | Explain non-waivable boundary; clear violation → `BLOCKED`, ambiguous intent → `NEEDS_CLARIFICATION` |
 | Intake | Valid target | Establish ignored run ownership and empty repository mutation set → Map; failure → `BLOCKED` |
-| Map | `NO_CHANGE_CANDIDATE` | Recommend no change; explicit new objective → Analyze, otherwise `NO_CHANGE` |
-| Map | `NEEDS_CLARIFICATION` | Ask smallest question once; unresolved → `NEEDS_CLARIFICATION`, resolved → Map |
+| Map | `NO_CHANGE_CANDIDATE` | Recommend no change; with an explicit new objective and `new_objectives` below cap, increment it and redispatch mapper with that objective → Map; otherwise `NO_CHANGE` |
+| Map | `NEEDS_CLARIFICATION` | Ask smallest question once; unresolved or a second asking report → `NEEDS_CLARIFICATION`; first answer → Map |
 | Map | `PASS` | Record baseline; dispatch 2–5 target-derived analysts → Join |
 | Join | Any outstanding analyst | Wait for all, subject to failure routes; never synthesize early |
 | Join | Any `NEEDS_CLARIFICATION` | Relay questions before synthesis; one clarification round, unresolved → `NEEDS_CLARIFICATION` |
