@@ -24,7 +24,7 @@ The orchestrator may select validation only from:
 
 The implementer may run only the selected contract. If the selected command's safety class changes on re-check, stop `BLOCKED` and ask the orchestrator to re-gate.
 
-When the contract command is classed `safe`, the implementer runs it once before any edit as a baseline checkpoint. A baseline failure is pre-existing evidence for the pre-existing-failure rule below — record it and continue; do not treat it as a stop or attribute it to the refactor.
+When the contract command is classed `safe`, the implementer (the orchestrator for parallel units) runs it once before any edit as a baseline checkpoint. A baseline failure is pre-existing evidence for the pre-existing-failure rule below — record it and continue; do not treat it as a stop or attribute it to the refactor.
 
 ## Evidence Requirements
 

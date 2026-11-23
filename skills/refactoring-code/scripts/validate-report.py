@@ -84,7 +84,7 @@ REQUIRED_FIELDS = {
         "User command", "Discovered candidates", "File sizes", "Proposed chunks", "Risk notes", "Pushback",
     ),
     "refactor-implementer": (
-        "Fix cycle", "Changes made", "Per-file disposition", "File sizes after change",
+        "Unit", "Fix cycle", "Changes made", "Per-file disposition", "File sizes after change",
         "Net lines", "Baseline checkpoint", "Validation evidence", "Command", "Safety class",
         "Exit code", "Coverage evidence", "Result", "Warnings", "Deviations", "Reviewer focus",
         "Risk notes", "Pushback",
@@ -211,7 +211,14 @@ def text_status(role, text):
         require(fields["Safety class"] in ("safe", "state-mutating", "destructive", "warning path"), "invalid safety class")
         require(fields["Result"] in ("pass", "fail", "not run", "pre-existing failure"), "invalid validation result")
         require(bool(re.fullmatch(r"-?\d+|not run", fields["Exit code"])), "invalid exit code")
-        if status == "PASS":
+        unit = fields["Unit"]
+        require(unit in ("all", "integration", "U1", "U2", "U3", "U4"), "invalid Unit")
+        require(re.match(r"^[ \t]*(?:-[ \t]+)?Unit:", lines[1]), "Unit must follow implementation status")
+        if unit not in ("all", "integration"):
+            require(status in ("PASS", "BLOCKED", "ERROR"), "invalid unit status")
+            for field in ("Command", "Exit code", "Coverage evidence", "Result"):
+                require(fields[field] == "not run", "unit requires not run: " + field)
+        elif status == "PASS":
             require(fields["Result"] == "pass", "PASS contradicts validation Result: " + fields["Result"])
             require(fields["Warnings"].removeprefix("- ") == "none", "PASS has warnings")
         elif status == "FAIL":

@@ -233,6 +233,71 @@ describe("reviewer report consistency", () => {
   );
 });
 
+const unitReport = implementer.text
+  .replace("Unit: all", "Unit: U2")
+  .replace("Command: node --test", "Command: not run")
+  .replace("Exit code: 0", "Exit code: not run")
+  .replace("Coverage evidence: 1 test", "Coverage evidence: not run")
+  .replace("Result: pass", "Result: not run");
+
+describe("parallel implementer contract", () => {
+  test.each(["U1", "U2", "U3", "U4"])("accepts %s without validation", (id) => {
+    const payload = unitReport.replace("U2", id);
+    expect(checkReport(payload, implementer.role)).toMatchObject(
+      validated("PASS"),
+    );
+  });
+
+  test.each([
+    ["BLOCKED", "Blocked reason: caller needs a rename"],
+    ["ERROR", "Error detail: write failed"],
+  ])("accepts unit %s with stop evidence", (status, detail) => {
+    const payload = `${unitReport.replace("PASS", status)}\n${detail}`;
+    expect(checkReport(payload, implementer.role)).toMatchObject(
+      validated(status),
+    );
+  });
+
+  test.each([
+    ["Command: not run", "Command: node --test"],
+    ["Exit code: not run", "Exit code: 0"],
+    ["Coverage evidence: not run", "Coverage evidence: 1 test"],
+    ["Result: not run", "Result: pass"],
+    ["IMPLEMENTATION: PASS", "IMPLEMENTATION: PASS_WITH_WARNINGS"],
+    ["IMPLEMENTATION: PASS", "IMPLEMENTATION: FAIL"],
+    ["Unit: U2", "Unit: U5"],
+    ["Unit: U2\n", ""],
+  ])("rejects replacing %s with %j", (before, after) => {
+    const payload = unitReport.replace(before, after);
+    expect(checkReport(payload, implementer.role).status).toBe(FAILURE);
+  });
+
+  test("a path named Unit stays distinct from the unit header", () => {
+    const payload = unitReport
+      .replace("Unit: U2", "- Unit: U2")
+      .replaceAll("src/a.js", "./Unit");
+    expect(checkReport(payload, implementer.role)).toMatchObject(
+      validated("PASS"),
+    );
+  });
+
+  test("a content bullet cannot supply the missing unit header", () => {
+    const payload = unitReport
+      .replace("Unit: U2\n", "")
+      .replace("Risk notes: none", "Risk notes: one path\n- Unit: U2");
+    expect(checkReport(payload, implementer.role).status).toBe(FAILURE);
+  });
+
+  test("integration PASS still requires a passing validation result", () => {
+    const payload = implementer.text.replace("Unit: all", "Unit: integration");
+    expect(checkReport(payload, implementer.role)).toMatchObject(
+      validated("PASS"),
+    );
+    const invalid = payload.replace("Result: pass", "Result: not run");
+    expect(checkReport(invalid, implementer.role).status).toBe(FAILURE);
+  });
+});
+
 const regression = implementer.text
   .replace("IMPLEMENTATION: PASS", "IMPLEMENTATION: FAIL")
   .replace("Result: pass", "Result: fail")
@@ -246,8 +311,8 @@ const preExisting = warning.replace(
   "Result: pre-existing failure",
 );
 
-describe("serial validation evidence", () => {
-  const passing = implementer.text;
+describe.each(["all", "integration"])("%s validation evidence", (unit) => {
+  const passing = implementer.text.replace("Unit: all", `Unit: ${unit}`);
   test.each([
     ["PASS", ""],
     ["PASS_WITH_WARNINGS", ""],
@@ -274,9 +339,10 @@ describe("serial validation evidence", () => {
   });
 
   test("FAIL requires a recorded exit code", () => {
-    const bad = regression.replace("Exit code: 1", "Exit code: not run");
+    const good = regression.replace("Unit: all", `Unit: ${unit}`);
+    const bad = good.replace("Exit code: 1", "Exit code: not run");
     expect(checkReport(bad, implementer.role).status).toBe(FAILURE);
-    expect(checkReport(regression, implementer.role).status).toBe(SUCCESS);
+    expect(checkReport(good, implementer.role).status).toBe(SUCCESS);
   });
 
   test.each([
