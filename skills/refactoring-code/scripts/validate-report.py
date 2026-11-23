@@ -125,9 +125,10 @@ def text_status(role, text):
         require(bool(fields[name]) or (
             name in PARENT_FIELDS[role] and remainder.startswith("- ")
         ), "empty field: " + name)
-    for name in CONDITIONAL_FIELDS.values():
+    for stop, name in CONDITIONAL_FIELDS.items():
         if name in fields:
             require(bool(fields[name]), "empty field: " + name)
+            require(status == stop, f"{name} is only for {stop}")
     if status in CONDITIONAL_FIELDS:
         name = CONDITIONAL_FIELDS[status]
         require(bool(fields.get(name)), "missing field: " + name)
