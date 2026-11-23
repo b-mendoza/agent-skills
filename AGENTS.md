@@ -34,22 +34,23 @@ The user's instructions are a baseline to build on, not a spec to execute verbat
 
 Follow this section only in the Claude Code harness. The `Agent` tool and its parameters belong to that harness.
 
-The orchestrator selects a model and an effort level for each child task. Match the model to the task difficulty. When the difficulty is not clear, start with `gpt-6.2-astra`.
+The orchestrator selects a model and an effort level for each child task. Match the model to the task difficulty. When the difficulty is not clear, start with `gpt-6.2-sol`.
 
-|                   | `claude-haiku-5-5`                                       | `gpt-6.2-astra`                                                      | `claude-opus-5-5`                                                                                            | `claude-fable-5-2`                                                                                                              |
-| ----------------- | -------------------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------- |
-| **Use for**       | High-volume work with results that are easy to check     | Everyday work                                                        | Higher-difficulty work                                                                                       | Very complex work                                                                                                               |
-| **Typical tasks** | File searches, log reads, summaries, and data extraction | Well-scoped bug fixes, features built to a spec, and routine reviews | Hard debugging, features across many files, performance work, and refactors or migrations that follow a plan | Architecture plans, refactor and migration plans, design reviews, deep research, and tasks that `claude-opus-5-5` did not solve |
-| **Move up when**  | The task needs a code edit or a judgment call            | `high` effort does not solve the task                                | A `claude-fable-5-2` condition is true                                                                       | No model is higher. Report the block to the user.                                                                               |
+|                   | `claude-haiku-5-5`                                       | `gpt-6.2-sol`                                                        | `gpt-6.2-astra`                                                                                              | `claude-fable-5-2`                                                                                                            |
+| ----------------- | -------------------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| **Use for**       | High-volume work with results that are easy to check     | Everyday work                                                        | Higher-difficulty work                                                                                       | Very complex work                                                                                                             |
+| **Typical tasks** | File searches, log reads, summaries, and data extraction | Well-scoped bug fixes, features built to a spec, and routine reviews | Hard debugging, features across many files, performance work, and refactors or migrations that follow a plan | Architecture plans, refactor and migration plans, design reviews, deep research, and tasks that `gpt-6.2-astra` did not solve |
+| **Move up when**  | The task needs a code edit or a judgment call            | `high` effort does not solve the task                                | A `claude-fable-5-2` condition is true                                                                       | No model is higher. Report the block to the user.                                                                             |
 
-When the harness does not offer `claude-haiku-5-5`, use `gpt-6.2-astra` at `low` effort.
+When the harness does not offer `claude-haiku-5-5`, use `gpt-6.2-sol` at `low` effort.
 
 ### Dispatch
 
 - Run each model in the table in the Claude Code harness. Use the native `Agent` tool for these models, not `delegate_task`.
-- For `claude-haiku-5-5`, `claude-opus-5-5`, and `claude-fable-5-2`, set the `model` parameter to `haiku`, `opus`, or `fable`.
-- For `gpt-6.2-astra`, do not set the `model` parameter. The `CLAUDE_CODE_SUBAGENT_MODEL` environment variable makes `gpt-6.2-astra` the default subagent model. The `model` parameter does not accept this model.
-- For `gpt-6.2-astra`, use a `subagent_type` whose definition sets no `model`, such as `general-purpose`. A `model` in the agent definition replaces the default. Do not use `fork`, because a fork always runs on the model of the orchestrator's thread.
+- For `claude-haiku-5-5` and `claude-fable-5-2`, set the `model` parameter to `haiku` or `fable`.
+- For `gpt-6.2-astra`, set `subagent_type` to `gpt-6.2-astra` and do not set the `model` parameter. The `gpt-6.2-astra` agent definition sets the model. The `model` parameter does not accept this model, and a `model` value replaces the model of the definition.
+- For `gpt-6.2-sol`, do not set the `model` parameter. The `CLAUDE_CODE_SUBAGENT_MODEL` environment variable makes `gpt-6.2-sol` the default subagent model. The `model` parameter does not accept this model.
+- For `gpt-6.2-sol`, use a `subagent_type` whose definition sets no `model`, such as `general-purpose`. A `model` in the agent definition replaces the default. Do not use `fork`, because a fork always runs on the model of the orchestrator's thread.
 - Use the Codex and Grok harnesses only for web reads and adjudication.
 
 ### Effort
@@ -73,19 +74,19 @@ When a model does not solve a task, do these steps in order.
 For code work, use `claude-fable-5-2` only when one of these conditions is true.
 
 - **Design decision:** The brief must ask the model to make or review a design decision, and no spec, plan, or convention makes that decision. A design decision selects an architecture, a service or module boundary, a data model, or a migration strategy.
-- **Failed check:** `claude-opus-5-5` fails the same verification check two times, and the last attempt used `high` effort.
+- **Failed check:** `gpt-6.2-astra` fails the same verification check two times, and the last attempt used `high` effort.
 
-The size of a task is not a condition. Send a large task that has a settled design to `claude-opus-5-5`.
+The size of a task is not a condition. Send a large task that has a settled design to `gpt-6.2-astra`.
 
 For a design decision, do these steps in order.
 
 1. Ask `claude-fable-5-2` for a written plan. State the scope in the brief, and ask for the simplest design that satisfies the requirements.
-2. Delegate the implementation of the plan to `claude-opus-5-5` or `gpt-6.2-astra`.
+2. Delegate the implementation of the plan to `gpt-6.2-astra` or `gpt-6.2-sol`.
 
 ### Web reads
 
 - After the first blocked fetch, delegate the read. Do not try other URLs, user agents, or scrapers to get past the block. Require quotes to come from retrieved content.
-- For a blocked web page, use `gpt-6.2-astra` in the Codex harness. For X posts, use `grok-4.6` in the Grok harness, not `grok-4.7`.
+- For a blocked web page, use `gpt-6.2-sol` in the Codex harness. For X posts, use `grok-4.6` in the Grok harness, not `grok-4.7`.
 
 ### Adjudication
 
