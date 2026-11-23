@@ -51,6 +51,10 @@ Numbered card choices:
 Decision: approve card v1 (D-code, D-validation), adjust, or decline?
 ```
 
+For a card with removals, add entries under **Numbered card choices** and include their ids in the approval prompt. Use the evidence in [`protected-surfaces.md`](./protected-surfaces.md):
+
+- `D-test-<n>`: case/assertions and exclusive setup to remove; one row per assertion: `removed path:line | unit, input class, expected outcome | retained baseline path:line`.
+
 ## Failure Cleanup Block
 
 ```text

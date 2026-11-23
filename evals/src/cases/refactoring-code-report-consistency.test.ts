@@ -31,6 +31,33 @@ describe.each([
   });
 });
 
+describe("analyst finding exceptions", () => {
+  const exportEvidence =
+    "Private module; no published or extension entry. rg -n 'oldSum' .; rg -n 'lib/compat' .; rg -n 'export .* from' .; only lib/compat.ts to rewrite.";
+  test.each([
+    [
+      "test-removal",
+      "Remove the duplicate zero check",
+      "sum.test.ts:12 (sum of empty input is zero) -> sum.test.ts:8",
+      SUCCESS,
+    ],
+    ["public-export-removal", "Remove oldSum", exportEvidence, FAILURE],
+    [null, "Remove oldSum", exportEvidence, FAILURE],
+  ])(
+    "validates the exception value %j",
+    (exception, transformation, evidence, status) => {
+      const report = analysisReport();
+      const [first, ...rest] = report.findings;
+      const findings = [
+        { ...first, exception, transformation, reuse_evidence: evidence },
+        ...rest,
+      ];
+      const payload = JSON.stringify({ ...report, findings });
+      expect(checkReport(payload).status).toBe(status);
+    },
+  );
+});
+
 test("mapper distinguishes ./Target from its Target field", () => {
   const report = mapper.text
     .replaceAll("src/a.js", "./Target")
