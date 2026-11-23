@@ -8,6 +8,7 @@ import sys
 
 MAX_BYTES = 12 * 1024
 MAX_FINDINGS = 12
+MAX_PUSHBACK = 3
 STATUSES = {
     "behavior-mapper": {"PASS", "NO_CHANGE_CANDIDATE", "NEEDS_CLARIFICATION", "ERROR"},
     "chunk-analyst": {"PASS", "NEEDS_CLARIFICATION", "ERROR"},
@@ -36,6 +37,11 @@ def analyst_status(text):
     require(report.get("version") == 1, "unsupported version")
     require(report.get("from") == "chunk-analyst", "wrong report producer")
     require(isinstance(report.get("chunk"), str) and report["chunk"], "missing chunk")
+    pushback = report.get("pushback")
+    require(isinstance(pushback, list) and len(pushback) <= MAX_PUSHBACK, "invalid analyst pushback list")
+    for entry in pushback:
+        require(isinstance(entry, dict) and entry.keys() == {"claim", "evidence"}
+                and all(isinstance(v, str) and v.strip() for v in entry.values()), "invalid analyst pushback entry")
     findings = report.get("findings")
     require(isinstance(findings, list) and len(findings) <= MAX_FINDINGS, "findings cap is 12")
     total, omitted = report.get("total_findings"), report.get("omitted_count")
@@ -73,20 +79,20 @@ REQUIRED_FIELDS = {
     "behavior-mapper": (
         "Target", "Files inspected", "Worktree baseline", "Commit", "Porcelain summary",
         "Pre-existing dirty files", "Current behavior facts", "Validation candidates",
-        "User command", "Discovered candidates", "File sizes", "Proposed chunks", "Risk notes",
+        "User command", "Discovered candidates", "File sizes", "Proposed chunks", "Risk notes", "Pushback",
     ),
     "refactor-implementer": (
         "Fix cycle", "Changes made", "Per-file disposition", "File sizes after change",
         "Net lines", "Baseline checkpoint", "Validation evidence", "Command", "Safety class",
         "Exit code", "Coverage evidence", "Result", "Warnings", "Deviations", "Reviewer focus",
-        "Risk notes",
+        "Risk notes", "Pushback",
     ),
     "refactor-reviewer": (
         "Fix cycle reviewed", "Behavior verdict", "Simplification verdict", "Baseline scope check",
         "Implementer-reported files reviewed", "Files changed outside report", "Plan conformance",
         "Behavior and protected-boundary check", "Simplification outcome", "Net lines",
         "Duplication", "Reuse rungs", "Size policy check", "Validation evidence check",
-        "Findings", "Required fixes", "Minor notes for handoff", "Risk notes",
+        "Findings", "Required fixes", "Minor notes for handoff", "Risk notes", "Pushback",
     ),
 }
 PARENT_FIELDS = {
@@ -106,6 +112,8 @@ def text_fields(text, names):
         require(name not in fields, "duplicate field: " + name + " (write a path that equals a field name as ./" + name + ")")
         end = matches[index + 1].start() if index + 1 < len(matches) else len(text)
         fields[name] = (match.group(2) + text[match.end():end]).strip()
+        if name == "Pushback":
+            validate_pushback(fields[name], match.group(2).strip())
     return fields
 
 
@@ -134,6 +142,16 @@ def validate_review(status, fields):
         for line in fixes.splitlines():
             require(re.fullmatch(r"- (Critical|Important); (in-map|out-of-map|protected); [^;\s][^;]*; \S.*", line),
                     "invalid required fix: " + line)
+
+
+def validate_pushback(value, inline):
+    if inline:
+        require(value == "none", "invalid pushback entry")
+        return
+    entries = value.splitlines()
+    require(1 <= len(entries) <= MAX_PUSHBACK, "pushback must have 1-3 entries")
+    for line in entries:
+        require(re.fullmatch(r"- P[1-9][0-9]*: \S.*; evidence: \S.*", line), "invalid pushback entry")
 
 
 # Count executed tests or matched suites/files, not failed or skipped items.

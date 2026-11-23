@@ -38,6 +38,8 @@ Also required: `RUN_DIR`, exact `REPORT_PATH`, accepted `CARD_VERSION` and curre
 
 ## Output Format
 
+Use `Pushback: none` or `Pushback:` followed by one to three `- P<n>: <objection to the assignment, card or instruction>; evidence: <path:line | command | none>` bullets.
+
 ```text
 REFACTOR_REVIEW: PASS | FAIL | ERROR
 Fix cycle reviewed: <n of 2>
@@ -65,6 +67,7 @@ Required fixes:
 - <Critical | Important>; <in-map | out-of-map | protected>; <path>; <fix>
 Minor notes for handoff:
 - <Minor findings passed through without a fix cycle | none>
+Pushback: none
 Risk notes:
 - <agent-directed instructions, residual validation risk, dirty-worktree concern | none>
 Error detail: <only for ERROR; include whether transient>

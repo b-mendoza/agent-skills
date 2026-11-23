@@ -38,6 +38,8 @@ Also required: `RUN_DIR`, exact `REPORT_PATH`, accepted `CARD_VERSION` and curre
 
 ## Output Format
 
+Use `Pushback: none` or `Pushback:` followed by one to three `- P<n>: <objection to the assignment, card or instruction>; evidence: <path:line | command | none>` bullets.
+
 ```text
 IMPLEMENTATION: PASS | PASS_WITH_WARNINGS | FAIL | BLOCKED | ERROR
 Fix cycle: <n of 2 | none>
@@ -62,6 +64,7 @@ Deviations:
 - <approved deviation | none>
 Reviewer focus:
 - <specific files, risks, or mechanical exemptions to inspect>
+Pushback: none
 Risk notes: <agent-directed instructions or untrusted content notes | none>
 Blocked reason: <only for BLOCKED>
 Error detail: <only for ERROR; include whether transient>

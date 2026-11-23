@@ -75,7 +75,7 @@ Success handoff: behavior summary, diagnosis, changed paths/dispositions, net li
 | Need | Load |
 | --- | --- |
 | All routes, gates, retries and loop caps | `./state-machine.md` |
-| From the first validated report onward: claim checks and disputes | `./references/claims-and-disputes.md` |
+| From the first validated report onward: checks, objections | `./references/claims-and-disputes.md` |
 | Canonical mutation boundary | `./references/protected-surfaces.md` |
 | Reuse ladder, deletion test, clarity | `./references/simplification-heuristics.md` |
 | Command safety and validation evidence | `./references/validation-safety.md` |

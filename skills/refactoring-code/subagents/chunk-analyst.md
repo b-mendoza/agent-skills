@@ -44,11 +44,14 @@ JSON report at `REPORT_PATH` (no code fences):
     "confidence": "high",
     "priority": "high"
   }],
+  "pushback": [],
   "risks": [],
   "question": null,
   "error": null
 }
 ```
+
+`pushback` holds at most three objects with non-empty `claim` (an objection to the assignment, card or instruction) and `evidence` (path:line, command or `none`) strings.
 
 `status` is one of `PASS | NEEDS_CLARIFICATION | ERROR`; retain all count fields even on a stop. On `NEEDS_CLARIFICATION`, set `question` to the smallest question; on `ERROR`, set `error` to the cause and whether transient. Both require non-empty strings on their respective stops. Compact reply, at most 12 lines, no raw excerpts:
 

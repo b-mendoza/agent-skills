@@ -20,6 +20,7 @@ export function analysisReport() {
     from: "chunk-analyst",
     chunk: "duplication-reuse",
     status: "PASS",
+    pushback: [],
     total_findings: 21,
     omitted_count: 9,
     omitted_high_priority: 0,
@@ -81,7 +82,8 @@ File sizes:
 Proposed chunks:
 - duplication: repeated branches
 - complexity: nested paths
-Risk notes: none`,
+Risk notes: none
+Pushback: none`,
   },
   {
     role: "refactor-implementer",
@@ -109,7 +111,8 @@ Deviations:
 - none
 Reviewer focus:
 - src/a.js
-Risk notes: none`,
+Risk notes: none
+Pushback: none`,
   },
   {
     role: "refactor-reviewer",
@@ -141,6 +144,7 @@ Required fixes:
 Minor notes for handoff:
 - none
 Risk notes:
-- none`,
+- none
+Pushback: none`,
   },
 ] as const;

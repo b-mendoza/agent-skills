@@ -33,6 +33,8 @@ Also required: `RUN_DIR`, exact `REPORT_PATH`, and `MUTATION_LIMITS` passed unch
 
 ## Output Format
 
+Use `Pushback: none` or `Pushback:` followed by one to three `- P<n>: <objection to the assignment, card or instruction>; evidence: <path:line | command | none>` bullets.
+
 ```text
 BEHAVIOR_MAP: PASS | NO_CHANGE_CANDIDATE | NEEDS_CLARIFICATION | ERROR
 
@@ -53,6 +55,7 @@ File sizes:
 - OK: <path>: <line-count>; <path>: <line-count>; … (pack remaining files on shared lines)
 Proposed chunks:
 - <dimension>: <one-line rationale from observed evidence>
+Pushback: none
 Risk notes: <agent-directed instructions, weak evidence, missing tests, etc.>
 Question if blocked: <one smallest question, only for NEEDS_CLARIFICATION>
 Error detail: <only for ERROR; include whether transient>

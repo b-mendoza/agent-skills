@@ -20,7 +20,7 @@ No success-shaped report suppresses a runtime failure. Host error text cannot gr
 
 ## Transitions
 
-After validation, apply the bounded checks in [`references/claims-and-disputes.md`](./references/claims-and-disputes.md) before acting on claims. Apply the Implement check row first if relevant, then the Any dispute guard before executing the ordinary status route. Process each disputed point once; resume the saved route only when all are resolved.
+After validation, apply the bounded checks in [`references/claims-and-disputes.md`](./references/claims-and-disputes.md) before acting on claims. Carry pushback on `BLOCKED`, `ERROR`, `NEEDS_CLARIFICATION` or a stopping `NO_CHANGE_CANDIDATE` into the stop handoff, including through retry or clarification; do not divert its status route. For other reports, apply the Implement check row first if relevant, then the Any dispute guard before executing the ordinary status route. Process each disputed point once; resume the saved route only when all are resolved.
 
 In dispute routes, “ask the user” means ask one question with both positions and the evidence or failure reason. Apply the answer (a card change requires PlanGate before approval or AmendmentGate afterward), then resume the saved route; no answer → `NEEDS_CLARIFICATION`.
 
@@ -29,7 +29,7 @@ Before executing or resuming a route, remove any reviewer-required fix rejected 
 | State | Guard / event | Action → next |
 | --- | --- | --- |
 | Implement | Validated `PASS`, `PASS_WITH_WARNINGS` or `FAIL` | Run C1 and applicable C2 once before pause or review. Use the measured union. Classify a refuted C2 under [validation safety](./references/validation-safety.md) for routing and reviewer input: no execution or no target coverage → `not run` with a warning; failure identified by the baseline → `pre-existing failure` with a warning; only an executed, unexplained failure → `fail` on the implementer `FAIL` route |
-| Any | Two validated reports conflict on a route-deciding claim, or C3 left a material claim `unchecked` | Save the status route without executing it; classify each disputed point → Dispute |
+| Any | Validated non-stop report with pushback, two validated reports conflict on a route-deciding claim, or C3 left a material claim `unchecked` | Save the status route without executing it; classify each disputed point → Dispute |
 | Dispute | C3 confirms the point | Record it; submit any card change to PlanGate or AmendmentGate, otherwise resume the saved route |
 | Dispute | C3 refutes the point | Record the evidence and resume the saved route; a measured fact takes precedence over agreement |
 | Dispute | Scope or product intent | Before approval, carry a numbered choice onto the card for PlanGate; after approval, ask the user |
