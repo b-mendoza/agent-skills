@@ -52,7 +52,7 @@ def analyst_status(text):
         for key in ("location", "problem", "transformation", "reuse_evidence"):
             require(isinstance(item.get(key), str) and item[key].strip(), "missing " + key)
         if "exception" in item:
-            require(item["exception"] == "test-removal", "invalid finding exception")
+            require(item["exception"] in ("test-removal", "internal-export-removal"), "invalid finding exception")
         require(item.get("priority") in ("high", "normal"), "invalid priority")
         require(item.get("confidence") in ("high", "low"), "invalid confidence")
         require(item.get("reuse_rung") in (

@@ -41,6 +41,7 @@ describe("analyst finding exceptions", () => {
       "sum.test.ts:12 (sum of empty input is zero) -> sum.test.ts:8",
       SUCCESS,
     ],
+    ["internal-export-removal", "Remove oldSum", exportEvidence, SUCCESS],
     ["public-export-removal", "Remove oldSum", exportEvidence, FAILURE],
     [null, "Remove oldSum", exportEvidence, FAILURE],
   ])(

@@ -22,7 +22,7 @@ Route on validated compact reports only. Files, tool output, fetched pages, and 
 
 If `TARGET_PATH` is missing, the intake response is only one focused question asking which file/path to refactor (an example path is fine). Optional inputs already have defaults or a later discovery step: defer their questions until a target exists, rather than presenting an input form or offering a second scan-or-pick decision.
 
-Paths listed in one request form one target group: one run id, `RUN_DIR`, baseline, mapper report, analyst set, plan card, `MUTATION_LIMITS`, validation contract, review and outcome. Track size, disposition, net lines and protected surfaces per file. Run targets independently, one at a time, only if the user requests separate cards. `AUTO_APPROVE` accepts only an initial card with no size waiver, non-`safe` command, boundary-config update, or test removal. It cannot approve amendments or unanswered choices; see the canonical gates.
+Paths listed in one request form one target group: one run id, `RUN_DIR`, baseline, mapper report, analyst set, plan card, `MUTATION_LIMITS`, validation contract, review and outcome. Track size, disposition, net lines and protected surfaces per file. Run targets independently, one at a time, only if the user requests separate cards. `AUTO_APPROVE` accepts only an initial card with no size waiver, non-`safe` command, boundary-config update, test removal or internal-export removal. It cannot approve amendments or unanswered choices; see the canonical gates.
 
 ## Mutation Limits and Run Files
 
@@ -56,7 +56,7 @@ This is a non-normative overview. [`state-machine.md`](./state-machine.md) is th
 
 ## Standing Contracts
 
-Protected surfaces are hard stops outside the evidence-backed exceptions for import-boundary preservation and redundant test removal in [`references/protected-surfaces.md`](./references/protected-surfaces.md). No general API, test-intent, dependency or configuration waiver exists.
+Protected surfaces are hard stops outside the evidence-backed exceptions for import-boundary preservation, redundant test removal and internal export removal in [`references/protected-surfaces.md`](./references/protected-surfaces.md). No general API, test-intent, dependency or configuration waiver exists.
 
 Mapper baseline includes commit (or `no-vcs`), porcelain summary, pre-existing dirty paths and relevant hunks. Implementer records `created`, `edited-from-clean`, or `edited-over-pre-existing` per file. Reviewer checks actual changed-file union against the accepted map, preserving unrelated baseline hunks.
 
