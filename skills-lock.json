@@ -134,6 +134,13 @@
       "skillPath": "skills/reporting-skill-issues/SKILL.md",
       "computedHash": "95a8139a559d9251b1a5cc762943be4a68f4bda390f7fc726a64cdef492ae05a"
     },
+    "requesting-code-review": {
+      "source": "obra/superpowers",
+      "commit": "22f0b463e7a5e579904dd6211a520321035526f7",
+      "sourceType": "github",
+      "skillPath": "skills/requesting-code-review/SKILL.md",
+      "computedHash": "32bcc25e8c3315d0150f646ee0067c9d4bfbc7719c34012db9c202e17cce8a14"
+    },
     "responding-to-pr-review-comments": {
       "source": "b-mendoza/agent-skills",
       "commit": "a0625900deb44c0f313ab182c27fb2a28d191db6",
