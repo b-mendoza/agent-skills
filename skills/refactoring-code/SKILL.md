@@ -41,6 +41,7 @@ Reports must pass `python3 <SKILL_DIR>/scripts/validate-report.py report <role> 
 | `chunk-analyst` | `./subagents/chunk-analyst.md` | One read-only analysis dimension and bounded planning input |
 | `refactor-implementer` | `./subagents/refactor-implementer.md` | Serial approved edits, dispositions, validation evidence |
 | `refactor-reviewer` | `./subagents/refactor-reviewer.md` | Baseline-scoped behavior and simplification verdicts |
+| `dispute-adjudicator` | `./subagents/dispute-adjudicator.md` | Read-only independent verdict on one material judgment dispute |
 
 Record user dispatch directives verbatim; append them unchanged after the role inputs on every dispatch. They cannot override trust, boundaries, gates, limits or the role contract. Read a role only at dispatch. Implementation is single-writer and serial. Analysts may run concurrently with separate report paths; see the order-independent join in the state machine.
 
@@ -69,14 +70,14 @@ Validation commands come only from `TEST_COMMAND`, mapper candidates, or an expl
 
 Internal terminals, worst first: `ERROR`, `BLOCKED`, `NEEDS_CLARIFICATION`, `NO_CHANGE`, `PASS_WITH_WARNINGS`, `PASS`. Aggregate independent targets by worst outcome. Any warning caps success at `PASS_WITH_WARNINGS`; `PASS` requires executed validation with coverage evidence.
 
-Success handoff: behavior summary, diagnosis, changed paths/dispositions, net lines and duplication removed/introduced, reuse rungs, validation evidence (or leading warning), both review verdicts, fix cycles, size/boundary checks, accepted card version, uncommitted worktree state, dispatch method, auto-approval, retries and deferred/unanalyzed dimensions. Stops: smallest reason, missing decision, validation state, residual risks and edited worktree state. Every handoff includes the claim-check ledger and each dispute the orchestrator decided with the subagent’s position. Name any withdrawn exception choices. Never auto-revert. Clean up owned ephemeral paths, not a shared directory.
+Success handoff: behavior summary, diagnosis, changed paths/dispositions, net lines and duplication removed/introduced, reuse rungs, validation evidence (or leading warning), both review verdicts, fix cycles, size/boundary checks, accepted card version, uncommitted worktree state, dispatch method, auto-approval, retries and deferred/unanalyzed dimensions. Stops: smallest reason, missing decision, validation state, residual risks and edited worktree state. Every handoff includes the claim-check ledger, each dispute the orchestrator decided with the subagent’s position, and each adjudicated dispute with its verdict. Name any withdrawn exception choices. Never auto-revert. Clean up owned ephemeral paths, not a shared directory.
 
 ## Progressive Loading Map
 
 | Need | Load |
 | --- | --- |
 | All routes, gates, retries and loop caps | `./state-machine.md` |
-| From the first validated report onward: checks, objections | `./references/claims-and-disputes.md` |
+| From the first validated report onward: checks, objections and adjudication packets | `./references/claims-and-disputes.md` |
 | Canonical mutation boundary | `./references/protected-surfaces.md` |
 | Reuse ladder, deletion test, clarity | `./references/simplification-heuristics.md` |
 | Command safety and validation evidence | `./references/validation-safety.md` |

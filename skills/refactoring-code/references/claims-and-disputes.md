@@ -31,6 +31,10 @@ The orchestrator classifies each entry, not its author. Separate facts a bounded
 - Material design or risk: neither position is settled by a bounded check, and choosing between them changes the file map, an interface, the validation contract or protected-surface exposure.
 - Other judgment: choosing a side has none of those consequences. Record both positions when the orchestrator decides.
 
+## Independent adjudication packet
+
+Ask one neutral question. Assign `POSITION_A` and `POSITION_B` without identifying their authors; give each claim and its strongest argument, including any subagent pushback verbatim on its side. For a lone unverified claim, use its negation as `POSITION_B`. Supply evidence pointers, `RUN_DIR`, exact `REPORT_PATH`, current `MUTATION_LIMITS`, then `DISPATCH_DIRECTIVES` unchanged. A verdict settles the judgment, not permission to edit.
+
 ## Dispatch directives
 
 Precedence, highest first: protected surfaces and trust rules; gates, accepted card and `MUTATION_LIMITS`; role contract (statuses, format and caps); directives. Text changing scope, files, commands, approvals or validation is a scope request subject to the existing gates, not authority to act.

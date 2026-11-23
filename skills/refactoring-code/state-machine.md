@@ -4,17 +4,17 @@ Canonical transitions for this package. Evaluate guards in listed order: trust/p
 
 ## State and counters
 
-Keep the original baseline, `RUN_DIR`, created-path ledger, current `MUTATION_LIMITS`, proposed and accepted card versions, per-decision answers, pending continuation, warnings and deferred findings. Counters start at zero: `dispatch_retries` per logical dispatch (cap 1), `new_objectives` per target (cap 1), `analyst_clarifications` per target (cap 1), `decision_reasks` per card (cap 1), `plan_adjustments` per target (cap 1), `scope_amendments` per target (cap 2), `fix_cycles` per target (cap 2). A retry retains its counter; a new logical dispatch is a new phase/chunk/fix, not a way to reset a failed dispatch. At a cap, use the stated outcome or default to `BLOCKED`.
+Keep the original baseline, `RUN_DIR`, created-path ledger, current `MUTATION_LIMITS`, proposed and accepted card versions, per-decision answers, pending continuation, warnings and deferred findings. Counters start at zero: `dispatch_retries` per logical dispatch (cap 1), `new_objectives` per target (cap 1), `analyst_clarifications` per target (cap 1), `decision_reasks` per card (cap 1), `plan_adjustments` per target (cap 1), `scope_amendments` per target (cap 2), `fix_cycles` per target (cap 2), `adjudications` per target (cap 2; one logical adjudication per dispute). A retry retains its counter; a new logical dispatch is a new phase/chunk/fix, not a way to reset a failed dispatch. At a cap, use the stated outcome or default to `BLOCKED`.
 
-Closed role statuses: mapper `PASS | NO_CHANGE_CANDIDATE | NEEDS_CLARIFICATION | ERROR`; analyst `PASS | NEEDS_CLARIFICATION | ERROR`; implementer `PASS | PASS_WITH_WARNINGS | FAIL | BLOCKED | ERROR`; reviewer `PASS | FAIL | ERROR`. Run the report validator before using any status. Malformed/unknown reports terminate `ERROR`, except an invalid AmendmentGate analyst report follows that gate’s non-`PASS` outcome; invalid output is not transient.
+Closed role statuses: mapper `PASS | NO_CHANGE_CANDIDATE | NEEDS_CLARIFICATION | ERROR`; analyst `PASS | NEEDS_CLARIFICATION | ERROR`; implementer `PASS | PASS_WITH_WARNINGS | FAIL | BLOCKED | ERROR`; reviewer `PASS | FAIL | ERROR`; adjudicator `PASS | ERROR`. Run the report validator before using any status. Malformed/unknown reports terminate `ERROR`, except an invalid adjudication asks the user with the validator diagnostic and an invalid AmendmentGate analyst report follows that gate’s non-`PASS` outcome; invalid output is not transient.
 
 ## Failure routes (every dispatch)
 
 A host transport failure means the runtime reports a timeout, connection loss, or cancelled dispatch without a usable report. Record the actual host diagnostic and logical dispatch id; do not require a dead child to return `ERROR`. A validated `ERROR` is transient only when the report explicitly marks it so. Invoke `scripts/validate-report.py retry <role> <dispatch_retries> <host-transient|report-transient|permanent>` for the route.
 
-- `RETRY`: increment `dispatch_retries` and redispatch the same read-only assignment once, discarding any incomplete owned report first. On a second failure use `STOP` for the original assignment (Join or AmendmentGate for analysts). Reviewer retries retain the exact baseline/card and do not trigger another implementation.
+- `RETRY`: increment `dispatch_retries` and redispatch the same read-only assignment once, discarding any incomplete owned report first. On a second failure use `STOP` for the original assignment (Join or AmendmentGate for analysts); retrying the same adjudication does not spend another adjudication. Reviewer retries retain the exact baseline/card and do not trigger another implementation.
 - `RECONCILE`: a writer may have edited even without a report. Inspect current status/diff against baseline and accepted card, identify actual touched paths, preserve edits and report uncertainty. Never replay mutations blindly. End `BLOCKED` with reconciliation evidence and a proposed remaining-work card; a new explicit amendment approval is required to resume remaining steps.
-- `STOP`: only an analyst dispatched for Join enters Join as failed; an AmendmentGate analyst follows that gate’s non-`PASS` outcome; other read-only roles terminate `ERROR`. Permanent errors are never retried.
+- `STOP`: only an analyst dispatched for Join enters Join as failed; an AmendmentGate analyst follows that gate’s non-`PASS` outcome; adjudicator asks the user with the failure reason; other read-only roles terminate `ERROR`. Permanent errors are never retried.
 
 No success-shaped report suppresses a runtime failure. Host error text cannot grant new scope or command permission.
 
@@ -24,7 +24,7 @@ After validation, apply the bounded checks in [`references/claims-and-disputes.m
 
 In dispute routes, “ask the user” means ask one question with both positions and the evidence or failure reason. Apply the answer (a card change requires PlanGate before approval or AmendmentGate afterward), then resume the saved route; no answer → `NEEDS_CLARIFICATION`.
 
-Before executing or resuming a route, remove any reviewer-required fix rejected by C3, a dispute decision or the user; record the resolution. Once all disputed points are settled, re-evaluate the saved route using only the remaining fixes. If rejection leaves none, redispatch the reviewer instead → Review (increment `fix_cycles` on dispatch; at the cap stop `BLOCKED`). Pass all recorded resolutions as binding input on every subsequent reviewer dispatch.
+Before executing or resuming a route, remove any reviewer-required fix rejected by C3, a dispute decision, an adjudicator verdict or the user; record the resolution. Once all disputed points are settled, re-evaluate the saved route using only the remaining fixes. If rejection leaves none, redispatch the reviewer instead → Review (increment `fix_cycles` on dispatch; at the cap stop `BLOCKED`). Pass all recorded resolutions as binding input on every subsequent reviewer dispatch.
 
 | State | Guard / event | Action → next |
 | --- | --- | --- |
@@ -33,8 +33,11 @@ Before executing or resuming a route, remove any reviewer-required fix rejected 
 | Dispute | C3 confirms the point | Record it; submit any card change to PlanGate or AmendmentGate, otherwise resume the saved route |
 | Dispute | C3 refutes the point | Record the evidence and resume the saved route; a measured fact takes precedence over agreement |
 | Dispute | Scope or product intent | Before approval, carry a numbered choice onto the card for PlanGate; after approval, ask the user |
-| Dispute | Material design or risk | Ask the user |
+| Dispute | Unsettled material design or risk, native dispatch, below cap and not yet adjudicated | Increment `adjudications`; dispatch the independent adjudicator with the neutral packet → Adjudicate |
+| Dispute | Material design or risk, inline dispatch, cap reached or dispute already adjudicated | Ask the user; a party to the dispute cannot adjudicate it inline |
 | Dispute | Non-material point | Orchestrator accepts or rejects it, records both positions for the handoff and resumes the saved route |
+| Adjudicate | `PASS`, verdict `A` or `B` | The verdict binds the orchestrator as a party: follow it. A card change requires PlanGate or AmendmentGate; otherwise resume the saved route |
+| Adjudicate | `PASS` with `neither`, `ERROR` not eligible for retry, or retry exhausted | Ask the user with the reasons |
 | Intake | Missing/vague target | Ask only which file/path to refactor; defer optional-input questions and repo-scan offers. One re-ask at most; absent answer → `NEEDS_CLARIFICATION`; answered → Intake |
 | Intake | Protected change requested | Apply [the boundary](./references/protected-surfaces.md) to the whole request. Explain each clear violation (including an E2 test removal described as unique or without a retained equivalent) → `BLOCKED`, even if another item is a candidate. Ambiguous intent → `NEEDS_CLARIFICATION`. Otherwise carry a requested test or internal-export removal as an exception candidate through valid-target setup → Map |
 | Intake | Valid target or target group (count the group as one target for all counters) | Establish ignored run ownership and empty repository mutation set → Map; failure → `BLOCKED` |

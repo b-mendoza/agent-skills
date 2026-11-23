@@ -301,6 +301,9 @@ describe("host failure routing executable contract (#301)", () => {
     ["refactor-reviewer", "0", "host-transient", "RETRY"],
     ["refactor-reviewer", "1", "host-transient", "STOP"],
     ["refactor-reviewer", "0", "permanent", "STOP"],
+    ["dispute-adjudicator", "0", "host-transient", "RETRY"],
+    ["dispute-adjudicator", "1", "host-transient", "STOP"],
+    ["dispute-adjudicator", "0", "permanent", "STOP"],
     ["refactor-implementer", "0", "host-transient", "RECONCILE"],
     ["refactor-implementer", "1", "permanent", "RECONCILE"],
   ])(

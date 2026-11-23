@@ -14,11 +14,13 @@ STATUSES = {
     "chunk-analyst": {"PASS", "NEEDS_CLARIFICATION", "ERROR"},
     "refactor-implementer": {"PASS", "PASS_WITH_WARNINGS", "FAIL", "BLOCKED", "ERROR"},
     "refactor-reviewer": {"PASS", "FAIL", "ERROR"},
+    "dispute-adjudicator": {"PASS", "ERROR"},
 }
 PREFIXES = {
     "behavior-mapper": "BEHAVIOR_MAP",
     "refactor-implementer": "IMPLEMENTATION",
     "refactor-reviewer": "REFACTOR_REVIEW",
+    "dispute-adjudicator": "ADJUDICATION",
 }
 
 
@@ -94,6 +96,7 @@ REQUIRED_FIELDS = {
         "Duplication", "Reuse rungs", "Size policy check", "Validation evidence check",
         "Findings", "Required fixes", "Minor notes for handoff", "Risk notes", "Pushback",
     ),
+    "dispute-adjudicator": ("Dispute", "Verdict", "Reasons", "Unresolved", "Pushback"),
 }
 PARENT_FIELDS = {
     "behavior-mapper": {"Worktree baseline", "Validation candidates"},
@@ -154,6 +157,13 @@ def validate_pushback(value, inline):
         require(re.fullmatch(r"- P[1-9][0-9]*: \S.*; evidence: \S.*", line), "invalid pushback entry")
 
 
+def validate_adjudication(status, fields):
+    allowed = ("A", "B", "neither", "unavailable") if status == "ERROR" else ("A", "B", "neither")
+    require(fields["Verdict"] in allowed, "invalid adjudication verdict")
+    if status == "PASS":
+        require(re.search(r"[\w./-]+:[1-9][0-9]*\b", fields["Reasons"]), "Reasons must cite path:line")
+
+
 # Count executed tests or matched suites/files, not failed or skipped items.
 MATCH_TARGET = r"(?:test\s+)?(?:suites?|files?)"
 ZERO_COVERAGE = re.compile(rf"""
@@ -184,7 +194,7 @@ def text_status(role, text):
         start = re.search(r"^(?:- )?" + re.escape(name) + r":[ \t]*(.*)$", text, re.MULTILINE)
         remainder = text[start.end():].lstrip() if start else ""
         require(bool(fields[name]) or (
-            name in PARENT_FIELDS[role] and remainder.startswith("- ")
+            name in PARENT_FIELDS.get(role, ()) and remainder.startswith("- ")
         ), "empty field: " + name)
     for stop, name in CONDITIONAL_FIELDS.items():
         if name in fields:
@@ -193,6 +203,8 @@ def text_status(role, text):
     if status in CONDITIONAL_FIELDS:
         name = CONDITIONAL_FIELDS[status]
         require(bool(fields.get(name)), "missing field: " + name)
+    if role == "dispute-adjudicator":
+        validate_adjudication(status, fields)
     if role == "refactor-reviewer":
         validate_review(status, fields)
     if role == "refactor-implementer":
