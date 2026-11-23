@@ -118,6 +118,14 @@ def validate_review(status, fields):
     material_finding = re.search(r"^[ \t]*(?:-[ \t]+)?(?:Critical|Important)\b", fields["Findings"], re.MULTILINE)
     if status == "PASS":
         require(verdicts == ["pass", "pass"], "PASS contradicts reviewer verdicts")
+        require(no_fixes, "PASS has required fixes")
+        for check in ("Plan conformance", "Behavior and protected-boundary check", "Size policy check", "Validation evidence check"):
+            outcomes = "pass|warning" if check == "Validation evidence check" else "pass"
+            for item in re.split(r"\n[ \t]*-(?=[ \t]|$)", fields[check]):
+                require(re.match(rf"^(?:-[ \t]+)?(?:{outcomes})\b", item.strip()),
+                        f"PASS needs {outcomes} for every {check} item")
+        require(not material_finding, "PASS has Critical or Important findings")
+        require(fields["Files changed outside report"].removeprefix("- ") == "none", "PASS has unreported files")
     else:
         require(not no_fixes, "FAIL needs required fixes")
         require("fail" in verdicts or material_finding, "FAIL needs a failed verdict or a Critical or Important finding")

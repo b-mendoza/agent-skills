@@ -56,9 +56,87 @@ const protectedFix = "- Critical; protected; src/api.js; would change the API";
 const failedReview = reviewer.text
   .replace("REFACTOR_REVIEW: PASS", "REFACTOR_REVIEW: FAIL")
   .replace("Simplification verdict: pass", "Simplification verdict: fail");
+const outside = "Files changed outside report: none";
+const unreported = "Files changed outside report: src/b.js";
+const size = "Size policy check:\n- pass";
+const badSize = "Size policy check:\n- fail; exceeds limit";
 const fix = `Required fixes:\n${inMap}`;
 
 describe("reviewer report consistency", () => {
+  test.each([
+    ["required fix", reviewer.text.replace(noFixes, fix)],
+    ["unreported file", reviewer.text.replace(outside, unreported)],
+    ["size violation", reviewer.text.replace(size, badSize)],
+    [
+      "unreported file and size violation",
+      reviewer.text.replace(outside, unreported).replace(size, badSize),
+    ],
+    [
+      "failed validation",
+      reviewer.text.replace("- pass; node --test", "- fail; node --test"),
+    ],
+  ])("PASS rejects %s", (_, payload) => {
+    expect(checkReport(payload, reviewer.role).status).toBe(FAILURE);
+  });
+
+  test.each(["Plan conformance", "Behavior and protected-boundary check"])(
+    "PASS requires a non-failing %s",
+    (label) => {
+      const passing = `${label}:\n- pass`;
+      const failing = reviewer.text.replace(passing, `${label}:\n- fail`);
+      expect(checkReport(failing, reviewer.role).status).toBe(FAILURE);
+      expect(checkReport(reviewer.text, reviewer.role).status).toBe(SUCCESS);
+    },
+  );
+
+  test.each(["Critical", "Important"])("PASS rejects a %s finding", (rank) => {
+    const findings = "Findings:\n- Minor; a.js; style";
+    const minor = reviewer.text.replace("Findings:\n- none", findings);
+    const another = minor.replace(findings, `${findings}\n- ${rank}; b; drift`);
+    expect(checkReport(another, reviewer.role).status).toBe(FAILURE);
+    expect(checkReport(minor, reviewer.role).status).toBe(SUCCESS);
+  });
+
+  test("PASS accepts warning evidence and bulleted none", () => {
+    const payload = reviewer.text
+      .replace(outside, "Files changed outside report:\n- none")
+      .replace("- pass; node --test; exit 0; 1 test", "- warning; not run");
+    expect(checkReport(payload, reviewer.role)).toMatchObject(
+      validated("PASS"),
+    );
+  });
+
+  test.each([
+    ["Plan conformance", FAILURE],
+    ["Behavior and protected-boundary check", FAILURE],
+    ["Size policy check", FAILURE],
+    ["Validation evidence check", SUCCESS],
+  ] as const)(
+    "PASS checks every outcome under %s",
+    (section, warningStatus) => {
+      const checkBullet = (bullet: string) => {
+        const payload = reviewer.text.replace(
+          new RegExp(`(${section}:\\n- [^\\n]+)`),
+          `$1\n- ${bullet}`,
+        );
+        return checkReport(payload, reviewer.role).status;
+      };
+      expect(checkBullet("pass; src/b.js:3 checked\n  against baseline")).toBe(
+        SUCCESS,
+      );
+      expect(checkBullet("pass")).toBe(SUCCESS);
+      expect(checkBullet("warning; not checked")).toBe(warningStatus);
+      for (const bullet of [
+        "fail; src/b.js:3",
+        "unavailable",
+        "bypass; src/b.js:3",
+        "passenger",
+      ]) {
+        expect(checkBullet(bullet)).toBe(FAILURE);
+      }
+    },
+  );
+
   test.each([
     ["Critical; src/a.js; changed return value", SUCCESS],
     ["Important; src/a.js; duplicated branch", SUCCESS],
