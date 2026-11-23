@@ -134,6 +134,20 @@ def validate_review(status, fields):
                     "invalid required fix: " + line)
 
 
+# Count executed tests or matched suites/files, not failed or skipped items.
+MATCH_TARGET = r"(?:test\s+)?(?:suites?|files?)"
+ZERO_COVERAGE = re.compile(rf"""
+    ^(?:0|zero)(?:\s*(?:/|of)\s*\d+)?$
+    | \b (?:
+        (?:0|zero|no) (?:\s*(?:/|of)\s*\d+)? \s+ (?:tests?|executed|ran|run|{MATCH_TARGET}\s+matched|matched\s+{MATCH_TARGET})
+        | tests?(?:\s+(?:run|ran|executed))? (?:\s*[:=]\s*|\s+) 0
+    ) \b (?!\s+(?:(?:files?|suites?)\s+)?(?:failed|failures?|errors?|skipped)\b)
+    | \b matched\s+(?:0|zero|no)\s+{MATCH_TARGET} \b
+    | \b (?:matched\s+{MATCH_TARGET} | {MATCH_TARGET}\s+matched)
+        (?:\s*[:=]\s*|\s+) (?:0|zero|none)(?![\w./-])
+""", re.I | re.X)
+
+
 def text_status(role, text):
     lines = text.splitlines()
     require(len(lines) <= 60, "report exceeds 60 lines")
@@ -167,15 +181,20 @@ def text_status(role, text):
         require(bool(re.fullmatch(r"-?\d+|not run", fields["Exit code"])), "invalid exit code")
         if status == "PASS":
             require(fields["Result"] == "pass", "PASS contradicts validation Result: " + fields["Result"])
-            require(fields["Exit code"] == "0", "PASS contradicts validation Exit code: " + fields["Exit code"])
-            require(fields["Safety class"] != "warning path", "PASS contradicts validation Safety class: warning path")
-            require(fields["Command"] != "not run" and fields["Coverage evidence"] != "not run", "PASS needs command and coverage")
+            require(fields["Warnings"].removeprefix("- ") == "none", "PASS has warnings")
         elif status == "FAIL":
             require(fields["Result"] == "fail", "FAIL needs Result: fail")
             require(fields["Command"] != "not run", "FAIL needs an executed command")
             require(fields["Exit code"] != "not run", "FAIL needs an exit code")
         elif status == "PASS_WITH_WARNINGS":
             require(fields["Result"] != "fail", "PASS_WITH_WARNINGS contradicts Result: fail")
+        if fields["Result"] == "pass":
+            claim = "PASS" if status == "PASS" else "Result: pass"
+            require(fields["Safety class"] != "warning path", claim + " contradicts validation Safety class: warning path")
+            require(fields["Command"] != "not run" and fields["Coverage evidence"] != "not run",
+                    claim + " needs command and coverage")
+            require(fields["Exit code"] == "0", claim + " contradicts validation Exit code: " + fields["Exit code"])
+            require(not ZERO_COVERAGE.search(fields["Coverage evidence"]), "Result: pass reports zero tests")
         if fields["Result"] == "pre-existing failure":
             require(fields["Command"] != "not run", "pre-existing failure needs an executed command")
             require(fields["Exit code"] != "not run", "pre-existing failure needs an exit code")

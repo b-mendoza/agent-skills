@@ -219,10 +219,74 @@ const preExisting = warning.replace(
 );
 
 describe("serial validation evidence", () => {
+  const passing = implementer.text;
+  test.each([
+    ["PASS", ""],
+    ["PASS_WITH_WARNINGS", ""],
+    ["BLOCKED", "\nBlocked reason: caller outside map"],
+    ["ERROR", "\nError detail: write failed"],
+  ])("%s checks exit and coverage for Result: pass", (status, stop) => {
+    const good = passing.replace(": PASS", `: ${status}`) + stop;
+    expect(checkReport(good, implementer.role).status).toBe(SUCCESS);
+    for (const bad of [
+      good.replace("Exit code: 0", "Exit code: 1"),
+      good.replace("1 test", "0"),
+      good.replace("1 test", "0 tests"),
+      good.replace("1 test", "Tests run: 0"),
+      good.replace(/^- Coverage evidence:.*$/m, "- Coverage evidence: not run"),
+      good.replace(/^- Command:.*$/m, "- Command: not run"),
+    ]) {
+      expect(checkReport(bad, implementer.role).status).toBe(FAILURE);
+    }
+  });
+
+  test("zero failures do not mean zero tests ran", () => {
+    const good = passing.replace("1 test", "10 tests ran; 0 tests failed");
+    expect(checkReport(good, implementer.role).status).toBe(SUCCESS);
+  });
+
   test("FAIL requires a recorded exit code", () => {
     const bad = regression.replace("Exit code: 1", "Exit code: not run");
     expect(checkReport(bad, implementer.role).status).toBe(FAILURE);
     expect(checkReport(regression, implementer.role).status).toBe(SUCCESS);
+  });
+
+  test.each([
+    ["0/12 tests ran", FAILURE],
+    ["0/12 executed", FAILURE],
+    ["0 of 12 tests ran", FAILURE],
+    ["Matched suites: 0", FAILURE],
+    ["Matched 0 suites", FAILURE],
+    ["Matched files: none", FAILURE],
+    ["0 suites matched", FAILURE],
+    ["0 files matched", FAILURE],
+    ["0/12 files matched", FAILURE],
+    ["10 tests ran; 0 failed", SUCCESS],
+    ["10 tests ran; 0 test files failed", SUCCESS],
+    ["10 tests ran; 0 files changed", SUCCESS],
+  ] as const)("checks executed coverage: %s", (coverage, expected) => {
+    expect(
+      checkReport(passing.replace("1 test", coverage), implementer.role).status,
+    ).toBe(expected);
+  });
+
+  test.each([
+    ["PASS_WITH_WARNINGS", ""],
+    ["BLOCKED", "\nBlocked reason: caller outside map"],
+    ["ERROR", "\nError detail: write failed"],
+  ])("%s rejects a validation pass on a warning path", (status, stop) => {
+    const payload =
+      passing
+        .replace(": PASS", `: ${status}`)
+        .replace("Safety class: safe", "Safety class: warning path") + stop;
+    expect(checkReport(payload, implementer.role).status).toBe(FAILURE);
+  });
+
+  test("a warning caps a successful implementation", () => {
+    const warned = passing.replace("Warnings:\n- none", "Warnings:\n- no docs");
+    expect(checkReport(warned, implementer.role).status).toBe(FAILURE);
+    const good = warned.replace(": PASS", ": PASS_WITH_WARNINGS");
+    expect(checkReport(good, implementer.role).status).toBe(SUCCESS);
   });
 });
 
