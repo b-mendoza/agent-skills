@@ -8,7 +8,7 @@ import {
 
 const SUCCESS = 0;
 const FAILURE = 1;
-const [mapper, implementer] = ROLE_REPORTS;
+const [mapper, implementer, reviewer] = ROLE_REPORTS;
 
 function validated(status: string) {
   return { status: SUCCESS, stdout: `${status}\n` };
@@ -47,4 +47,22 @@ test.each([
   expect(checkReport(report, fixture.role).status).toBe(FAILURE);
   const stopped = report.replace(": PASS", `: ${status}`);
   expect(checkReport(stopped, fixture.role)).toMatchObject(validated(status));
+});
+
+const noFixes = "Required fixes:\n- none";
+
+describe("reviewer report consistency", () => {
+  test.each(["none", "unavailable"])(
+    "ERROR accepts a transient stop with required fixes marked %s",
+    (fixes) => {
+      const stopped = reviewer.text
+        .replace("REFACTOR_REVIEW: PASS", "REFACTOR_REVIEW: ERROR")
+        .replaceAll("verdict: pass", "verdict: unavailable")
+        .replace(noFixes, `Required fixes:\n- ${fixes}`);
+      const payload = `${stopped}\nError detail: transient; diff read timed out`;
+      expect(checkReport(payload, reviewer.role)).toMatchObject(
+        validated("ERROR"),
+      );
+    },
+  );
 });

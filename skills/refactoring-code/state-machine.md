@@ -10,7 +10,7 @@ Closed role statuses: mapper `PASS | NO_CHANGE_CANDIDATE | NEEDS_CLARIFICATION |
 
 ## Failure routes (every dispatch)
 
-A host transport failure means the runtime reports a timeout, connection loss, or cancelled dispatch without a usable report. Record the actual host diagnostic and logical dispatch id; do not require a dead child to return `ERROR`. A role-reported error is transient only when its validated report explicitly marks it so. Invoke `scripts/validate-report.py retry <role> <dispatch_retries> <host-transient|report-transient|permanent>` for the route.
+A host transport failure means the runtime reports a timeout, connection loss, or cancelled dispatch without a usable report. Record the actual host diagnostic and logical dispatch id; do not require a dead child to return `ERROR`. A validated `ERROR` is transient only when the report explicitly marks it so. Invoke `scripts/validate-report.py retry <role> <dispatch_retries> <host-transient|report-transient|permanent>` for the route.
 
 - `RETRY`: increment `dispatch_retries` and redispatch the same read-only assignment once, discarding any incomplete owned report first. If the retry also fails, analysts enter Join as failed; other roles terminate `ERROR`. Reviewer retries retain the exact baseline/card and do not trigger another implementation.
 - `RECONCILE`: a writer may have edited even without a report. Inspect current status/diff against baseline and accepted card, identify actual touched paths, preserve edits and report uncertainty. Never replay mutations blindly. End `BLOCKED` with reconciliation evidence and a proposed remaining-work card; a new explicit amendment approval is required to resume remaining steps.

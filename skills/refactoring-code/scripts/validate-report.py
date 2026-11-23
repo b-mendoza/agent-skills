@@ -107,6 +107,16 @@ def text_fields(text, names):
     return fields
 
 
+def validate_review(status, fields):
+    verdicts = [fields["Behavior verdict"], fields["Simplification verdict"]]
+    allowed = ("pass", "fail", "unavailable") if status == "ERROR" else ("pass", "fail")
+    require(all(value in allowed for value in verdicts), "invalid reviewer verdict")
+    if status == "ERROR":
+        return
+    if status == "PASS":
+        require(verdicts == ["pass", "pass"], "PASS contradicts reviewer verdicts")
+
+
 def text_status(role, text):
     lines = text.splitlines()
     require(len(lines) <= 60, "report exceeds 60 lines")
@@ -133,9 +143,7 @@ def text_status(role, text):
         name = CONDITIONAL_FIELDS[status]
         require(bool(fields.get(name)), "missing field: " + name)
     if role == "refactor-reviewer":
-        verdicts = [fields["Behavior verdict"], fields["Simplification verdict"]]
-        require(all(value in ("pass", "fail") for value in verdicts), "invalid reviewer verdict")
-        require(status != "PASS" or verdicts == ["pass", "pass"], "PASS contradicts reviewer verdicts")
+        validate_review(status, fields)
     if role == "refactor-implementer":
         require(fields["Safety class"] in ("safe", "state-mutating", "destructive", "warning path"), "invalid safety class")
         require(fields["Result"] in ("pass", "fail", "not run", "pre-existing failure"), "invalid validation result")

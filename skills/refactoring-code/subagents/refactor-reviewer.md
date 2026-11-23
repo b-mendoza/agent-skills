@@ -40,8 +40,8 @@ Also required: `RUN_DIR`, exact `REPORT_PATH`, accepted `CARD_VERSION` and curre
 ```text
 REFACTOR_REVIEW: PASS | FAIL | ERROR
 Fix cycle reviewed: <n of 2>
-Behavior verdict: <pass | fail>
-Simplification verdict: <pass | fail>
+Behavior verdict: <pass | fail | unavailable on ERROR>
+Simplification verdict: <pass | fail | unavailable on ERROR>
 
 Baseline scope check:
 - Implementer-reported files reviewed: <paths>
