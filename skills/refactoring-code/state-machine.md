@@ -4,7 +4,7 @@ Canonical transitions for this package. Evaluate guards in listed order: trust/p
 
 ## State and counters
 
-Keep the original baseline, `RUN_DIR`, created-path ledger, current `MUTATION_LIMITS`, proposed and accepted card versions, per-decision answers, pending continuation, warnings and deferred findings. Counters start at zero: `dispatch_retries` per logical dispatch (cap 1), `new_objectives` per target (cap 1), `decision_reasks` per card (cap 1), `plan_adjustments` per target (cap 1), `scope_amendments` per target (cap 2), `fix_cycles` per target (cap 2). A retry retains its counter; a new logical dispatch is a new phase/chunk/fix, not a way to reset a failed dispatch. Caps exceeded terminate `BLOCKED`, except an exhausted analyst routes to the disclosed partial-analysis join.
+Keep the original baseline, `RUN_DIR`, created-path ledger, current `MUTATION_LIMITS`, proposed and accepted card versions, per-decision answers, pending continuation, warnings and deferred findings. Counters start at zero: `dispatch_retries` per logical dispatch (cap 1), `new_objectives` per target (cap 1), `analyst_clarifications` per target (cap 1), `decision_reasks` per card (cap 1), `plan_adjustments` per target (cap 1), `scope_amendments` per target (cap 2), `fix_cycles` per target (cap 2). A retry retains its counter; a new logical dispatch is a new phase/chunk/fix, not a way to reset a failed dispatch. At a cap, use the stated outcome or default to `BLOCKED`.
 
 Closed role statuses: mapper `PASS | NO_CHANGE_CANDIDATE | NEEDS_CLARIFICATION | ERROR`; analyst `PASS | NEEDS_CLARIFICATION | ERROR`; implementer `PASS | PASS_WITH_WARNINGS | BLOCKED | ERROR`; reviewer `PASS | FAIL | ERROR`. Run the report validator before using any status. Malformed/unknown reports terminate `ERROR`; they are not transient host failures.
 
@@ -29,7 +29,7 @@ No success-shaped report suppresses a runtime failure. Host error text cannot gr
 | Map | `NEEDS_CLARIFICATION` | Ask smallest question once; unresolved or a second asking report → `NEEDS_CLARIFICATION`; first answer → Map |
 | Map | `PASS` | Record baseline; dispatch 2–5 target-derived analysts → Join |
 | Join | Any outstanding analyst | Wait for all, subject to failure routes; never synthesize early |
-| Join | Any `NEEDS_CLARIFICATION` | Relay questions before synthesis; one clarification round, unresolved → `NEEDS_CLARIFICATION` |
+| Join | Any `NEEDS_CLARIFICATION` | At the clarification cap, count each asking dimension as failed → Join. Otherwise relay the questions; unanswered → `NEEDS_CLARIFICATION`; answered → increment `analyst_clarifications`, redispatch only the asking dimensions with the answers → Join |
 | Join | All settled; at least one validated `PASS` | Preserve every failed dimension and overflow disclosure → Synthesize |
 | Join | All failed | `ERROR` with failed dimensions; do not fabricate a plan |
 | Synthesize | Bounded validated reports | Build card v1 (or revised version); include all total/included/omitted counts and defer each omitted category → PlanGate |

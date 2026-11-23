@@ -60,7 +60,11 @@ def analyst_status(text):
     require(not high_omitted or (
         len(findings) == MAX_FINDINGS and all(item["priority"] == "high" for item in findings)
     ), "include high-priority findings before lower-priority findings")
-    return report.get("status")
+    status = report.get("status")
+    for stop, field in (("NEEDS_CLARIFICATION", "question"), ("ERROR", "error")):
+        if status == stop:
+            require(isinstance(report.get(field), str) and report[field].strip(), "missing " + field)
+    return status
 
 
 REQUIRED_FIELDS = {

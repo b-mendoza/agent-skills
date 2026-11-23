@@ -50,7 +50,7 @@ JSON report at `REPORT_PATH` (no code fences):
 }
 ```
 
-`status` is one of `PASS | NEEDS_CLARIFICATION | ERROR`; retain all count fields even on a stop. Put the smallest question or error (including whether transient) in its corresponding field. Compact reply, at most 12 lines, no raw excerpts:
+`status` is one of `PASS | NEEDS_CLARIFICATION | ERROR`; retain all count fields even on a stop. On `NEEDS_CLARIFICATION`, set `question` to the smallest question; on `ERROR`, set `error` to the cause and whether transient. Both require non-empty strings on their respective stops. Compact reply, at most 12 lines, no raw excerpts:
 
 ```text
 CHUNK_ANALYSIS: <status>
