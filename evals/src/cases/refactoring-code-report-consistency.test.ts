@@ -31,6 +31,13 @@ describe.each([
   });
 });
 
+test("mapper distinguishes ./Target from its Target field", () => {
+  const report = mapper.text
+    .replaceAll("src/a.js", "./Target")
+    .replace("7/250 OK", "300/250 OVERSIZED");
+  expect(checkReport(report, mapper.role)).toMatchObject(validated("PASS"));
+});
+
 test.each([
   ["ERROR", mapper, "Error detail: read failed"],
   ["NEEDS_CLARIFICATION", mapper, "Question if blocked: Which target?"],

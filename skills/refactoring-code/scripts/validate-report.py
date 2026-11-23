@@ -101,7 +101,7 @@ def text_fields(text, names):
     fields = {}
     for index, match in enumerate(matches):
         name = match.group(1)
-        require(name not in fields, "duplicate field: " + name)
+        require(name not in fields, "duplicate field: " + name + " (write a path that equals a field name as ./" + name + ")")
         end = matches[index + 1].start() if index + 1 < len(matches) else len(text)
         fields[name] = (match.group(2) + text[match.end():end]).strip()
     return fields
