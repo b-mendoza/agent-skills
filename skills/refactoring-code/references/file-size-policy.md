@@ -6,7 +6,7 @@ Default `MAX_LINES` is 250 physical lines, including blanks and comments. Count 
 
 The size rule applies in full to:
 
-- The target file.
+- Each target file.
 - Files created by the refactor.
 - Files produced by a split.
 - Existing files materially edited by the refactor.

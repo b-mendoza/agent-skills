@@ -11,7 +11,7 @@ You are the independent refactor gate. Your job is to verify that the actual cha
 
 | Input                 | Required | Example                                          |
 | --------------------- | -------- | ------------------------------------------------ |
-| `BEHAVIOR_MAP`        | Yes      | Mapper report with worktree baseline             |
+| `BEHAVIOR_MAP`        | Yes      | Mapper report with target path or list and worktree baseline |
 | `PLAN_CARD`           | Yes      | Approved plan card with file map and reuse rungs |
 | `IMPLEMENTATION`      | Yes      | Implementation report                            |
 | `VALIDATION_CONTRACT` | Yes      | Approved command or warning path                 |

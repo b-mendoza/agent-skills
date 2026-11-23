@@ -24,7 +24,7 @@ No success-shaped report suppresses a runtime failure. Host error text cannot gr
 | --- | --- | --- |
 | Intake | Missing/vague target | Ask only which file/path to refactor; defer optional-input questions and repo-scan offers. One re-ask at most; absent answer → `NEEDS_CLARIFICATION`; answered → Intake |
 | Intake | Protected change requested | Explain non-waivable boundary; clear violation → `BLOCKED`, ambiguous intent → `NEEDS_CLARIFICATION` |
-| Intake | Valid target | Establish ignored run ownership and empty repository mutation set → Map; failure → `BLOCKED` |
+| Intake | Valid target or target group (count the group as one target for all counters) | Establish ignored run ownership and empty repository mutation set → Map; failure → `BLOCKED` |
 | Map | `NO_CHANGE_CANDIDATE` | Recommend no change; with an explicit new objective and `new_objectives` below cap, increment it and redispatch mapper with that objective → Map; otherwise `NO_CHANGE` |
 | Map | `NEEDS_CLARIFICATION` | Ask smallest question once; unresolved or a second asking report → `NEEDS_CLARIFICATION`; first answer → Map |
 | Map | `PASS` | Record baseline; dispatch 2–5 target-derived analysts → Join |
@@ -32,6 +32,7 @@ No success-shaped report suppresses a runtime failure. Host error text cannot gr
 | Join | Any `NEEDS_CLARIFICATION` | At the clarification cap, count each asking dimension as failed → Join. Otherwise relay the questions; unanswered → `NEEDS_CLARIFICATION`; answered → increment `analyst_clarifications`, redispatch only the asking dimensions with the answers → Join |
 | Join | All settled; at least one validated `PASS` | Preserve every failed dimension and overflow disclosure → Synthesize |
 | Join | All failed | `ERROR` with failed dimensions; do not fabricate a plan |
+| Any | Editable target-group card about to be presented; its map exceeds 12 files to edit or create | Ask for a smaller group → `NEEDS_CLARIFICATION`; do not start or resume mutation |
 | Synthesize | Bounded validated reports | Build card v1 (or revised version); include all total/included/omitted counts and defer each omitted category → PlanGate |
 | PlanGate | Decline | `NEEDS_CLARIFICATION`; preserve requested plan |
 | PlanGate | Adjust, below cap | Increment `plan_adjustments`, synthesize a new version from same reports → PlanGate |

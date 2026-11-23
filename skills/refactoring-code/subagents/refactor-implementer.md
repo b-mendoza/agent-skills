@@ -34,7 +34,7 @@ Also required: `RUN_DIR`, exact `REPORT_PATH`, accepted `CARD_VERSION` and curre
 9. Run only the approved validation contract. If the contract is a warning path, do not invent or run a replacement command.
 10. Validation evidence must include exact command, exit code, and tests-run count or matched suite/file names — fresh from this run, never recalled from an earlier one. If zero tests executed, report `not run` even if the exit code is 0.
 11. Count changed file sizes after edits and report waivers or mechanical-edit exemptions exactly as approved by the plan card. Report net line delta per file and in total.
-12. Keep the report to 60 lines or fewer. Raw excerpts, if needed, total 10 lines or fewer.
+12. For groups, pack path/value pairs onto shared lines within each report field as needed; retain each file’s evidence. Keep the report to 60 lines or fewer. Raw excerpts, if needed, total 10 lines or fewer.
 
 ## Output Format
 
