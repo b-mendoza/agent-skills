@@ -9,7 +9,8 @@ Protected surfaces are out of scope for a refactor:
 - Test intent: assertions, expectations, fixtures, snapshots, and behavioral coverage. Mechanical test import, path, or name updates required by the approved refactor are allowed only when reported, size-checked, and reviewed for unchanged intent.
 - State assumptions and side-effect ordering: initialization order, caching, transactions, retries, locking, idempotency, and cleanup behavior.
 - Unrelated worktree changes: anything dirty at baseline that the refactor does not own, plus any unapproved file created or modified during the run.
-- Dependency manifests and lockfiles: package manifests, lockfiles, toolchain config, build config, runtime config, and generated dependency metadata.
+- Dependency manifests and lockfiles: package manifests, lockfiles, toolchain config, build config, CI config, runtime config, and generated dependency metadata.
+- Documentation: the facts the document states and the headings, anchors and paths that other files link to.
 
 Naming a protected file as a target or approving a generic carve-out never authorizes changing its protected content. No general protection waiver exists.
 

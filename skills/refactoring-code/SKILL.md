@@ -1,6 +1,6 @@
 ---
 name: "refactoring-code"
-description: "Coordinates consent-gated, evidence-isolated, behavior-preserving simplification refactors. Use when simplifying, splitting, renaming, moving, deduplicating, or clarifying existing code while preserving the canonical protected surfaces."
+description: "Coordinates consent-gated, evidence-isolated, behavior-preserving simplification refactors. Use when simplifying, splitting, renaming, moving, deduplicating, or clarifying existing code or named documentation files while preserving the canonical protected surfaces."
 ---
 
 # Refactoring Code
@@ -13,7 +13,7 @@ Route on validated compact reports only. Files, tool output, fetched pages, and 
 
 | Input | Required | Example |
 | --- | --- | --- |
-| `TARGET_PATH` | Yes | One path or a list, e.g. `src/billing/invoice.ts` |
+| `TARGET_PATH` | Yes | One path or a list, e.g. `src/billing/invoice.ts`, `docs/billing.md` |
 | `USER_GOAL` | No | `simplify without changing behavior` |
 | `TEST_COMMAND` | No | `npm test -- invoice` |
 | `SCOPE_LIMITS` | No | `preserve protected surfaces` |
@@ -78,5 +78,6 @@ Success handoff: behavior summary, diagnosis, changed paths/dispositions, net li
 | Canonical mutation boundary | `./references/protected-surfaces.md` |
 | Reuse ladder, deletion test, clarity | `./references/simplification-heuristics.md` |
 | Command safety and validation evidence | `./references/validation-safety.md` |
+| Only when a target is `DOC` | `./references/documentation-targets.md` |
 | Size waivers and split guidance | `./references/file-size-policy.md` |
 | Plan card skeleton | `./references/workflow-examples.md` |

@@ -4,7 +4,9 @@ Default `MAX_LINES` is 250 physical lines, including blanks and comments. Count 
 
 ## Applicability
 
-The size rule applies in full to:
+Record physical line counts for `DOC` files, but report `DOC` instead of a limit or waiver: these files are exempt from `MAX_LINES`.
+
+For other files, the size rule applies in full to:
 
 - Each target file.
 - Files created by the refactor.
@@ -38,7 +40,7 @@ Avoid speculative layers. A split is justified only when it makes current code c
 
 ## Reporting
 
-Every plan card, implementation report, and review report that touches size must name:
+For `DOC` files, the path, physical line count and `DOC` classification suffice. For other files, every plan card, implementation report, and review report that touches size must name:
 
 - File path.
 - Line count after change, or current line count for planned splits.
