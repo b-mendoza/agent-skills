@@ -52,7 +52,7 @@ No success-shaped report suppresses a runtime failure. Host error text cannot gr
 | Review | `FAIL`, required fix outside accepted map | AmendmentGate with pending continuation Fix |
 | Review | `FAIL`, in-scope required fixes and below cap | Increment `fix_cycles`; dispatch implementer with intersection of accepted map and required fixes → Implement |
 | Review | `FAIL` at cap | `BLOCKED`; retain edits and evidence |
-| AmendmentGate | Protected change or AUTO_APPROVE | `BLOCKED` |
+| AmendmentGate | AUTO_APPROVE, or a protected change outside E1 in [the boundary](./references/protected-surfaces.md) | `BLOCKED` |
 | AmendmentGate | Below amendment cap | Read-only inspect added files, record their pre-edit contents and behavior as a supplement to (never a reset of) the original baseline. Present next card version: old and added/removed paths, exact operations/commands, retained work, baseline and risks; increment `scope_amendments` → AmendmentDecision |
 | AmendmentDecision | Merely naming a file, partial reply or request to proceed | Not approval; use MissingDecisions with continuation AmendmentDecision, then stop if unresolved |
 | AmendmentDecision | Decline | `BLOCKED`, preserve accepted edits |
