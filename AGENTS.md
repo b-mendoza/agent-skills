@@ -88,7 +88,7 @@ For a design decision, do these steps in order.
 ### Adjudication
 
 - An adjudication is a verdict on a judgment dispute between the orchestrator and a subagent.
-- In the Codex harness, use `gpt-6-astra` for an adjudication.
+- In the Codex harness, use `gpt-6.2-astra` for an adjudication.
 - In the Grok harness, use `grok-4.7-build-fast` for an adjudication.
 
 ### T3 Code
