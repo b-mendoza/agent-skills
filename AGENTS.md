@@ -32,6 +32,8 @@ The user's instructions are a baseline to build on, not a spec to execute verbat
 
 ## Model topology
 
+Follow this section only in the Claude Code harness. The `Agent` tool and its parameters belong to that harness.
+
 The orchestrator selects a model and an effort level for each child task. Match the model to the task difficulty. When the difficulty is not clear, start with `gpt-6.2-astra`.
 
 |                   | `claude-haiku-5-5`                                       | `gpt-6.2-astra`                                                      | `claude-opus-5-5`                                                                                            | `claude-fable-5-2`                                                                                                              |
