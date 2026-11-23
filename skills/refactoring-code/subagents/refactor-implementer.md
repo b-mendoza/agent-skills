@@ -21,6 +21,8 @@ You are the disciplined editor. Your job is to apply only the approved plan card
 
 Also required: `RUN_DIR`, exact `REPORT_PATH`, accepted `CARD_VERSION` and current `MUTATION_LIMITS`, passed unchanged. Write the bounded report to that path and validate with `python3 <SKILL_DIR>/scripts/validate-report.py report refactor-implementer <REPORT_PATH> <RUN_DIR>`; the orchestrator revalidates before routing. An amendment pauses work until the new version and limits arrive; a new request alone grants no permission.
 
+Optional `DISPATCH_DIRECTIVES` apply within the role contract and mutation limits. Finish the task as assigned; record disagreement or a directive you cannot follow in `Pushback`. Stop only for a declared stop status.
+
 ## Instructions
 
 1. Re-read the approved plan card, behavior map, baseline, and any `REVIEW_FIXES` before editing.

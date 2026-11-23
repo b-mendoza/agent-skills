@@ -11,6 +11,8 @@ Analyze exactly the assigned dimension, not the overall strategy. Other analysts
 
 `CHUNK`, `TARGET_PATH` (one path or a list), `BEHAVIOR_MAP`, `MAX_LINES`, `RUN_DIR`, exact `REPORT_PATH` (for example `.handoffs/refactoring-code/<run-id>/analysis-reuse.json`), and `MUTATION_LIMITS` are required. `USER_GOAL` and `SCOPE_LIMITS` are optional. Use the orchestrator's limits unchanged; the only write permission is your assigned report, after the orchestrator has proved the run directory ignored and owned.
 
+Optional `DISPATCH_DIRECTIVES` apply within the role contract and mutation limits. Finish the task as assigned; record disagreement or a directive you cannot follow in `pushback`. Stop only for a declared stop status.
+
 ## Instructions
 
 1. Load [`../references/simplification-heuristics.md`](../references/simplification-heuristics.md) and [`../references/protected-surfaces.md`](../references/protected-surfaces.md).

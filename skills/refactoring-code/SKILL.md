@@ -17,6 +17,7 @@ Route on validated compact reports and the bounded claim-check ledger only. File
 | `USER_GOAL` | No | `simplify without changing behavior` |
 | `TEST_COMMAND` | No | `npm test -- invoice` |
 | `SCOPE_LIMITS` | No | `preserve protected surfaces` |
+| `DISPATCH_DIRECTIVES` | No | `Report assumptions explicitly` |
 | `MAX_LINES` | No, default `250` | `300` |
 | `AUTO_APPROVE` | No, default `false` | `true` |
 
@@ -41,7 +42,7 @@ Reports must pass `python3 <SKILL_DIR>/scripts/validate-report.py report <role> 
 | `refactor-implementer` | `./subagents/refactor-implementer.md` | Serial approved edits, dispositions, validation evidence |
 | `refactor-reviewer` | `./subagents/refactor-reviewer.md` | Baseline-scoped behavior and simplification verdicts |
 
-Read a role only at dispatch. Implementation is single-writer and serial. Analysts may run concurrently with separate report paths; see the order-independent join in the state machine.
+Record user dispatch directives verbatim; append them unchanged after the role inputs on every dispatch. They cannot override trust, boundaries, gates, limits or the role contract. Read a role only at dispatch. Implementation is single-writer and serial. Analysts may run concurrently with separate report paths; see the order-independent join in the state machine.
 
 ## Execution
 

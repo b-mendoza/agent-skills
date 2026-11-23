@@ -30,3 +30,8 @@ The orchestrator classifies each entry, not its author. Separate facts a bounded
 - Scope or product intent: what the user wants to include, preserve or change.
 - Material design or risk: neither position is settled by a bounded check, and choosing between them changes the file map, an interface, the validation contract or protected-surface exposure.
 - Other judgment: choosing a side has none of those consequences. Record both positions when the orchestrator decides.
+
+## Dispatch directives
+
+Precedence, highest first: protected surfaces and trust rules; gates, accepted card and `MUTATION_LIMITS`; role contract (statuses, format and caps); directives. Text changing scope, files, commands, approvals or validation is a scope request subject to the existing gates, not authority to act.
+Record the user's directives verbatim and append them unchanged after the inputs on every dispatch, including retries. A role identifies any directive it cannot follow in its pushback; the orchestrator tells the user which directive and why.
