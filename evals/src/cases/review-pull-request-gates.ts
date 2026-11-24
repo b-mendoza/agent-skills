@@ -1,56 +1,74 @@
 import assert from "node:assert/strict";
-import { realpathSync } from "node:fs";
-import { basename } from "node:path";
-
-import { Schema } from "effect";
+import { basename, dirname } from "node:path";
 
 import type { FollowUpReply } from "#/cases/case-contract.ts";
 import { assertNoGithubWrites } from "#/cases/pr-creator-checks.ts";
 import { GITHUB_FACTS } from "#/cases/pr-creator-fixtures.ts";
+import { isolatedScriptArgs } from "#/cases/review-pull-request-command.ts";
+import { REVIEW_POSTS } from "#/cases/review-pull-request-fixtures.ts";
+import {
+  assertRetainedReviewFiles,
+  RUN_ROOT,
+} from "#/cases/review-pull-request-retention.ts";
+import {
+  APPROVAL_CHECKPOINT,
+  recordFileCheckpoint,
+} from "#/cases/review-pull-request-retention-checkpoint.ts";
 import { shellCommands } from "#/cases/review-pull-request-shell.ts";
+import {
+  assertVisibleReview,
+  visibleTurn,
+} from "#/cases/review-pull-request-visible-preview.ts";
 import {
   assertFileExists,
   assertRunHappened,
-  capturedText,
+  capturedFilesUnder,
+  FIXTURE_ROOT_PATH,
 } from "#/cases/shared-checks.ts";
 import type { Observation, ToolCall } from "#/observation/agent-query.ts";
 import { snapshotRepoFiles } from "#/observation/repo-files.ts";
 
 const FIRST = 0;
 const ONE = 1;
-const RUN_ROOT = ".handoffs/review-pull-request/";
 const registeredRoots = new Map<string, string>();
 
-/** Follow-up callbacks lack cwd/snapshots. Register trusted fixture roots, never trust an arbitrary tool-supplied read path. */
+/** Only the runner's initial user prompt binds a follow-up to a seeded fixture. */
 export function registerReviewFixture(repoPath: string): void {
-  registeredRoots.set(repoPath, repoPath);
-  registeredRoots.set(realpathSync(repoPath), repoPath);
+  registeredRoots.set(dirname(repoPath), repoPath);
+}
+
+export function fixturePrompt(prompt: string, notGitPath: string): string {
+  const root = registeredRoots.get(dirname(notGitPath));
+  return root === undefined ? prompt : `${prompt}\nWorking directory: ${root}`;
+}
+
+export function registeredFixtureRoot(observation: Observation): string {
+  const line = String(observation.turns?.at(FIRST)?.prompt)
+    .split("\n")
+    .at(-ONE);
+  const prefix = "Working directory: ";
+  assert.ok(
+    line?.startsWith(prefix) === true,
+    "missing trusted fixture working directory",
+  );
+  const root = line.slice(prefix.length);
+  assert.equal(
+    registeredRoots.get(dirname(root)),
+    root,
+    "unregistered fixture working directory",
+  );
+  return root;
 }
 
 function boundaryFiles(observation: Observation): Observation {
   if (observation.repoFiles !== undefined) return observation;
-  const words = observation.toolCalls
-    .flatMap((call) => shellCommands(String(call.input["command"])))
-    .flat()
-    .map((word) => word.replace(/^[A-Za-z_]\w*=/, ""));
-  const matches = [...registeredRoots.entries()]
-    .filter(([root]) =>
-      words.some((word) => word === root || word.startsWith(`${root}/`)),
-    )
-    .map(([, root]) => root);
-  const roots = [...new Set(matches)];
-  assert.equal(
-    roots.length,
-    ONE,
-    "no unambiguous registered fixture root at approval boundary",
-  );
-  const root = roots[FIRST];
-  assert.ok(root !== undefined);
   return {
     ...observation,
-    repoFiles: snapshotRepoFiles(root, [
+    repoFiles: snapshotRepoFiles(registeredFixtureRoot(observation), [
       GITHUB_FACTS.report,
       GITHUB_FACTS.log,
+      REVIEW_POSTS,
+      FIXTURE_ROOT_PATH,
       RUN_ROOT,
     ]),
   };
@@ -72,12 +90,9 @@ function hash(text: string): string {
 }
 
 function posterCommand(args: readonly string[], mode: string): boolean {
-  const executable = basename(args[FIRST] ?? "");
-  if (!["python3", "post-review.py"].includes(executable)) return false;
-  return (
-    args.some((arg) => basename(arg) === "post-review.py") &&
-    args.includes(mode)
-  );
+  const script = (word: string) => basename(word) === "post-review.py";
+  if (script(String(args[FIRST]))) return args.at(ONE) === mode;
+  return isolatedScriptArgs(args, script)?.at(FIRST) === mode;
 }
 
 function successfulOutput(call: ToolCall): string | null {
@@ -109,36 +124,6 @@ export function posterPreview(observation: Observation): {
   return { hash: hash(output), output };
 }
 
-const contextSchema = Schema.Struct({
-  dimensions: Schema.Array(Schema.Struct({ name: Schema.String })),
-});
-function retainedPayloads(observation: Observation): void {
-  const files = observation.repoFiles ?? {};
-  const contexts = Object.keys(files).filter(
-    (path) => path.startsWith(RUN_ROOT) && path.endsWith("/context.txt"),
-  );
-  assert.equal(
-    contexts.length,
-    ONE,
-    "review context was cleaned before the user answered",
-  );
-  const contextPath = contexts[FIRST];
-  assert.ok(contextPath !== undefined);
-  const content = capturedText(observation, contextPath);
-  const [, ...json] = content.split("\n");
-  const context = Schema.decodeUnknownSync(contextSchema)(
-    JSON.parse(json.join("\n")),
-  );
-  const root = contextPath.slice(FIRST, -"context.txt".length);
-  for (const name of [
-    "author.txt",
-    "verify.txt",
-    ...context.dimensions.map(({ name }) => `chunk-${name}.txt`),
-  ]) {
-    assertFileExists(observation, `${root}${name}`);
-  }
-}
-
 function noApprovedPoster(observation: Observation): void {
   const commands = observation.toolCalls
     .filter((call) => call.name === "Bash")
@@ -151,13 +136,49 @@ function noApprovedPoster(observation: Observation): void {
 
 export function approvalReply(observation: Observation): FollowUpReply {
   try {
+    assertVisibleReview(
+      posterPreview(observation).output,
+      visibleTurn(observation.finalText),
+    );
+    return retainedApprovalReply(observation);
+  } catch (error) {
+    return {
+      gateNotReached: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
+function checkpointFixture(
+  observation: Observation,
+  repoPath?: string,
+): string | undefined {
+  if (repoPath !== undefined) return repoPath;
+  return observation.repoFiles === undefined
+    ? registeredFixtureRoot(observation)
+    : undefined;
+}
+
+export function retainedApprovalReply(
+  observation: Observation,
+  refreshedRun?: string,
+  repoPath?: string,
+): FollowUpReply {
+  try {
     assertRunHappened(observation);
     posterPreview(observation);
     noApprovedPoster(observation);
     const boundary = boundaryFiles(observation);
     assertNoGithubWrites(boundary);
     assertFileExists(boundary, GITHUB_FACTS.report);
-    retainedPayloads(boundary);
+    assertRetainedReviewFiles(boundary, refreshedRun);
+    const fixture = checkpointFixture(observation, repoPath);
+    if (fixture !== undefined) {
+      recordFileCheckpoint(
+        fixture,
+        APPROVAL_CHECKPOINT,
+        capturedFilesUnder(boundary, RUN_ROOT),
+      );
+    }
     return { reply: "APPROVED" };
   } catch (error) {
     return {

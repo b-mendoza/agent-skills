@@ -1,6 +1,6 @@
 ---
 name: "improving-skill-definition"
-description: "Adversarially audits and improves existing first-party agent-skill packages through approval-gated edits, focused subagent reports, baseline diff validation, and outcome-dependent evidence preservation. Use when improving, hardening, or repairing a skill definition, subagent architecture, flow diagram, package hygiene, or prompt sufficiency."
+description: "Adversarially audits and improves existing first-party agent-skill packages through approval-gated edits, focused subagent reports, and baseline diff validation. Use when improving, hardening, or repairing a skill definition, subagent architecture, flow diagram, package hygiene, or prompt sufficiency."
 ---
 
 # Improving Skill Definition
@@ -63,7 +63,9 @@ The orchestrator advances the state machine, writes handoff YAML, reads reports,
 1. `Intake`: load `state-machine.md`; normalize `SKILL_PATH`; build `IMPROVEMENT_MANDATES` (prepend `KNOWN_PROBLEM`).
 2. `TerminalBlocked` if path missing, unreadable, outside first-party `skills/`, or inside `.agents/skills/`, `.claude/skills/`, `skills-lock.json`, `.git`, secrets, private config, or unrelated scope. Even at intake, load the blocked template and include every required heading. Ask for an eligible first-party target; these exclusions have no waiver route.
 3. `SKILL_DIR` is the directory containing this `SKILL.md` as loaded: the base directory the host reported when it loaded the skill (`${CLAUDE_SKILL_DIR}` where the host substitutes it); otherwise the directory of the `SKILL.md` path you read; if neither is known, stop at `TerminalBlocked` with reason `TOOLS_MISSING`.
-4. Set `HANDOFF_DIR=.handoffs/improving-skill-definition/<run-id>/`, where `<run-id>` is generated once at intake (UTC timestamp plus a short random suffix); if the directory exists, regenerate — never reuse a run directory. Materialize `MUTATION_LIMITS`: writes only inside the resolved target package, minus the step-2 exclusions, plus any `SCOPE_LIMITS`; pass this exact value to editor, validator, and synthesis, and go to `TerminalBlocked` before approval if it cannot be derived unambiguously. Copy baseline, set `repair_counter=0`, `mutation_applied=false`, record `ignored_preapproval`. If target is this package, `SELF_IMPROVEMENT_RUN=true`.
+4. Set `HANDOFF_DIR=.handoffs/improving-skill-definition/<run-id>/`, where `<run-id>` is generated once at intake (UTC timestamp plus a short random suffix); if the directory exists, regenerate — never reuse a run directory. Materialize `MUTATION_LIMITS`: writes only inside the resolved target package, minus the step-2 exclusions, plus any `SCOPE_LIMITS`; pass this exact value to editor, validator, and synthesis, and go to `TerminalBlocked` before approval if it cannot be derived unambiguously.
+   - Before the first write, require `git check-ignore --quiet -- "$HANDOFF_DIR"` to exit zero. Otherwise choose a fresh, already-ignored directory under the same workflow prefix and repeat the check, or stop at `TerminalBlocked`. Never read sibling runs.
+   - Copy the baseline, set `repair_counter=0`, `mutation_applied=false`, record `ignored_preapproval`. If target is this package, `SELF_IMPROVEMENT_RUN=true`.
 5. `FlowLoad`: load `references/personality.md` and the target flow when present.
 6. `Discover` / `Audit`: dispatch the registered contracts using `state-machine.md`. Write `HANDOFF_DIR/audit-synthesis-report.yaml` with provenance and `G_MANDATE_COVERAGE` over `IMPROVEMENT_MANDATES`; the FSM owns fan-out/join, status precedence, and wait routes.
 7. `Approval`: request one personality decision (`keep`/`refine`/`replace`/`add`/`remove`/`demote`/`skip`) plus `all`/`none`/current gap ids.
@@ -72,7 +74,7 @@ The orchestrator advances the state machine, writes handoff YAML, reads reports,
 
 ## Output Contract
 
-State the FSM-selected outcome in plain prose, never as a standalone status value or routing envelope. Retain the structured report content using `./references/final-report-template.md` and its mandatory emission checklist. Cleanup: success cleans; approval required preserves `HANDOFF_DIR`; post-mutation blocked/error preserves baseline, editor report, validator report, and a `diff -r` command. Name preserved evidence whenever mutation lacks validation success.
+State the FSM-selected outcome in plain prose, never as a standalone status value or routing envelope. Retain the structured report content using `./references/final-report-template.md` and its mandatory emission checklist. Keep every file written in `HANDOFF_DIR` on every outcome. Report its actual path, or say no run files were created; do not write a file just to report a path. Use retained files only when the dispatch or resume condition allows it. After an unvalidated mutation, identify the baseline, editor and validator reports (disclose any missing evidence), and give the `diff -r` command.
 
 ## Example
 

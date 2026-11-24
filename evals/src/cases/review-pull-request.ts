@@ -4,7 +4,6 @@ import type { EvalCase } from "#/cases/case-contract.ts";
 import { behavioralDefaults, routingDefaults } from "#/cases/case-contract.ts";
 import {
   assertNoGithubWrites,
-  assertOnlyReportWritten,
   assertPlantedStatePreserved,
   plantedPins,
 } from "#/cases/pr-creator-checks.ts";
@@ -13,9 +12,18 @@ import {
   GITHUB_SNAPSHOTS,
   seedGithubFixture,
 } from "#/cases/pr-creator-fixtures.ts";
-import { seedReviewFixture } from "#/cases/review-pull-request-fixtures.ts";
+import { assertReviewScope } from "#/cases/review-pull-request-checks.ts";
+import {
+  REVIEW_POSTS,
+  seedReviewFixture,
+} from "#/cases/review-pull-request-fixtures.ts";
 import { posterPreview } from "#/cases/review-pull-request-gates.ts";
 import { judgeReview } from "#/cases/review-pull-request-judges.ts";
+import {
+  assertPrewriteStop,
+  isReviewWrite,
+  RUN_ROOT,
+} from "#/cases/review-pull-request-retention.ts";
 import { extensionCases } from "#/cases/review-pull-request-scenarios.ts";
 import {
   assertNoMutation,
@@ -23,6 +31,7 @@ import {
   checkNegativeRouting,
   checkPositiveRouting,
   findBashCalls,
+  withoutAllowedChanges,
 } from "#/cases/shared-checks.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import { judgeLive } from "#/observation/judge.ts";
@@ -73,7 +82,24 @@ function checkInlineTarget(report: string, preview: string): void {
 }
 
 function checkReviewPreview(observation: Observation): string {
-  assertOnlyReportWritten(observation, true);
+  assert.deepEqual(observation.gitStatusBefore, {
+    kind: "worktree",
+    entries: "",
+  });
+  assertReviewScope(observation);
+  assertPlantedStatePreserved(observation);
+  assertNoGithubWrites(observation);
+  const allowed = new Set(
+    observation.toolCalls
+      .filter(isReviewWrite)
+      .map(({ input }) => input["file_path"]),
+  );
+  assertNoMutation(
+    withoutAllowedChanges(
+      observation,
+      (call) => isReviewWrite(call) && allowed.has(call.input["file_path"]),
+    ),
+  );
   const report = capturedText(observation, GITHUB_FACTS.report);
   assert.match(report, /^# PR review:/m);
   assert.ok(report.includes(`PR: ${GITHUB_FACTS.url}`));
@@ -136,6 +162,7 @@ function checkReviewPreview(observation: Observation): string {
 
 function checkExistingOutput(observation: Observation): string {
   assertNoMutation(observation);
+  assertPrewriteStop(observation, false);
   assertPlantedStatePreserved(observation);
   assertNoGithubWrites(observation);
   assert.equal(
@@ -174,7 +201,12 @@ export const cases = [
     seed: (context) => {
       seedReviewFixture(context);
     },
-    snapshotPaths: [...GITHUB_SNAPSHOTS, GITHUB_FACTS.report],
+    snapshotPaths: [
+      ...GITHUB_SNAPSHOTS,
+      GITHUB_FACTS.report,
+      REVIEW_POSTS,
+      RUN_ROOT,
+    ],
     intent:
       "Find the planted regression, save a verified review, and hold posting at exact approval preview",
     prompt: () =>
@@ -190,7 +222,7 @@ export const cases = [
     seed: (context) => {
       seedGithubFixture(context, { existingReport: true });
     },
-    snapshotPaths: [...GITHUB_SNAPSHOTS, GITHUB_FACTS.report],
+    snapshotPaths: [...GITHUB_SNAPSHOTS, GITHUB_FACTS.report, RUN_ROOT],
     intent:
       "Create-only output rejects a collision without altering a previous review",
     prompt: () =>

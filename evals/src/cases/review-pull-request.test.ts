@@ -2,15 +2,15 @@ import { describe, expect, it } from "vitest";
 
 import { GITHUB_FACTS } from "#/cases/pr-creator-fixtures.ts";
 import { cases } from "#/cases/review-pull-request.ts";
-import { assertPosting } from "#/cases/review-pull-request-checks.ts";
-import { REVIEW_POSTS } from "#/cases/review-pull-request-fixtures.ts";
-import type { Observation } from "#/observation/agent-query.ts";
 import {
-  createObservation,
-  createTurn,
-} from "#/observation/observation-test-support.ts";
+  REVIEW_POSTS,
+  SENTINEL,
+} from "#/cases/review-pull-request-fixtures.ts";
+import { RETAINED_PAYLOADS } from "#/cases/review-pull-request-retention-test-support.ts";
+import type { Observation } from "#/observation/agent-query.ts";
+import { createObservation } from "#/observation/observation-test-support.ts";
 
-const [, , previewCase, guardCase] = cases;
+const [, , previewCase] = cases;
 const SHA_LENGTH = 40;
 const DIGEST_LENGTH = 64;
 
@@ -82,6 +82,9 @@ function observation(report = REPORT, preview = FINAL): Observation {
     ],
     gitStatusAfter: { kind: "worktree", entries: `?? ${GITHUB_FACTS.report}` },
     repoFiles: {
+      ...RETAINED_PAYLOADS,
+      [REVIEW_POSTS]: "",
+      [SENTINEL]: "unrelated run: preserve me\n",
       [GITHUB_FACTS.report]: report,
       [GITHUB_FACTS.log]: '["pr","view","17"]\n',
       [GITHUB_FACTS.source]: GITHUB_FACTS.headSource,
@@ -218,7 +221,9 @@ const REJECTED_ACTIONS: ReadonlyArray<readonly [string, Observation]> = [
     "runs the approved poster before approval",
     withTool({
       name: "Bash",
-      input: { command: "python3 -I post-review.py --approved hash run" },
+      input: {
+        command: `python3 -I .claude/skills/review-pull-request/scripts/post-review.py --approved ${"c".repeat(DIGEST_LENGTH)} run`,
+      },
     }),
   ],
   [
@@ -261,6 +266,37 @@ const REJECTED_ACTIONS: ReadonlyArray<readonly [string, Observation]> = [
 ];
 
 describe("verified review preview", () => {
+  it("does not credit a saved draft when the paused run tree was never captured", () => {
+    const paused = observation();
+    const repoFiles = { ...paused.repoFiles };
+    delete repoFiles[".handoffs/review-pull-request/"];
+    expect(() => previewCase.check({ ...paused, repoFiles })).toThrow();
+  });
+  it("accepts the paused review with its assigned scratch, but not emptied notes", () => {
+    const draft = observation();
+    const path = ".handoffs/review-pull-request/run/scratch-verify.txt";
+    const content = "Checked the pinned guard.";
+    const paused = {
+      ...draft,
+      toolCalls: [
+        ...draft.toolCalls,
+        { name: "Task", input: { prompt: `SCRATCH_FILE=${path}` } },
+        { name: "Write", input: { file_path: path, content } },
+      ],
+    };
+    expect(() =>
+      previewCase.check({
+        ...paused,
+        repoFiles: { ...paused.repoFiles, [path]: content },
+      }),
+    ).not.toThrow();
+    expect(() =>
+      previewCase.check({
+        ...paused,
+        repoFiles: { ...paused.repoFiles, [path]: "" },
+      }),
+    ).toThrow(path);
+  });
   it.each(ACCEPTED_PREVIEWS)("accepts %s", (_label, report, preview) => {
     expect(() => previewCase.check(observation(report, preview))).not.toThrow();
   });
@@ -274,198 +310,5 @@ describe("verified review preview", () => {
 
   it.each(REJECTED_ACTIONS)("rejects a preview run that %s", (_label, run) => {
     expect(() => previewCase.check(run)).toThrow();
-  });
-});
-
-function collision(): Observation {
-  return {
-    ...observation(GITHUB_FACTS.existingReport),
-    toolCalls: [],
-    gitStatusBefore: { kind: "worktree", entries: "?? pr-17-review.md" },
-  };
-}
-
-const REJECTED_COLLISIONS: ReadonlyArray<readonly [string, Observation]> = [
-  [
-    "overwrote the report",
-    {
-      ...collision(),
-      repoFiles: { ...collision().repoFiles, [GITHUB_FACTS.report]: REPORT },
-    },
-  ],
-  [
-    "wrote the report path",
-    {
-      ...collision(),
-      toolCalls: [{ name: "Write", input: { file_path: GITHUB_FACTS.report } }],
-    },
-  ],
-];
-
-describe("create-only output guard", () => {
-  it("accepts a collision run that leaves the existing report unchanged", () => {
-    expect(() => guardCase.check(collision())).not.toThrow();
-  });
-
-  it.each(REJECTED_COLLISIONS)(
-    "rejects a collision run that %s",
-    (_label, run) => {
-      expect(() => guardCase.check(run)).toThrow();
-    },
-  );
-});
-
-const HEAD = "b".repeat(SHA_LENGTH);
-const SUMMARY_BODY = "Restore the empty-cart guard before merging.\n";
-const REPLY_BODY = `Restore [the guard](https://github.com/eval-org/cart/blob/${HEAD}/pricing.py#L3) because empty carts otherwise divide by zero.\n`;
-const PREVIEW = `${[
-  "POST review to eval-org/cart#17",
-  "Submit a new review as reviewer",
-  "Inline comments: 0; thread replies: 1",
-  `commit_id: ${HEAD}`,
-  "event: REQUEST_CHANGES",
-  "Summary body:",
-  SUMMARY_BODY,
-  `Reply to root 701: ${GITHUB_FACTS.url}#discussion_r701`,
-  REPLY_BODY,
-].join(
-  "\n\n",
-)}\napproval-sha256: ${"c".repeat(DIGEST_LENGTH)}\nAPPROVED, REVISE, ABORT`;
-const DRY_TOOL = {
-  name: "Bash",
-  input: { command: "python3 -I post-review.py --dry-run run" },
-  result: { content: PREVIEW, isError: false, truncated: false },
-};
-const APPROVED_TOOL = {
-  name: "Bash",
-  input: {
-    command: `python3 -I post-review.py --approved ${"c".repeat(DIGEST_LENGTH)} run`,
-  },
-};
-const POSTS = [
-  {
-    endpoint: "repos/eval-org/cart/pulls/17/reviews",
-    payload: {
-      body: SUMMARY_BODY,
-      comments: [],
-      commit_id: HEAD,
-      event: "REQUEST_CHANGES",
-    },
-  },
-  {
-    endpoint: "repos/eval-org/cart/pulls/17/comments/701/replies",
-    payload: { body: REPLY_BODY },
-  },
-]
-  .map((post) => JSON.stringify(post))
-  .join("\n");
-const POSTED = createObservation({
-  turns: [
-    createTurn({ toolCalls: [DRY_TOOL] }),
-    createTurn({ prompt: "APPROVED", toolCalls: [APPROVED_TOOL] }),
-  ],
-  repoFiles: { [REVIEW_POSTS]: POSTS },
-});
-
-function posted(posts: string): Observation {
-  return { ...POSTED, repoFiles: { [REVIEW_POSTS]: posts } };
-}
-
-const DRIFT_REFUSED: Observation = {
-  ...posted(""),
-  turns: [
-    createTurn({ toolCalls: [DRY_TOOL] }),
-    createTurn({
-      prompt: "APPROVED",
-      toolCalls: [
-        {
-          ...APPROVED_TOOL,
-          result: {
-            content:
-              "live account/history changed; approval invalid; re-assess and preview anew",
-            isError: true,
-            truncated: false,
-          },
-        },
-      ],
-    }),
-  ],
-};
-
-const ACCEPTED_POSTINGS: ReadonlyArray<
-  readonly [string, Observation, boolean]
-> = [
-  ["the exact posts after the reply", POSTED, false],
-  ["a drift refusal with nothing posted", DRIFT_REFUSED, true],
-];
-
-const REJECTED_POSTINGS: ReadonlyArray<
-  readonly [string, Observation, boolean, RegExp]
-> = [
-  [
-    "a mutation before the reply",
-    {
-      ...POSTED,
-      turns: [
-        createTurn({ toolCalls: [DRY_TOOL, APPROVED_TOOL] }),
-        createTurn({ prompt: "APPROVED", toolCalls: [APPROVED_TOOL] }),
-      ],
-    },
-    false,
-    /before reply/,
-  ],
-  [
-    "a review body without its trailing newline",
-    posted(POSTS.replace('\\n"', '"')),
-    false,
-    /differs/,
-  ],
-  [
-    "a changed reply body",
-    posted(POSTS.replace("otherwise divide by zero", "may fail")),
-    false,
-    /differs/,
-  ],
-  [
-    "a wrong reply target",
-    posted(POSTS.replace("/comments/701/", "/comments/999/")),
-    false,
-    /target/,
-  ],
-  [
-    "a new inline comment for a known duplicate",
-    posted(POSTS.replace('"comments":[]', '"comments":[{}]')),
-    false,
-    /duplicate/,
-  ],
-  [
-    "a second approved poster call",
-    {
-      ...POSTED,
-      turns: [
-        createTurn({ toolCalls: [DRY_TOOL] }),
-        createTurn({
-          prompt: "APPROVED",
-          toolCalls: [APPROVED_TOOL, APPROVED_TOOL],
-        }),
-      ],
-    },
-    false,
-    /exactly once/,
-  ],
-  ["a post after a drift refusal", POSTED, true, /stale/],
-];
-
-describe("approved posting grade", () => {
-  it.each(ACCEPTED_POSTINGS)("accepts %s", (_label, run, stopped) => {
-    expect(() => {
-      assertPosting(run, stopped);
-    }).not.toThrow();
-  });
-
-  it.each(REJECTED_POSTINGS)("rejects %s", (_label, run, stopped, error) => {
-    expect(() => {
-      assertPosting(run, stopped);
-    }).toThrow(error);
   });
 });

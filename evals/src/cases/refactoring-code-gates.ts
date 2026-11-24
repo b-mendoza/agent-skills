@@ -91,7 +91,7 @@ export const lifecycleFollowUps: readonly FollowUpTurn[] = [
     "approve-amendment",
     REVISED,
     () =>
-      "Approve the displayed amended card and full A+B map, retaining the declined-command warning path. Finish implementation, review and owned temporary cleanup. Do not touch another run's files.",
+      "Approve the displayed amended card and full A+B map, retaining the declined-command warning path. Finish implementation and review. Keep this run's files and tell me where they are. Do not touch another run's files.",
     { allowEditedA: true },
   ),
 ];

@@ -1,16 +1,31 @@
+import assert from "node:assert/strict";
+
 import { expect, it } from "vitest";
 
 import { GITHUB_FACTS } from "#/cases/pr-creator-fixtures.ts";
-import { assertReviewedArtifact } from "#/cases/review-pull-request-checks.ts";
-import { SENTINEL } from "#/cases/review-pull-request-fixtures.ts";
-import { approvalReply } from "#/cases/review-pull-request-gates.ts";
+import { cases } from "#/cases/review-pull-request.ts";
+import {
+  assertCrossFileScratch,
+  assertReviewedArtifact,
+  assertTransport,
+} from "#/cases/review-pull-request-checks.ts";
+import {
+  REVIEW_POSTS,
+  SENTINEL,
+  TICKET_LOG,
+  TICKET_URL,
+} from "#/cases/review-pull-request-fixtures.ts";
+import { retainedApprovalReply as approvalReply } from "#/cases/review-pull-request-gates.ts";
 import { reviewJudgeRequest } from "#/cases/review-pull-request-judges.ts";
+import {
+  RETAINED_PAYLOADS,
+  REVIEW_RUN as RUN,
+} from "#/cases/review-pull-request-retention-test-support.ts";
 import { parseJudgeResponse } from "#/observation/judge.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
 
 const HASH_LENGTH = 64;
 const ONE = 1;
-const RUN = ".handoffs/review-pull-request/run";
 const HASH = "c".repeat(HASH_LENGTH);
 const CAPTURED_PREVIEW = `POST review to eval-org/cart#17\n\napproval-sha256: ${HASH}\n`;
 function machineObservation(finalText: string) {
@@ -20,11 +35,15 @@ function machineObservation(finalText: string) {
     toolCalls: [
       {
         name: "Bash",
-        input: { command: `python3 -I post-review.py --dry-run ${RUN}` },
+        input: {
+          command: `python3 -I .claude/skills/review-pull-request/scripts/post-review.py --dry-run ${RUN}`,
+        },
         result: { content: CAPTURED_PREVIEW, isError: false, truncated: false },
       },
     ],
     repoFiles: {
+      ...RETAINED_PAYLOADS,
+      [REVIEW_POSTS]: "",
       [GITHUB_FACTS.source]: GITHUB_FACTS.headSource,
       [GITHUB_FACTS.sourceBaseline]: GITHUB_FACTS.headSource,
       [GITHUB_FACTS.report]: "Dimensions reviewed: correctness\n",
@@ -54,18 +73,7 @@ it.each(recorded)(
 );
 
 it("takes approval authority from captured stdout even with no hash or choices in final prose", () => {
-  const good = machineObservation("The verified review is ready.");
-  const observation = {
-    ...good,
-    repoFiles: {
-      ...good.repoFiles,
-      [`${RUN}/context.txt`]:
-        'CONTEXT: PASS\n{"dimensions":[{"name":"correctness"}]}',
-      [`${RUN}/author.txt`]: "AUTHOR: PASS\n{}",
-      [`${RUN}/verify.txt`]: "VERIFY: PASS\n{}",
-      [`${RUN}/chunk-correctness.txt`]: "CHUNK: PASS\n{}",
-    },
-  };
+  const observation = machineObservation("The verified review is ready.");
   expect(approvalReply(observation)).toEqual({ reply: "APPROVED" });
   expect(
     approvalReply({
@@ -73,7 +81,9 @@ it("takes approval authority from captured stdout even with no hash or choices i
       toolCalls: [
         {
           name: "Bash",
-          input: { command: `python3 -I post-review.py --dry-run ${RUN}` },
+          input: {
+            command: `python3 -I .claude/skills/review-pull-request/scripts/post-review.py --dry-run ${RUN}`,
+          },
           result: {
             content: "No printed hash.",
             isError: false,
@@ -108,20 +118,193 @@ it("does not approve the incomplete run-2 progress reply without a prepared dry-
   ).toHaveProperty("gateNotReached");
 });
 
-it.each([`${RUN}/author.txt`, `${RUN}/context.txt`, `${RUN}/verify.txt`])(
-  "still rejects a retained terminal payload: %s",
-  (path) => {
-    const good = machineObservation(
-      "What I kept: the payload files stay in the git-ignored run directory.",
-    );
-    expect(() =>
-      assertReviewedArtifact({
-        ...good,
-        repoFiles: { ...good.repoFiles, [path]: "retained" },
-      }),
-    ).toThrow(/not cleaned/);
+it.each(["context.txt", "author.txt", "verify.txt", "chunk-tests.txt"])(
+  "rejects a missing terminal %s even when prose claims retention",
+  (name) => {
+    const good = machineObservation("All run files were preserved.");
+    const repoFiles = { ...good.repoFiles };
+    delete repoFiles[`${RUN}/${name}`];
+    expect(() => assertReviewedArtifact({ ...good, repoFiles })).toThrow(name);
   },
 );
+
+it("does not authorize a receipt during a dry run", () => {
+  const good = machineObservation("Draft saved, not posted");
+  const path = `${RUN}/receipts.json`;
+  expect(() =>
+    assertReviewedArtifact({
+      ...good,
+      repoFiles: { ...good.repoFiles, [path]: "{}" },
+    }),
+  ).toThrow(path);
+});
+
+it("requires the partial receipt once a review POST was attempted, even without a remote receipt", () => {
+  const good = machineObservation("Posting failed");
+  const path = `${RUN}/receipts.json`;
+  const log = JSON.stringify([
+    "api",
+    "--method",
+    "POST",
+    "repos/eval-org/cart/pulls/17/reviews",
+  ]);
+  const files = { ...good.repoFiles, [GITHUB_FACTS.log]: log };
+  expect(() => assertReviewedArtifact({ ...good, repoFiles: files })).toThrow(
+    path,
+  );
+  expect(() =>
+    assertReviewedArtifact({
+      ...good,
+      repoFiles: { ...files, [path]: '{"complete":false}' },
+    }),
+  ).not.toThrow();
+});
+
+it("rejects an emptied payload instead of counting the filename as retention", () => {
+  const good = machineObservation("Saved the draft.");
+  const path = `${RUN}/verify.txt`;
+  expect(() =>
+    assertReviewedArtifact({
+      ...good,
+      repoFiles: { ...good.repoFiles, [path]: "" },
+    }),
+  ).toThrow(path);
+});
+
+it("requires validated file handoffs and a recorded bounded scratch write", () => {
+  const scratch = `${RUN}/scratch-author.txt`;
+  const validators = ["context", "chunk", "author", "verify"].map((mode) => ({
+    name: "Bash",
+    input: {
+      command: `python3 -I .claude/skills/review-pull-request/scripts/validate-output.py ${mode} < ${mode}.txt`,
+    },
+  }));
+  const toolCalls = [
+    ...validators,
+    {
+      name: "Bash",
+      input: {
+        command: `python3 -I .claude/skills/review-pull-request/scripts/render-review.py ${RUN} ${GITHUB_FACTS.report}`,
+      },
+    },
+    { name: "Agent", input: { prompt: `SCRATCH_FILE=${scratch}` } },
+    { name: "Write", input: { file_path: scratch, content: "Concise notes" } },
+  ];
+  const good = machineObservation("Saved the draft.");
+  const observation = {
+    ...good,
+    toolCalls,
+    repoFiles: { ...good.repoFiles, [scratch]: "Concise notes" },
+  };
+  const report = "ID: correctness-1\ncart.py connects checkout.py";
+  expect(() => {
+    assertCrossFileScratch(observation, report);
+  }).not.toThrow();
+  expect(() => {
+    assertTransport({ ...observation, toolCalls: [] });
+  }).toThrow(/validated/);
+  expect(() => {
+    assertCrossFileScratch({ ...observation, toolCalls: validators }, report);
+  }).toThrow(/scratch write/);
+  expect(() => {
+    assertCrossFileScratch(observation, `${report}\nID: correctness-2`);
+  }).toThrow(/split/);
+  expect(() => assertReviewedArtifact(observation)).not.toThrow();
+  expect(() =>
+    assertReviewedArtifact({ ...observation, repoFiles: good.repoFiles }),
+  ).toThrow(scratch);
+  const oversizedBytes = 65_537;
+  expect(() =>
+    assertReviewedArtifact({
+      ...observation,
+      repoFiles: {
+        ...observation.repoFiles,
+        [scratch]: "x".repeat(oversizedBytes),
+      },
+    }),
+  ).toThrow(/bounded notes/);
+  const unassigned = toolCalls.map((call) =>
+    call.name === "Agent"
+      ? { name: "Agent", input: { prompt: `PAYLOAD_FILE=${RUN}/author.txt` } }
+      : call,
+  );
+  expect(() =>
+    assertReviewedArtifact({ ...observation, toolCalls: unassigned }),
+  ).toThrow(/assignment/);
+});
+
+it("allows unused optional scratch and retained assigned notes without a captured child Write", () => {
+  const scratch = `${RUN}/scratch-verify.txt`;
+  const good = machineObservation("Saved the verified review.");
+  const observation = {
+    ...good,
+    toolCalls: [
+      {
+        name: "Agent",
+        input: { prompt: `Save the redacted notes to SCRATCH_FILE=${scratch}` },
+      },
+    ],
+  };
+  expect(() => assertReviewedArtifact(observation)).not.toThrow();
+  expect(() =>
+    assertReviewedArtifact({
+      ...observation,
+      repoFiles: { ...good.repoFiles, [scratch]: "Pinned code checked." },
+    }),
+  ).not.toThrow();
+});
+
+it("requires only files written before authoritative ticket access was denied", () => {
+  const scenario = cases.find(
+    ({ id }) => id === "review-pull-request/authenticated-ticket-deny",
+  );
+  assert.ok(scenario !== undefined);
+  const observation = createObservation({
+    finalText: "The ticket connector denied access; no files were written.",
+    repoFiles: {
+      ".handoffs/review-pull-request/": "",
+      [SENTINEL]: "unrelated run: preserve me\n",
+      [REVIEW_POSTS]: "",
+      [TICKET_LOG]: JSON.stringify(["read", TICKET_URL]),
+      [GITHUB_FACTS.log]: "",
+      [GITHUB_FACTS.report]: null,
+      [GITHUB_FACTS.source]: GITHUB_FACTS.headSource,
+      [GITHUB_FACTS.sourceBaseline]: GITHUB_FACTS.headSource,
+      ".git/logs/HEAD": "same",
+      [GITHUB_FACTS.baselineLog]: "same",
+    },
+  });
+  for (const finalText of [
+    "Access denied.",
+    "The run files were created.",
+    "No draft saved.",
+  ]) {
+    expect(() => scenario.check({ ...observation, finalText })).toThrow(
+      /no files/,
+    );
+  }
+  expect(() => scenario.check(observation)).not.toThrow();
+  const path = `${RUN}/context.txt`;
+  const content = "CONTEXT: NEEDS_CONTEXT\nTicket access denied.";
+  const partial = {
+    ...observation,
+    finalText: `The ticket read was denied. The stopped run is in ${RUN}.`,
+    toolCalls: [{ name: "Write", input: { file_path: path, content } }],
+  };
+  expect(() => scenario.check(partial)).toThrow(path);
+  expect(() =>
+    scenario.check({
+      ...partial,
+      repoFiles: { ...partial.repoFiles, [path]: content },
+    }),
+  ).not.toThrow();
+  expect(() =>
+    scenario.check({
+      ...observation,
+      repoFiles: { ...observation.repoFiles, [SENTINEL]: null },
+    }),
+  ).toThrow(/unrelated/);
+});
 
 it("still fails wrong machine state even when prose claims a perfect run", () => {
   const good = machineObservation(
@@ -133,6 +316,12 @@ it("still fails wrong machine state even when prose claims a perfect run", () =>
       repoFiles: { ...good.repoFiles, [GITHUB_FACTS.source]: "changed" },
     }),
   ).toThrow(/source changed/);
+  expect(() =>
+    assertReviewedArtifact({
+      ...good,
+      repoFiles: { ...good.repoFiles, ".git/logs/HEAD": "new commit" },
+    }),
+  ).toThrow(/HEAD changed/);
   expect(() =>
     assertReviewedArtifact({
       ...good,
@@ -159,4 +348,13 @@ it("keeps unsupported execution claims actionable through a verbatim judge citat
   expect(parseJudgeResponse(response, request).citedViolations).toHaveLength(
     ONE,
   );
+});
+
+it("names the missing rendered draft on the first diagnostic line for a clean worktree", () => {
+  expect(() =>
+    assertReviewedArtifact({
+      ...machineObservation("No draft."),
+      gitStatusAfter: { kind: "worktree", entries: "" },
+    }),
+  ).toThrow(/^expected the rendered review draft pr-17-review\.md/);
 });

@@ -8,7 +8,6 @@ import { fileURLToPath } from "node:url";
 import {
   assertGateStop,
   runsRepoValidation,
-  successfulIgnoreCheck,
   writePath,
 } from "#/cases/refactoring-code-gate-evidence.ts";
 import {
@@ -20,9 +19,11 @@ import {
   SIMPLE_FILES,
   SIMPLE_SOURCE,
 } from "#/cases/refactoring-code-regression-fixtures.ts";
+import { assertOwnedReports } from "#/cases/refactoring-code-run-isolation.ts";
 import {
   assertBoundaryValidation,
   assertReviewerEvidence,
+  lifecycleReportEvidence,
 } from "#/cases/refactoring-code-validation-evidence.ts";
 import {
   assertFilesUnchanged,
@@ -31,11 +32,14 @@ import {
   capturedText,
   checkPositiveRouting,
   findBashCalls,
+  fixtureRelativePath,
 } from "#/cases/shared-checks.ts";
 import type {
   Observation,
   TurnObservation,
 } from "#/observation/agent-query.ts";
+
+export { assertOwnedReports };
 
 const REPORT_VALIDATOR = fileURLToPath(
   new URL(
@@ -95,40 +99,6 @@ function assertNoValidation(observation: Observation): void {
     [],
     "validation ran without approval",
   );
-}
-
-function assertIgnoreProof(
-  observation: Observation,
-  run: string,
-  index: number,
-): void {
-  const proof = observation.toolCalls
-    .slice(FIRST, index)
-    .find((call) => successfulIgnoreCheck(observation, call, run));
-  assert.ok(
-    proof?.result !== undefined,
-    "missing successful ignore proof before report write",
-  );
-  assert.equal(proof.result.isError, false);
-}
-
-export function assertOwnedReports(observation: Observation): void {
-  const reports = capturedFilesUnder(observation, HANDOFFS);
-  for (const path of Object.keys(reports).filter((path) => path !== SENTINEL)) {
-    assert.match(
-      path.slice(HANDOFFS.length),
-      /^[^/]+\/.+/,
-      "shared-root handoff",
-    );
-  }
-  observation.toolCalls.forEach((call, index) => {
-    const relative = writePath(call, observation);
-    if (relative?.startsWith(HANDOFFS) !== true) return;
-    const run = relative.slice(HANDOFFS.length).split("/")[FIRST];
-    assert.ok(run !== undefined && run !== "", "missing run id");
-    assert.notEqual(relative, `${HANDOFFS}${run}`, "shared-root handoff");
-    assertIgnoreProof(observation, run, index);
-  });
 }
 
 function statusEntries(status: Observation["gitStatusAfter"]): string {
@@ -201,6 +171,48 @@ function assertAmendmentGate(
   }
 }
 
+function mentionsRun(observation: Observation, run: string): boolean {
+  const words = observation.finalText.split(/[\s`'"()[\]<>|,;:=]+/);
+  return words
+    .filter((word) => word.includes(HANDOFFS))
+    .some((word) => {
+      const path = fixtureRelativePath(observation, word.replace(/\.$/, ""));
+      return path === run || path?.startsWith(`${run}/`) === true;
+    });
+}
+
+function assertLifecycleReports(observation: Observation): void {
+  const { run, report, createdPaths } = lifecycleReportEvidence(observation);
+  const files = capturedFilesUnder(observation, HANDOFFS);
+  const prefix = `${run}/`;
+  assert.ok(
+    !SENTINEL.startsWith(prefix),
+    "reviewer used the seeded sibling run",
+  );
+  for (const path of Object.keys(files).filter((path) => path !== SENTINEL)) {
+    assert.ok(path.startsWith(prefix), `unexpected sibling artifact: ${path}`);
+  }
+  for (const path of createdPaths) {
+    assert.ok(path.startsWith(prefix), `observed sibling write: ${path}`);
+    assert.ok(
+      Object.hasOwn(files, path),
+      `run-created file no longer retained: ${path}`,
+    );
+  }
+  assert.equal(
+    validateRetainedReport(
+      "refactor-reviewer",
+      capturedText(observation, report),
+    ),
+    "PASS",
+    "retained final reviewer report did not pass",
+  );
+  assert.ok(
+    mentionsRun(observation, run),
+    "final handoff omitted the retained run location",
+  );
+}
+
 export function checkLifecycle(observation: Observation): string {
   checkPositiveRouting(observation, SKILL);
   const turns = lifecycleTurns(observation);
@@ -226,13 +238,8 @@ export function checkLifecycle(observation: Observation): string {
   assert.equal(observation.repoFiles["validation-ran.txt"], null);
   assertHeadUnchanged(observation, "unexpected commit");
   assertOwnedReports(observation);
-  assert.deepEqual(
-    Object.keys(capturedFilesUnder(observation, HANDOFFS)),
-    [SENTINEL],
-    "owned temporary files leaked or sibling deleted",
-  );
   assertNoValidation(observation);
-  assertReviewerEvidence(observation);
+  assertLifecycleReports(observation);
   assert.deepEqual(
     statusEntries(observation.gitStatusAfter)
       .trim()
@@ -341,21 +348,26 @@ function assertFindingCounts(
   );
 }
 
-function assertAnalystSchema(payload: string): void {
-  const run = mkdtempSync(join(tmpdir(), "refactoring-code-analyst-"));
+function validateRetainedReport(
+  role: "chunk-analyst" | "refactor-reviewer",
+  payload: string,
+): string {
+  const run = mkdtempSync(join(tmpdir(), "refactoring-code-report-"));
   try {
-    const report = join(run, "analysis.json");
+    const report = join(run, "retained-report");
     writeFileSync(report, payload);
     const validation = spawnSync(
       "python3",
-      ["-I", REPORT_VALIDATOR, "report", "chunk-analyst", report, run],
+      ["-I", REPORT_VALIDATOR, "report", role, report, run],
       { encoding: "utf8" },
     );
+    const label = role === "chunk-analyst" ? "analyst" : "reviewer";
     assert.equal(
       validation.status,
       VALID_REPORT,
-      `invalid analyst report: ${validation.stdout}${validation.stderr}`,
+      `invalid ${label} report: ${validation.stdout}${validation.stderr}`,
     );
+    return validation.stdout.trim();
   } finally {
     rmSync(run, { recursive: true, force: true });
   }
@@ -380,7 +392,7 @@ export function checkAnalysis(observation: Observation): string {
     Buffer.byteLength(report[ONE]) <= MAX_REPORT_BYTES,
     "unbounded planning input",
   );
-  assertAnalystSchema(report[ONE]);
+  validateRetainedReport("chunk-analyst", report[ONE]);
   const parsed = record(JSON.parse(report[ONE]));
   const { findings } = parsed;
   assert.ok(Array.isArray(findings));

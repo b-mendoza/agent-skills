@@ -48,9 +48,9 @@ Ask one concise question when a missing field changes authority, sensitive actio
 
 `OTHER_DIAGRAM_DIGEST` contains one line per compared diagram with node labels and status tokens only, no edges or prose, soft-capped at about 50 entries per diagram. A subagent projection includes slim-root and sibling content but excludes nodes assigned to that subagent. Subagents consume projections, never derive the digest. `none` is valid only when no root or sibling content exists to compare.
 
-For packages with more than about six subagents, or candidates that strain the orchestrator context, stage digests and candidates in a run-scoped handoff directory and pass file paths instead of inline content.
+For packages with more than about six subagents, or candidates that strain the orchestrator context, stage digests and candidates in the fresh `.handoffs/generate-flow-diagram/<run-id>/` directory and pass file paths instead of inline content. Require `git check-ignore --quiet` to succeed before the first handoff write.
 
-Parser inputs are validation-only scratch allowed in every mode, using existing proven-ignored run-owned handoff or shell temporary storage, never source/destination files. The orchestrator materializes builder-returned content in a run-owned file before each review when execution and scratch preparation are available. Clean only this run's scratch at a terminal; if execution or preparation is unavailable, use candidate content for `inspected-only` review. Builders return content only; source writes follow the Mutation Limits contract and FSM.
+Parser inputs are validation-only scratch allowed in every mode. Use the run's proven-ignored handoff directory or shell temporary storage, never source/destination files. The orchestrator materializes builder-returned content in a run-owned file before each review when execution and scratch preparation are available. At every terminal, keep all files written under the handoff directory and report its path if any were written there. Remove this run's shell temporary scratch at a terminal. If execution or scratch preparation is unavailable, use candidate content for `inspected-only` review. Builders return content only; source writes follow the Mutation Limits contract and FSM.
 
 ## Decompose Inputs
 

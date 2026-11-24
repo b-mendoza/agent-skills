@@ -101,7 +101,7 @@ This workflow maintains Category A1 persistent orchestration records on disk:
 - `docs/<KEY>-progress.md`
 - The downstream phase artifacts listed in [Workflow Overview](#workflow-overview)
 
-Category A1 artifacts are preserved for resumability and are not committed by the orchestrator. Ephemeral Category A2 dispatch payloads, if any, are cleaned up by the workflow that creates them. Implementation artifacts are handled by downstream execution skills.
+Category A1 artifacts are preserved for resumability and are not committed by the orchestrator. Each producer keeps all files it writes under its own `.handoffs/` run directory, including Category A2 dispatch payloads, and names that directory in its terminal reply on every outcome. Other storage follows the producer's existing contract. The orchestrator says if it wrote no files, creates no handoff just to report a path, and keeps child envelopes private. Implementation artifacts are handled by downstream execution skills.
 
 ## Start Or Resume
 

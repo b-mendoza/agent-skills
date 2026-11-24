@@ -26,7 +26,7 @@ query='query($owner: String!, $repo: String!, $number: Int!, $endCursor: String)
       reviewThreads(first: 100, after: $endCursor) {
         pageInfo { hasNextPage endCursor }
         nodes {
-          id isResolved path line
+          id isResolved viewerCanUnresolve path line
           comments(first: 100) {
             totalCount
             pageInfo { hasNextPage }
@@ -45,11 +45,12 @@ projection='
   then error("inaccessible or invalid review thread history")
   else [.data.repository.pullRequest.reviewThreads.nodes[] |
     if (.id | type) != "string" or (.isResolved | type) != "boolean" or
+       (.viewerCanUnresolve | type) != "boolean" or
        (.path | type) != "string" or (.comments.totalCount | type) != "number" or
        (.comments.pageInfo.hasNextPage | type) != "boolean"
     then error("invalid review thread metadata")
     else {
-      thread_id: .id, is_resolved: .isResolved, path, line,
+      thread_id: .id, is_resolved: .isResolved, viewer_can_unresolve: .viewerCanUnresolve, path, line,
       root_comment_id: (.comments.nodes[0].fullDatabaseId | comment_id),
       root_url: .comments.nodes[0].url,
       comments_total: .comments.totalCount,

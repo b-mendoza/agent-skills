@@ -79,7 +79,7 @@ Read the per-run JSON to diagnose failures. It holds every attempt's output and 
 
 **Coverage gap, recorded on purpose:** fixtures register no skill-specific subagents in either runtime's agent registry, so current snapshot cases exercise the skill's _inline_ route. The isolated (dispatched-subagent) route — and with it any "did the orchestrator pass the contracted inputs to the subagent" assertion — is currently untestable here; covering it needs fixtures that register the three subagent definitions and a harness that captures dispatch payloads.
 
-**Approval gates:** cases can script ordered human replies in one SDK session. A reply can extract an exact approval token or option from the settled preview, or fail the attempt if the gate was not reached. Turn records let checks distinguish pre-approval behavior from post-approval commits, edits, or fake-CLI actions. Existing per-skill cases still stop at their previews; adding post-approval cases remains separate work. No live GitHub mutations are tested.
+**Approval gates:** cases can script ordered human replies in one SDK session. A reply can extract an exact approval token or option from the settled preview, or fail the attempt if the gate was not reached. Turn records let checks distinguish pre-approval behavior from post-approval commits, edits, or fake-CLI actions. The `review-pull-request/approved-reopen` case checks a review, its exact reply to a resolved thread, and the subsequent reopen against a fake `gh`. The fake refuses the reopen until the scripted `APPROVED` reply. The `review-pull-request/post-saved-draft` case starts with a draft-only turn, then requests posting in a separate turn. It checks re-verification, a fresh preview, and the exact review sent after `APPROVED`. No live GitHub mutations are tested.
 
 **Tracker coverage gap:** external trackers are faked through executables on PATH, currently GitHub's `gh`. These cases do not exercise live services. Jira routes are untested.
 
@@ -199,11 +199,11 @@ All 28 skills have registered suites. Counts describe available cases, not live-
 | `refine-task`                      |               2 |                  2 |                   0 |
 | `reporting-skill-issues`           |               2 |                  4 |                   2 |
 | `responding-to-pr-review-comments` |               2 |                  5 |                   1 |
-| `review-pull-request`              |               2 |                 11 |                   4 |
+| `review-pull-request`              |               2 |                 15 |                   7 |
 | `review-software-engineer-cv`      |               2 |                  2 |                   0 |
 | `rewriting-code-strictly`          |               2 |                  2 |                   0 |
 | `validate-implementation-plan`     |               2 |                  2 |                   0 |
 | `workflow-skill-architect`         |               2 |                  3 |                   0 |
-| **Total**                          |          **59** |            **102** |              **19** |
+| **Total**                          |          **59** |            **106** |              **22** |
 
-One attempt per case sums to $3.00 in tier-1 `budgetUsd` and $214.60 in tier-2 `budgetUsd`, or $217.60 combined. These are configured SDK budget caps, not observed costs; judge calls are additional. The default five repeats multiply these totals by five. Multi-turn cases use `followUps`, and one cap covers all of a case's turns.
+One attempt per case sums to $3.00 in tier-1 `budgetUsd` and $224.60 in tier-2 `budgetUsd`, or $227.60 combined. These are configured SDK budget caps, not observed costs; judge calls are additional. The default five repeats multiply these totals by five. Multi-turn cases use `followUps`, and one cap covers all of a case's turns.

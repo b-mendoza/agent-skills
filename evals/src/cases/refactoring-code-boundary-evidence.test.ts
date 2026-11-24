@@ -38,6 +38,11 @@ function orderedEvidence(): ToolCall[] {
       (call) => call !== reviewerValidation,
     ),
     reviewerValidation,
+    {
+      name: "Bash",
+      input: { command: `git check-ignore -q -- ${HANDOFFS}run/probe` },
+      result: { content: "", isError: false, truncated: false },
+    },
   ];
 }
 

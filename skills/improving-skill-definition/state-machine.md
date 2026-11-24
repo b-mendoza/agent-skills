@@ -30,7 +30,7 @@ Internal terminal decisions below select the outcome; public replies use prose a
 | -------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
 | `[*]`                      | `Intake`                   | run start                                                                                                                             |
 | `Intake`                   | `FlowLoad`                 | `SKILL_PATH` eligible; `SKILL_DIR` resolved; baseline copied; limits derived                                                          |
-| `Intake`                   | `TerminalBlocked`          | path missing, unreadable, or excluded; `SKILL_DIR` unresolved (`TOOLS_MISSING`); or `MUTATION_LIMITS` cannot be derived unambiguously |
+| `Intake`                   | `TerminalBlocked`          | path missing, unreadable or excluded; `SKILL_DIR` unresolved (`TOOLS_MISSING`); limits underivable; no proven-ignored run directory   |
 | `FlowLoad`                 | `Discover`                 | own `references/personality.md` readable                                                                                              |
 | `FlowLoad`                 | `TerminalError`            | own `references/personality.md` unreadable                                                                                            |
 | `Discover`                 | `Audit`                    | `RELATED_SKILLS: PASS`, or BLOCKED/ERROR with optional degrade                                                                        |
@@ -62,11 +62,11 @@ Internal terminal decisions below select the outcome; public replies use prose a
 | `Validate`                 | `TerminalBlocked`          | `VALIDATION: BLOCKED`                                                                                                                 |
 | `Validate`                 | `TerminalError`            | `VALIDATION: ERROR`                                                                                                                   |
 | `Repair`                   | `EditPrep`                 | re-enter scoped to Lane A findings and approved gaps only                                                                             |
-| `TerminalChanged`          | `[*]`                      | emit handoff + cleanup                                                                                                                |
-| `TerminalNoChange`         | `[*]`                      | emit handoff + cleanup                                                                                                                |
+| `TerminalChanged`          | `[*]`                      | keep all run files and report `HANDOFF_DIR`                                                                                           |
+| `TerminalNoChange`         | `[*]`                      | keep all run files and report `HANDOFF_DIR`                                                                                           |
 | `TerminalApprovalRequired` | `[*]`                      | emit handoff; preserve `HANDOFF_DIR`                                                                                                  |
-| `TerminalBlocked`          | `[*]`                      | emit handoff + outcome-dependent preserve                                                                                             |
-| `TerminalError`            | `[*]`                      | emit handoff + outcome-dependent preserve                                                                                             |
+| `TerminalBlocked`          | `[*]`                      | keep all run files, including partial evidence; report `HANDOFF_DIR` or say no files were created                                     |
+| `TerminalError`            | `[*]`                      | keep all run files, including partial evidence; report `HANDOFF_DIR` or say no files were created                                     |
 
 ## Diagram candidate validation
 
@@ -82,4 +82,4 @@ The six auditors are an independent, read-only fan-out: each reads the target an
 
 ## Status-routing note
 
-External lookup is optional unless `REFERENCE_NEED` or a mandate requires it; dispatch `related-skills-discoverer` and require `HANDOFF_DIR/related-skills-discoverer-report.yaml` on every run. Skipped or unavailable optional lookup still returns `RELATED_SKILLS: PASS` with `reduced_confidence: true` in that report. Discovery's `: BLOCKED`/`: ERROR` statuses degrade the run (or block it when `REFERENCE_NEED` or a mandate requires evidence) instead of terminating as runtime errors. Audit statuses instead follow the Audit guards above.
+External lookup is optional unless `REFERENCE_NEED` or a mandate requires it; dispatch `related-skills-discoverer` and require `HANDOFF_DIR/related-skills-discoverer-report.yaml` whenever the run reaches `Discover`. Skipped or unavailable optional lookup still returns `RELATED_SKILLS: PASS` with `reduced_confidence: true` in that report. Discovery's `: BLOCKED`/`: ERROR` statuses degrade the run (or block it when `REFERENCE_NEED` or a mandate requires evidence) instead of terminating as runtime errors. Audit statuses instead follow the Audit guards above.

@@ -156,6 +156,8 @@ tool before expecting runtime discovery copies or pins to reflect this package.
 
 ## Run Report Template
 
+Name the resolved handoff run directory in the run report or terminal prose, outside the diagram. On a no-write stop, say no files were created. If files were written only outside `.handoffs/`, say there are no handoff files to report. Create nothing just to report a path.
+
 ```text
 ## Run Report
 

@@ -1,13 +1,17 @@
 import { describe, expect, it } from "vitest";
 
 import { GITHUB_FACTS } from "#/cases/pr-creator-fixtures.ts";
+import { assertPinnedCitations } from "#/cases/review-pull-request-checks.ts";
 import {
-  approvalReply,
-  assertPinnedCitations,
-} from "#/cases/review-pull-request-checks.ts";
+  REVIEW_POSTS,
+  SENTINEL,
+} from "#/cases/review-pull-request-fixtures.ts";
+import { retainedApprovalReply as approvalReply } from "#/cases/review-pull-request-gates.ts";
+import { extensionCases as cases } from "#/cases/review-pull-request-scenarios.ts";
 import type { ToolCall } from "#/observation/agent-query.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
 
+const FIRST = 0;
 const SHA_LENGTH = 40;
 const HASH_LENGTH = 64;
 const BASE = "a".repeat(SHA_LENGTH);
@@ -30,6 +34,9 @@ function atPreview() {
       },
     ],
     repoFiles: {
+      ".handoffs/review-pull-request/": "",
+      [SENTINEL]: "unrelated run: preserve me\n",
+      [REVIEW_POSTS]: "",
       [GITHUB_FACTS.report]: "Verified review.\n",
       [GITHUB_FACTS.log]: '["api","user"]\n',
       [`${RUN}/context.txt`]:
@@ -403,4 +410,25 @@ describe("pinned read evidence", () => {
       );
     }).toThrow(/pinned reads/);
   });
+});
+
+it("withholds the ordinary scripted approval when only a choice was shown", () => {
+  const gate = cases
+    .find(({ id }) => id.endsWith("/approved-thread-reply"))
+    ?.followUps?.at(FIRST);
+  expect(
+    gate?.reply({ ...atPreview(), finalText: "APPROVED, REVISE or ABORT?" }),
+  ).toHaveProperty("gateNotReached");
+});
+
+it("does not treat poster flags passed to unrelated Python code as a preview", () => {
+  const good = atPreview();
+  const call = {
+    ...good.toolCalls.at(FIRST),
+    name: "Bash",
+    input: { command: `python3 -c 'print(1)' post-review.py --dry-run ${RUN}` },
+  };
+  expect(approvalReply({ ...good, toolCalls: [call] })).toHaveProperty(
+    "gateNotReached",
+  );
 });
