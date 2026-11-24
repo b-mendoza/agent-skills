@@ -241,7 +241,7 @@ export function checkDeniedDispatch(observation: Observation): string {
   assert.ok(!after.some(isExecutorDispatch), "executor dispatch retried");
   assert.ok(
     !after.some((call) =>
-      /git\s+commit\b|permissionMode|dangerouslyDisableSandbox/.test(
+      /git\s+(?:--literal-pathspecs\s+)?commit\b|permissionMode|dangerouslyDisableSandbox/.test(
         JSON.stringify(call.input),
       ),
     ),
