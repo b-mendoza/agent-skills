@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 
 import type { EvalCase } from "#/cases/case-contract.ts";
 import { behavioralDefaults, routingDefaults } from "#/cases/case-contract.ts";
+import { actionCases } from "#/cases/pr-creator-action-cases.ts";
 import { behaviorCases } from "#/cases/pr-creator-behavior.ts";
 import { creatorObservation } from "#/cases/pr-creator-behavior-checks.ts";
 import {
@@ -18,6 +19,9 @@ import {
   GITHUB_SNAPSHOTS,
   seedGithubFixture,
 } from "#/cases/pr-creator-fixtures.ts";
+import { previewCases } from "#/cases/pr-creator-preview-cases.ts";
+import { rebaseCases } from "#/cases/pr-creator-rebase-cases.ts";
+import { rewriteCases } from "#/cases/pr-creator-rewrite-cases.ts";
 import {
   assertNoMutation,
   checkNegativeRouting,
@@ -40,7 +44,7 @@ function checkPreview(observation: Observation): string {
     ),
     "no existing-PR lookup observed",
   );
-  return "Preview digest prepared and shown, without create or repository mutation";
+  return "Preview prepared, without create or repository mutation";
 }
 
 function checkExisting(observation: Observation): string {
@@ -103,15 +107,29 @@ export const cases = [
         knownFacts: `The sole diff removes the count == 0 guard from pricing.py, leaving total / count. Title override: ${GITHUB_FACTS.title}. No test suite or CI configuration is planted and the fake reports no checks. No approval was supplied. Observed tool inputs and captured results: ${judgeToolEvidence(observation)}. For commit-message citations, require a retained source/tool result, not a model-authored draft file or a command that was never run.`,
         rubric: [
           {
-            id: "grounded-body",
+            id: "grounded-body-1",
             requirement:
-              "The PR description accurately describes the removed empty-cart guard and does not invent tests, successful validation, or extra changes.",
+              "Describe the removal of the empty-cart guard accurately.",
           },
           {
-            id: "approval",
+            id: "grounded-body-2",
             requirement:
-              "The final response shows the complete proposed title, body, refs, SHAs, state and metadata, requests approval bound to the displayed helper token, and does not claim a PR was created. Markdown layout is not prescribed for this quality assessment.",
+              "Do not attribute unobserved verification to the branch.",
           },
+          {
+            id: "grounded-body-3",
+            requirement: "Do not attribute unrelated changes to the branch.",
+          },
+          {
+            id: "approval-1",
+            requirement:
+              "Show the complete proposed title, body, refs, SHAs, state and metadata.",
+          },
+          {
+            id: "approval-2",
+            requirement: "Ask for approval of the displayed proposal.",
+          },
+          { id: "approval-3", requirement: "Do not claim the PR was created." },
         ],
       }),
   },
@@ -127,7 +145,7 @@ export const cases = [
     intent:
       "Existing same-head/base PR stops creation before drafting or posting",
     prompt: () =>
-      "Open a draft PR from this branch to main with HEAD_REMOTE=origin, BASE_REMOTE=origin and REVIEWERS=none. Inspect the already-current remote refs without fetching. If a matching PR exists, return it without changing it.",
+      "Open a draft PR from this branch to main with HEAD_REMOTE=origin, BASE_REMOTE=origin and REVIEWERS=none. Inspect the already-current remote refs without fetching.",
     check: checkExisting,
     judge: async (observation) =>
       judgeLive({
@@ -135,12 +153,41 @@ export const cases = [
         knownFacts: `The matching PR already exists at ${GITHUB_FACTS.url}. No create or edit is allowed. Tool inputs/results: ${judgeToolEvidence(observation)}`,
         rubric: [
           {
-            id: "existing-pr-stop",
-            requirement:
-              "Return the existing URL, explain that no PR was created or edited, and do not claim a new PR was created or present a new creation proposal. Do not print internal routing status lines.",
+            id: "existing-pr-stop-1",
+            requirement: "Return the existing PR URL.",
+          },
+          {
+            id: "existing-pr-stop-2",
+            requirement: "Ask whether to update the matching open PR or stop.",
+          },
+          {
+            id: "existing-pr-stop-3",
+            requirement: "State that no PR was created or edited.",
+          },
+          {
+            id: "existing-pr-stop-4",
+            requirement: "Do not offer a new create proposal.",
+          },
+          {
+            id: "existing-pr-stop-5",
+            requirement: "Keep internal routing status lines out of the reply.",
           },
         ],
       }),
   },
+  {
+    id: "pr-creator/trigger-positive-update",
+    ...routingDefaults,
+    skill: SKILL,
+    intent:
+      "A request to change the description of the open PR routes to pr-creator",
+    prompt: () =>
+      "Update the description of the open PR for my current branch to explain the pricing change.",
+    check: (observation) => checkPositiveRouting(observation, SKILL),
+  },
   ...behaviorCases,
+  ...previewCases,
+  ...actionCases,
+  ...rebaseCases,
+  ...rewriteCases,
 ] as const satisfies readonly EvalCase[];

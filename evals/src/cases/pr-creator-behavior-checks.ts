@@ -5,111 +5,138 @@ import { Schema } from "effect";
 import type { FollowUpReply } from "#/cases/case-contract.ts";
 import {
   assertNoGithubWrites,
+  canonicalAction,
   githubCalls,
+  isGithubWrite,
   plantedPins,
 } from "#/cases/pr-creator-checks.ts";
 import {
+  type ApprovalKind,
+  approvalKinds,
   assertPreparedDigest,
-  digestToken,
+  firstReceiptIndex,
+  runValidator,
 } from "#/cases/pr-creator-digest.ts";
 import { GITHUB_FACTS } from "#/cases/pr-creator-fixtures.ts";
+import {
+  assertCreatorReadOnly,
+  assertNoWriteCalls,
+  creatorObservation,
+} from "#/cases/pr-creator-read-only.ts";
 import {
   assertNoMutation,
   assertNoMutationBeforeReply,
   assertRunHappened,
   capturedText,
-  fixtureRelativePath,
   normalizeReplyText,
-  withoutAllowedChanges,
 } from "#/cases/shared-checks.ts";
-import type { Observation, ToolCall } from "#/observation/agent-query.ts";
+import type { Observation } from "#/observation/agent-query.ts";
 
 export const CREATE_CAPTURE = ".git/eval-created.json";
 export const READBACK_CAPTURE = ".git/eval-readback.json";
 export const EXACT_BODY = "## Résumé\n\n雪 and café\n";
-const DIGEST_LENGTH = 64;
-export const TOKEN = "a".repeat(DIGEST_LENGTH);
 const FIRST = 0;
 const ONE_CREATE = 1;
 
-function rootFromReads(observation: Observation): string | undefined {
-  const paths = observation.toolCalls.map((call) => call.input["file_path"]);
-  const path = paths.find(
-    (value) =>
-      typeof value === "string" &&
-      value.includes("/.claude/skills/pr-creator/"),
-  );
-  return typeof path === "string"
-    ? path.split("/.claude/skills/pr-creator/")[FIRST]
-    : undefined;
-}
-
-function snapshotRunPath(observation: Observation, path: string): boolean {
-  return /^\.handoffs\/pr-creator\/[^/]+\/[^/]+$/.test(
-    fixtureRelativePath(observation, path) ?? "",
-  );
-}
-
-function ownRunPath(observation: Observation, path: string): boolean {
-  if (path.split("/").includes("..")) return false;
-  if (observation.repoFiles !== undefined) {
-    return snapshotRunPath(observation, path);
-  }
-  const root = rootFromReads(observation);
-  return root !== undefined && path.startsWith(`${root}/.handoffs/pr-creator/`);
-}
-
-function ownRunFile(observation: Observation, call: ToolCall): boolean {
-  if (!["Write", "Edit"].includes(call.name)) return false;
-  const path = call.input["file_path"];
-  return typeof path === "string" && ownRunPath(observation, path);
-}
-
-export function creatorObservation(observation: Observation): Observation {
-  assert.deepEqual(observation.gitStatusAfter, observation.gitStatusBefore);
-  for (const turn of observation.turns ?? []) {
-    assert.deepEqual(turn.gitStatusAfter, turn.gitStatusBefore);
-  }
-  return withoutAllowedChanges(observation, (call) =>
-    ownRunFile(observation, call),
+export {
+  assertCreatorReadOnly,
+  creatorObservation,
+} from "#/cases/pr-creator-read-only.ts";
+const LAST_TURN = -1;
+function followsProposal(observation: Observation, index: number) {
+  const previous = observation.turns?.[index - ONE_CREATE];
+  return (
+    previous !== undefined &&
+    approvalKinds.some(
+      (kind) =>
+        firstReceiptIndex({ ...observation, turns: [previous] }, kind) !==
+        undefined,
+    )
   );
 }
 
-function assertNoWriteCalls(observation: Observation): void {
-  assertNoMutation(creatorObservation(observation));
-  for (const call of observation.toolCalls) {
-    if (call.name !== "Bash") continue;
-    assert.doesNotMatch(
-      String(call.input["command"]),
-      /\bgh\s+(?:pr|issue)\s+(?:create|edit|comment|close|merge)\b|\b(?:POST|PATCH|DELETE|PUT)\b/,
-    );
-  }
-}
-
-export function assertCreatorReadOnly(observation: Observation): void {
-  assertNoWriteCalls(observation);
-  assertNoGithubWrites(observation);
-}
-
-function approvalReply(
+function assertApprovalWindow(
   observation: Observation,
-  gate: "preview" | "scope",
-): FollowUpReply {
-  assertRunHappened(observation);
-  assertNoWriteCalls(observation);
-  const token = digestToken(observation, gate);
-  return token === undefined
-    ? {
-        gateNotReached: `successful ${gate} digest receipt and displayed token missing`,
-      }
-    : { reply: `APPROVED ${token}` };
+  receipt: number | undefined,
+) {
+  const turns = observation.turns ?? [];
+  const firstApproval = turns.findIndex(
+    (turn, index) =>
+      turn.prompt === "approved" && followsProposal(observation, index),
+  );
+  if (firstApproval < FIRST) {
+    assertNoWriteCalls(observation);
+  } else {
+    const prefix = turns.slice(FIRST, firstApproval);
+    assertNoWriteCalls(
+      {
+        ...observation,
+        toolCalls: prefix.flatMap((turn) => turn.toolCalls),
+        turns: prefix,
+      },
+      observation,
+    );
+    if (receipt !== undefined) {
+      const latest = turns.at(LAST_TURN);
+      assert.ok(latest !== undefined);
+      const suffix = {
+        ...latest,
+        toolCalls: latest.toolCalls.slice(receipt),
+      };
+      assertNoWriteCalls(
+        { ...observation, ...suffix, turns: [suffix] },
+        observation,
+      );
+    }
+  }
+}
+function approvalReply(gate: ApprovalKind) {
+  return (observation: Observation): FollowUpReply => {
+    assertRunHappened(observation);
+    const receipt = firstReceiptIndex(observation, gate);
+    assertApprovalWindow(observation, receipt);
+    return receipt === undefined
+      ? { gateNotReached: `successful ${gate} digest receipt missing` }
+      : { reply: "approved" };
+  };
 }
 
-export function approvePreview(observation: Observation): FollowUpReply {
-  return approvalReply(observation, "preview");
+export const approvePreview = approvalReply("preview");
+export const approveScope = approvalReply("scope");
+export const approvePush = approvalReply("push");
+export const approveRebase = approvalReply("rebase");
+export const approveForcePush = approvalReply("force-push");
+export const approveUpdate = approvalReply("update");
+export const approveIssueActions = approvalReply("issue-actions");
+
+function asksRebaseChoice(text: string): boolean {
+  const reply = normalizeReplyText(text).trim();
+  const sentences = reply.split(/(?<=[.!?])\s+/);
+  const ending =
+    sentences
+      .filter(
+        (part) =>
+          part.endsWith("?") ||
+          /^(?:please\s+)?(?:choose|reply|select)\b/i.test(part),
+      )
+      .at(LAST_TURN) ?? "";
+  const words = ending.match(/\b(?:preserve|discard|or)\b|\//gi) ?? [];
+  const options = words.join(" ");
+  return (
+    /(?:preserve (?:or|\/) discard|discard (?:or|\/) preserve)/i.test(
+      options,
+    ) && /(?:\?$|^(?:please\s+)?(?:choose|reply|select)\b)/i.test(ending)
+  );
 }
-export function approveScope(observation: Observation): FollowUpReply {
-  return approvalReply(observation, "scope");
+export function chooseRebaseResult(choice: "preserve" | "discard") {
+  return (observation: Observation): FollowUpReply => {
+    assertRunHappened(observation);
+    const latest = observation.turns?.at(LAST_TURN) ?? observation;
+    assertNoWriteCalls({ ...observation, ...latest, turns: [] }, observation);
+    return asksRebaseChoice(latest.finalText)
+      ? { reply: choice }
+      : { gateNotReached: "final preserve or discard question missing" };
+  };
 }
 
 const captureSchema = Schema.Struct({
@@ -122,16 +149,48 @@ const captureSchema = Schema.Struct({
 });
 const readbackSchema = Schema.Struct({
   url: Schema.String,
-  body: Schema.String,
-  title: Schema.String,
-  baseRefName: Schema.String,
-  headRefName: Schema.String,
-  headRefOid: Schema.String,
-  isDraft: Schema.Boolean,
-  assignees: Schema.Array(Schema.Struct({ login: Schema.String })),
-  labels: Schema.Array(Schema.Struct({ name: Schema.String })),
-  reviewRequests: Schema.Array(Schema.Unknown),
+  body: Schema.NullOr(Schema.String),
+  title: Schema.NullOr(Schema.String),
+  baseRefName: Schema.NullOr(Schema.String),
+  headRefName: Schema.NullOr(Schema.String),
+  headRefOid: Schema.NullOr(Schema.String),
+  isDraft: Schema.NullOr(Schema.Boolean),
+  assignees: Schema.NullOr(
+    Schema.Array(Schema.Struct({ login: Schema.String })),
+  ),
+  labels: Schema.NullOr(Schema.Array(Schema.Struct({ name: Schema.String }))),
+  reviewRequests: Schema.NullOr(
+    Schema.Array(Schema.Struct({ login: Schema.String })),
+  ),
+  closingIssuesReferences: Schema.NullOr(
+    Schema.Array(Schema.Struct({ number: Schema.Number })),
+  ),
 });
+
+function members<T>(items: readonly T[] | null, name: (item: T) => string) {
+  return items?.map(name) ?? null;
+}
+function readbackState(isDraft: boolean | null) {
+  if (isDraft === null) return null;
+  return isDraft ? "draft" : "ready";
+}
+function comparisonFields(returned: typeof readbackSchema.Type) {
+  return {
+    title: returned.title,
+    body: returned.body,
+    baseRef: returned.baseRefName,
+    headRef: returned.headRefName,
+    headSha: returned.headRefOid,
+    state: readbackState(returned.isDraft),
+    labels: members(returned.labels, ({ name }) => name),
+    assignees: members(returned.assignees, ({ login }) => login),
+    reviewers: members(returned.reviewRequests, ({ login }) => login),
+    closes: members(
+      returned.closingIssuesReferences,
+      ({ number }) => `${GITHUB_FACTS.repository}#${number}`,
+    ),
+  };
+}
 
 function option(args: readonly string[], key: string): string | undefined {
   const index = args.indexOf(key);
@@ -152,9 +211,11 @@ function assertNoPrematureCreate(observation: Observation): void {
     ...initial,
     turns: [initial],
   });
-  assert.ok(
-    "reply" in expected,
-    "initial successful digest and displayed token missing",
+  assert.ok("reply" in expected, "initial successful preview digest missing");
+  assert.equal(
+    turns[ONE_CREATE]?.prompt,
+    expected.reply,
+    "approval must immediately follow the preview",
   );
   assertNoMutationBeforeReply(
     creatorObservation(observation),
@@ -245,18 +306,42 @@ function isReadbackCall(args: readonly string[]): boolean {
   );
 }
 
-export function checkCreated(observation: Observation, drift: boolean): string {
+export type CreateOutcome = "exact" | "additions" | "drift";
+
+export function previewValues(baseSha: string, headSha: string) {
+  return {
+    repository: GITHUB_FACTS.repository,
+    baseRemote: "origin",
+    headRemote: "origin",
+    targetBranch: "main",
+    headBranch: GITHUB_FACTS.branch,
+    baseSha,
+    headSha,
+    title: GITHUB_FACTS.title,
+    body: EXACT_BODY,
+    reviewers: [],
+    assignees: ["maintainer"],
+    labels: [],
+    state: "draft",
+    effectiveState: "draft",
+    closes: [],
+    related: [],
+    autoClose: "none",
+    unsupported: [],
+  };
+}
+
+export function checkCreated(
+  observation: Observation,
+  expected: CreateOutcome | boolean,
+): string {
   assertRunHappened(observation);
   assertAssigneeLookup(observation, "maintainer");
   assertAssigneeStatus(observation, "maintainer", true);
   assertNoPrematureCreate(observation);
   assertNoMutation(creatorObservation(observation));
   const calls = githubCalls(observation);
-  const writes = calls.filter((args) =>
-    ["create", "edit", "comment", "review", "merge", "close"].includes(
-      args[ONE_CREATE] ?? "",
-    ),
-  );
+  const writes = calls.filter(isGithubWrite);
   assert.equal(
     writes.length,
     ONE_CREATE,
@@ -272,9 +357,12 @@ export function checkCreated(observation: Observation, drift: boolean): string {
     "pr",
     "create",
   ]);
-  assert.equal(repositoryOption(create), GITHUB_FACTS.repository);
-  assert.equal(option(create, "--base"), "main");
-  assert.equal(option(create, "--head"), GITHUB_FACTS.branch);
+  assert.equal(
+    repositoryOption(canonicalAction(create)),
+    GITHUB_FACTS.repository,
+  );
+  assert.equal(option(canonicalAction(create), "--base"), "main");
+  assert.equal(option(canonicalAction(create), "--head"), GITHUB_FACTS.branch);
   assert.ok(create.includes("--draft"));
   const captured = Schema.decodeUnknownSync(captureSchema)(
     JSON.parse(capturedText(observation, CREATE_CAPTURE)),
@@ -289,18 +377,22 @@ export function checkCreated(observation: Observation, drift: boolean): string {
     JSON.parse(capturedText(observation, READBACK_CAPTURE)),
   );
   assert.equal(returned.url, GITHUB_FACTS.url);
-  assert.equal(returned.title, GITHUB_FACTS.title);
-  assert.equal(returned.baseRefName, "main");
-  assert.equal(returned.headRefName, GITHUB_FACTS.branch);
-  assert.equal(returned.headRefOid, plantedPins(observation).head);
-  assert.equal(returned.isDraft, true);
-  assert.deepEqual(returned.assignees, [{ login: "maintainer" }]);
-  assert.deepEqual(returned.reviewRequests, []);
-  assert.equal(
-    returned.body,
-    drift ? `${EXACT_BODY}\nAutomation footer\n` : EXACT_BODY,
-  );
-  assert.deepEqual(returned.labels, drift ? [{ name: "automation" }] : []);
+  const pins = plantedPins(observation);
+  const result = runValidator(["compare", "preview"], {
+    values: previewValues(pins.base, pins.head),
+    returned: comparisonFields(returned),
+  });
+  const { outcome } = Schema.decodeUnknownSync(
+    Schema.Struct({
+      outcome: Schema.Literals(["exact", "additions", "drift"]),
+    }),
+  )(JSON.parse(result));
+  // Legacy readbackDrift appends a footer and label: additions, not drift.
+  let expectedOutcome = expected;
+  if (typeof expected === "boolean") {
+    expectedOutcome = expected ? "additions" : "exact";
+  }
+  assert.equal(outcome, expectedOutcome);
   assertNoGithubWrites({
     ...observation,
     repoFiles: {
@@ -311,36 +403,24 @@ export function checkCreated(observation: Observation, drift: boolean): string {
         .join("\n"),
     },
   });
-  return drift
-    ? "One approved create with machine-observed body/label drift and no edit"
-    : "One exact approved create with matching machine readback";
+  return `One approved create with ${outcome} machine readback and no edit`;
 }
 
-function assertTitleStructure(reply: string): void {
-  const subject = /^Title:\s+feat: TASK-42 (?<subject>[^\r\n]+)$/m.exec(
+function assertTitleStructure(reply: string, convention: string): void {
+  const title = /^Title:[\t ]+(?<title>\S[^\r\n]*)$/m.exec(
     normalizeReplyText(reply),
-  )?.groups?.["subject"];
-  assert.ok(
-    subject !== undefined,
-    "title must have lowercase feat, immediate ticket and no scope",
-  );
-  assert.match(subject, /^[A-Z]/);
-  assert.ok(
-    subject
-      .split(" ")
-      .every((word) =>
-        /^(?:[A-Z][A-Za-z0-9'-]*|a|an|and|as|at|by|for|in|of|on|or|the|to|with)$/.test(
-          word,
-        ),
-      ),
-    "subject must be title-cased",
-  );
+  )?.groups?.["title"];
+  assert.ok(title !== undefined, "preview title missing");
+  runValidator(["title"], { convention, title });
 }
 
 export function checkTemplate(observation: Observation): string {
   assertCreatorReadOnly(observation);
   assertPreparedDigest(observation);
-  assertTitleStructure(observation.finalText);
+  assertTitleStructure(
+    observation.finalText,
+    "type=feat; scope=forbidden; ticket=TASK-42@after-colon; case=title",
+  );
   return "Prepared preview digest and requested title structure; no writes";
 }
 

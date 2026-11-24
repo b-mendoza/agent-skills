@@ -192,7 +192,7 @@ All 28 skills have registered suites. Counts describe available cases, not live-
 | `planning-codebase-restructuring`  |               2 |                  2 |                   0 |
 | `planning-task-execution`          |               2 |                  2 |                   0 |
 | `planning-work-item-tasks`         |               2 |                  3 |                   0 |
-| `pr-creator`                       |               2 |                  9 |                   3 |
+| `pr-creator`                       |               3 |                 38 |                  21 |
 | `prompt-structurer`                |               2 |                  2 |                   0 |
 | `recency-guard`                    |               2 |                  2 |                   0 |
 | `refactoring-code`                 |               2 |                  6 |                   2 |
@@ -204,6 +204,6 @@ All 28 skills have registered suites. Counts describe available cases, not live-
 | `rewriting-code-strictly`          |               2 |                  2 |                   0 |
 | `validate-implementation-plan`     |               2 |                  2 |                   0 |
 | `workflow-skill-architect`         |               2 |                  3 |                   0 |
-| **Total**                          |          **59** |            **102** |              **19** |
+| **Total**                          |          **60** |            **131** |              **37** |
 
-One attempt per case sums to $3.00 in tier-1 `budgetUsd` and $214.60 in tier-2 `budgetUsd`, or $217.60 combined. These are configured SDK budget caps, not observed costs; judge calls are additional. The default five repeats multiply these totals by five. Multi-turn cases use `followUps`, and one cap covers all of a case's turns.
+One attempt per case sums to $3.05 in tier-1 `budgetUsd` and $281.60 in tier-2 `budgetUsd`, or $284.65 combined. These are configured SDK budget caps, not observed costs; judge calls are additional. The default five repeats multiply these totals by five. Multi-turn cases use `followUps`, and one cap covers all of a case's turns.

@@ -35,13 +35,14 @@ function caseWithJudge(id: string): EvalCase {
 describe("pr-creator prose quality stays in judge rubrics", () => {
   it.each([
     ["approved-exact-bytes-assignee", "Accurately explain that the PR exists"],
-    ["created-with-drift", "each body/label mismatch"],
+    ["created-with-additions", "all approved content"],
+    ["created-with-drift", "changed title"],
     ["template-title-observed-retained", "not unit-price simplification"],
     [
       "unknown-verification-no-assignee",
       "unknown rather than passed or definitely not run",
     ],
-    ["scope-record-continues", "separate helper-token create approval"],
+    ["scope-record-continues", "separate create approval"],
     ["preview-awaits-approval", "complete proposed title, body"],
   ] as const)(
     "%s retains its semantic requirement",

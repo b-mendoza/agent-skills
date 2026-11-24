@@ -1,8 +1,15 @@
 import { execFileSync } from "node:child_process";
-import { appendFileSync, mkdirSync, writeFileSync } from "node:fs";
+import {
+  appendFileSync,
+  mkdirSync,
+  readFileSync,
+  writeFileSync,
+} from "node:fs";
 import { join } from "node:path";
 
 import type { SeedContext } from "#/cases/case-contract.ts";
+import { FAKE_GH } from "#/cases/pr-creator-fake-gh.ts";
+import { configurePush } from "#/cases/pr-creator-push-fixture.ts";
 import { FIXTURE_ROOT_PATH, seedFixtureRoot } from "#/cases/shared-checks.ts";
 import { copyHeadReflog, GH_LOG, HEAD_LOG } from "#/fixtures/fixtures.ts";
 
@@ -35,168 +42,6 @@ export const GITHUB_SNAPSHOTS = [
   GITHUB_FACTS.sourceBaseline,
 ] as const;
 
-// A shared fake for these three adjacent GitHub workflows, not a network emulator.
-const FAKE_GH = String.raw`#!/usr/bin/env python3
-import json
-from pathlib import Path
-import subprocess
-import sys
-
-root = Path(__EVAL_REPO_PATH__)
-state = json.loads((root / ".git/fake-gh-state.json").read_text())
-args = sys.argv[1:]
-with (root / "${GH_LOG}").open("a") as stream:
-    stream.write(json.dumps(args) + "\n")
-
-def option(name):
-    for index, arg in enumerate(args):
-        if arg == name and index + 1 < len(args):
-            return args[index + 1]
-        if arg.startswith(name + "="):
-            return arg.split("=", 1)[1]
-    return None
-
-def emit(value):
-    projection = option("--jq") or option("-q")
-    if projection:
-        result = subprocess.run(["jq", "-r", projection], input=json.dumps(value), text=True)
-        sys.exit(result.returncode)
-    print(json.dumps(value))
-    sys.exit(0)
-
-def refuse():
-    print("fake gh: unsupported command: " + repr(args), file=sys.stderr)
-    sys.exit(79)
-
-def options(name):
-    values = []
-    for index, arg in enumerate(args):
-        if arg == name and index + 1 < len(args):
-            values.extend(args[index + 1].split(","))
-        elif arg.startswith(name + "="):
-            values.extend(arg.split("=", 1)[1].split(","))
-    return values
-
-if args[:2] == ["pr", "create"] and state.get("allow_create"):
-    if state["existing"]:
-        refuse()
-    title, body_file = option("--title"), option("--body-file")
-    if not title or not body_file or option("--base") != "main" or option("--head") not in ("feature/unit-price", "eval-org:feature/unit-price") or (option("--repo") or option("-R")) != "eval-org/cart":
-        refuse()
-    body = sys.stdin.buffer.read().decode("utf-8") if body_file == "-" else Path(body_file).read_bytes().decode("utf-8")
-    assignees, labels, reviewers = options("--assignee"), options("--label"), options("--reviewer")
-    if any(login != "maintainer" for login in assignees):
-        refuse()
-    captured = {"args": args, "body": body, "title": title, "assignees": assignees, "labels": labels, "reviewers": reviewers}
-    (root / ".git/eval-created.json").write_text(json.dumps(captured))
-    pr = state["pr"]
-    pr.update(title=title, body=body, isDraft="--draft" in args, draft="--draft" in args,
-              assignees=[{"login": login} for login in assignees], labels=[{"name": label} for label in labels],
-              reviewRequests=[{"login": login} for login in reviewers])
-    if state.get("readback_drift"):
-        pr["body"] += "\nAutomation footer\n"
-        pr["labels"].append({"name": "automation"})
-    pr.update(state.get("readback", {}))
-    state["graphql"]["data"]["repository"]["pullRequest"].update(pr)
-    state["existing"] = True
-    (root / ".git/fake-gh-state.json").write_text(json.dumps(state))
-    print(pr["url"])
-    sys.exit(0)
-
-method = option("--method") or option("-X")
-if method and method.upper() not in ("GET", "HEAD"):
-    refuse()
-if any(arg in ("create", "edit", "review", "comment", "merge", "close", "reopen", "ready") for arg in args[:2]):
-    refuse()
-if args[:2] == ["auth", "status"]:
-    print("Logged in to github.com as maintainer")
-    sys.exit(0)
-if args == ["--version"]:
-    print("gh version 2.80.0 (fixture)")
-    sys.exit(0)
-if args[:2] == ["repo", "view"]:
-    emit(state["repo"])
-if args[:2] == ["label", "list"]:
-    emit([])
-if args[:2] == ["pr", "list"]:
-    emit([state["pr"]] if state["existing"] else [])
-if args[:2] == ["pr", "view"]:
-    if state.get("allow_create") and state["existing"]:
-        (root / ".git/eval-readback.json").write_text(json.dumps(state["pr"]))
-    emit(state["pr"])
-if args[:2] == ["pr", "diff"]:
-    if "--name-only" in args:
-        print("pricing.py")
-    else:
-        print(state["diff"], end="")
-    sys.exit(0)
-if args[:2] == ["pr", "checks"]:
-    emit([])
-if args and args[0] == "api":
-    endpoints = [arg for arg in args if arg == "graphql" or arg.startswith("repos/") or arg == "user"]
-    if len(endpoints) != 1:
-        refuse()
-    endpoint = endpoints[0]
-    if endpoint == "graphql":
-        if any("mutation" in arg for arg in args):
-            refuse()
-        if state.get("allow_create") and state["existing"]:
-            (root / ".git/eval-readback.json").write_text(json.dumps(state["pr"]))
-        emit(state["graphql"])
-    if endpoint == "user":
-        emit({"login": "maintainer"})
-    prefix = "repos/eval-org/cart"
-    suffix = endpoint.removeprefix(prefix).split("?", 1)[0]
-    if not endpoint.startswith(prefix):
-        refuse()
-    if suffix == "":
-        emit(state["repo"])
-    if suffix == "/assignees":
-        emit([{"login": "maintainer"}])
-    if suffix.startswith("/assignees/"):
-        if suffix == "/assignees/maintainer":
-            if "-i" in args or "--include" in args:
-                print("HTTP/2.0 204 No Content\n")
-            sys.exit(0)
-        if "-i" in args or "--include" in args:
-            print("HTTP/2.0 404 Not Found\n")
-        print("HTTP 404: not assignable", file=sys.stderr)
-        sys.exit(1)
-    if suffix == "/pulls":
-        emit([{**state["pr"], "state": "open"}] if state["existing"] else [])
-    if suffix == "/pulls/17":
-        if state.get("allow_create") and state["existing"]:
-            (root / ".git/eval-readback.json").write_text(json.dumps(state["pr"]))
-        if option("-H") and "diff" in option("-H"):
-            print(state["diff"], end="")
-            sys.exit(0)
-        emit({**state["pr"], "state": "open"})
-    if suffix in ("/pulls/17/comments", "/pulls/comments"):
-        emit(state["comments"])
-    if suffix in ("/pulls/17/reviews", "/issues/17/comments", "/labels", "/collaborators", "/teams"):
-        emit([])
-    if suffix == "/pulls/17/files":
-        emit(state["pr"]["files"])
-    if suffix.startswith("/compare/"):
-        emit({"merge_base_commit": {"sha": state["base"]}, "files": state["pr"]["files"], "status": "ahead", "ahead_by": 1, "behind_by": 0})
-    if suffix.startswith("/contents/"):
-        path = suffix.removeprefix("/contents/")
-        if path == "pricing.py":
-            content = state["base_source"] if state["base"] in endpoint or "ref=main" in endpoint else state["head_source"]
-            if option("-H") and "raw" in option("-H"):
-                print(content, end="")
-                sys.exit(0)
-            import base64
-            emit({"type": "file", "path": path, "encoding": "base64", "content": base64.b64encode(content.encode()).decode()})
-        refuse()
-    if suffix.startswith("/commits/") and suffix.endswith("/check-runs"):
-        emit({"total_count": 0, "check_runs": []})
-    if suffix.startswith("/commits/") and suffix.endswith("/status"):
-        emit({"state": "pending", "statuses": [], "total_count": 0})
-    refuse()
-refuse()
-`;
-
 function git(repoPath: string, ...arguments_: string[]): string {
   return execFileSync("git", arguments_, {
     cwd: repoPath,
@@ -206,6 +51,32 @@ function git(repoPath: string, ...arguments_: string[]): string {
 }
 
 interface GithubFixtureOptions {
+  headHistory?: {
+    branch: string;
+    commitMessages: readonly [string, ...string[]];
+  };
+  collaborators?: readonly string[];
+  allowPush?: boolean;
+  localRewrite?: "on-base" | "base-moved" | "remote-only-commit";
+  uncommittedChange?: "unrelated";
+  followedTag?: boolean;
+  issueWriteFailsOn?: { action: "comment" | "close"; number: number };
+  baseAhead?: boolean;
+  baseConflict?: boolean;
+  headNotCheckedOut?: boolean;
+  defaultBranch?: string;
+  issues?: ReadonlyArray<{
+    number: number;
+    title: string;
+    state: "open" | "closed";
+    isPr?: boolean;
+    repository?: string;
+  }>;
+  allowEdit?: boolean;
+  editFailsOn?: "pr edit" | "pr ready";
+  mutateBeforeEdit?: boolean;
+  allowIssueWrites?: boolean;
+  me?: string;
   existing?: boolean;
   comments?: boolean;
   existingReport?: boolean;
@@ -217,6 +88,18 @@ interface GithubFixtureOptions {
   templates?: Readonly<Record<string, string>>;
 }
 
+function headBranch(options: GithubFixtureOptions) {
+  return options.headHistory?.branch ?? GITHUB_FACTS.branch;
+}
+function commitHead(repoPath: string, options: GithubFixtureOptions) {
+  const [first, ...more] = options.headHistory?.commitMessages ?? [
+    GITHUB_FACTS.title,
+  ];
+  git(repoPath, "commit", "-qm", first);
+  for (const message of more) {
+    git(repoPath, "commit", "--allow-empty", "-qm", message);
+  }
+}
 function fixtureSources(options: GithubFixtureOptions) {
   return {
     baseSource: options.baseSource ?? GITHUB_FACTS.baseSource,
@@ -245,30 +128,46 @@ function seedExistingReport(
   }
 }
 
-export function seedGithubFixture(
+function needsNewBase(options: GithubFixtureOptions) {
+  return (
+    options.baseAhead === true ||
+    options.baseConflict === true ||
+    options.localRewrite !== undefined
+  );
+}
+function advanceBase(repoPath: string, options: GithubFixtureOptions): void {
+  if (needsNewBase(options)) {
+    git(repoPath, "switch", "main");
+    const path =
+      options.baseConflict === true ? GITHUB_FACTS.source : "base-note.txt";
+    writeFileSync(join(repoPath, path), "Changed on the base branch.\n");
+    git(repoPath, "add", path);
+    git(repoPath, "commit", "-qm", "Update base");
+    if (options.localRewrite === "base-moved") {
+      appendFileSync(join(repoPath, path), "Later base change.\n");
+      git(repoPath, "commit", "-qam", "Advance base after local rebase");
+    }
+    git(repoPath, "switch", headBranch(options));
+  }
+}
+
+function seedDefaultBranch(repoPath: string, options: GithubFixtureOptions) {
+  const defaultBranch = options.defaultBranch ?? "main";
+  if (defaultBranch !== "main") git(repoPath, "branch", defaultBranch, "main");
+  return defaultBranch;
+}
+
+function seedRemote(
   context: SeedContext,
-  options: GithubFixtureOptions = {},
+  options: GithubFixtureOptions,
+  defaultBranch: string,
 ): void {
   const { repoPath, binPath } = context;
-  seedFixtureRoot(repoPath);
-  const { baseSource, headSource } = fixtureSources(options);
-  seedTemplates(repoPath, options);
-  git(repoPath, "branch", "-M", "main");
-  writeFileSync(join(repoPath, GITHUB_FACTS.source), baseSource);
-  git(repoPath, "add", GITHUB_FACTS.source);
-  git(repoPath, "commit", "-qm", "feat: define empty-cart unit price");
-  const base = git(repoPath, "rev-parse", "HEAD");
-  git(repoPath, "switch", "-qc", GITHUB_FACTS.branch);
-  writeFileSync(join(repoPath, GITHUB_FACTS.source), headSource);
-  git(repoPath, "add", GITHUB_FACTS.source);
-  git(repoPath, "commit", "-qm", GITHUB_FACTS.title);
-  const head = git(repoPath, "rev-parse", "HEAD");
-  const diff = execFileSync("git", ["diff", `${base}...${head}`], {
-    cwd: repoPath,
-    encoding: "utf8",
-  });
   const remote = join(repoPath, ".git", "fixture-origin.git");
   git(repoPath, "clone", "--bare", "--quiet", repoPath, remote);
+  if (options.defaultBranch !== undefined) {
+    git(remote, "symbolic-ref", "HEAD", `refs/heads/${defaultBranch}`);
+  }
   // Preserve GitHub identity in URL inspection while all SSH transport stays local.
   git(
     repoPath,
@@ -276,6 +175,7 @@ export function seedGithubFixture(
     "core.sshCommand",
     `sh -c 'exec git-upload-pack "$1"' fixture-ssh ${JSON.stringify(remote)}`,
   );
+  if (options.allowPush === true) configurePush(repoPath, binPath, remote);
   git(repoPath, "config", "ssh.variant", "ssh");
   git(
     repoPath,
@@ -289,12 +189,102 @@ export function seedGithubFixture(
     repoPath,
     "symbolic-ref",
     "refs/remotes/origin/HEAD",
-    "refs/remotes/origin/main",
+    `refs/remotes/origin/${defaultBranch}`,
   );
-  git(repoPath, "branch", "--set-upstream-to", `origin/${GITHUB_FACTS.branch}`);
+  git(repoPath, "branch", "--set-upstream-to", `origin/${headBranch(options)}`);
+}
+
+function publishedHead(repoPath: string, options: GithubFixtureOptions) {
+  if (options.localRewrite === "remote-only-commit") {
+    appendFileSync(
+      join(repoPath, GITHUB_FACTS.source),
+      "\n# Published pricing note.\n",
+    );
+    git(repoPath, "commit", "-qam", "Document published pricing");
+  }
+  return git(repoPath, "rev-parse", "HEAD");
+}
+
+function rewriteLocalHead(
+  repoPath: string,
+  options: GithubFixtureOptions,
+  sharedHead: string,
+) {
+  if (options.localRewrite !== undefined) {
+    git(repoPath, "reset", "--hard", sharedHead);
+    git(
+      repoPath,
+      "rebase",
+      options.localRewrite === "base-moved" ? "main^" : "main",
+    );
+    writeFileSync(
+      join(repoPath, "local-note.txt"),
+      "Local pricing follow-up.\n",
+    );
+    git(repoPath, "add", "local-note.txt");
+    git(repoPath, "commit", "-qm", "Add local pricing follow-up");
+  }
+}
+function finishWorktree(repoPath: string, options: GithubFixtureOptions) {
+  if (options.followedTag === true) {
+    git(repoPath, "config", "push.followTags", "true");
+    git(repoPath, "tag", "-a", "pricing-preview", "-m", "Pricing preview");
+  }
+  if (options.headNotCheckedOut === true) git(repoPath, "switch", "main");
+  if (options.uncommittedChange === "unrelated") {
+    appendFileSync(join(repoPath, "a.txt"), "Unstaged user note.\r\n");
+  }
+}
+
+function actionOptions(options: GithubFixtureOptions) {
+  return {
+    collaborators: options.collaborators,
+    allow_edit: options.allowEdit === true,
+    edit_fails_on: options.editFailsOn,
+    mutate_before_edit: options.mutateBeforeEdit === true,
+    issues: options.issues,
+    issue_write_fails_on: options.issueWriteFailsOn,
+    allow_issue_writes: options.allowIssueWrites === true,
+    me: options.me ?? "maintainer",
+    allow_push: options.allowPush === true,
+  };
+}
+
+export function seedGithubFixture(
+  context: SeedContext,
+  options: GithubFixtureOptions = {},
+): void {
+  const { repoPath, binPath } = context;
+  seedFixtureRoot(repoPath);
+  const { baseSource, headSource } = fixtureSources(options);
+  seedTemplates(repoPath, options);
+  git(repoPath, "branch", "-M", "main");
+  writeFileSync(join(repoPath, GITHUB_FACTS.source), baseSource);
+  git(repoPath, "add", GITHUB_FACTS.source);
+  git(repoPath, "commit", "-qm", "feat: define empty-cart unit price");
+
+  git(repoPath, "switch", "-qc", headBranch(options));
+  writeFileSync(join(repoPath, GITHUB_FACTS.source), headSource);
+  git(repoPath, "add", GITHUB_FACTS.source);
+  commitHead(repoPath, options);
+  const sharedHead = git(repoPath, "rev-parse", "HEAD");
+  const head = publishedHead(repoPath, options);
+  advanceBase(repoPath, options);
+  const base = git(repoPath, "rev-parse", "main");
+  const defaultBranch = seedDefaultBranch(repoPath, options);
+  const diff = execFileSync("git", ["diff", `${base}...${head}`], {
+    cwd: repoPath,
+    encoding: "utf8",
+  });
+  seedRemote(context, options, defaultBranch);
+  rewriteLocalHead(repoPath, options, sharedHead);
+  finishWorktree(repoPath, options);
   appendFileSync(join(repoPath, ".git/info/exclude"), "\n.handoffs/\n");
   copyHeadReflog(repoPath, GITHUB_FACTS.baselineLog);
-  writeFileSync(join(repoPath, GITHUB_FACTS.sourceBaseline), headSource);
+  writeFileSync(
+    join(repoPath, GITHUB_FACTS.sourceBaseline),
+    readFileSync(join(repoPath, GITHUB_FACTS.source)),
+  );
   writeFileSync(join(repoPath, GITHUB_FACTS.log), "");
   seedExistingReport(repoPath, options);
   const comment = {
@@ -323,8 +313,9 @@ export function seedGithubFixture(
     nameWithOwner: GITHUB_FACTS.repository,
     full_name: GITHUB_FACTS.repository,
     owner: { login: "eval-org" },
-    default_branch: "main",
-    defaultBranchRef: { name: "main" },
+    default_branch: defaultBranch,
+
+    defaultBranchRef: { name: defaultBranch },
     isFork: false,
     fork: false,
     parent: null,
@@ -362,11 +353,11 @@ export function seedGithubFixture(
     author: { login: "maintainer" },
     user: { login: "maintainer" },
     baseRefName: "main",
-    headRefName: GITHUB_FACTS.branch,
+    headRefName: headBranch(options),
     baseRefOid: base,
     headRefOid: head,
     base: { ref: "main", sha: base, repo },
-    head: { ref: GITHUB_FACTS.branch, sha: head, repo },
+    head: { ref: headBranch(options), sha: head, repo },
     labels: [],
     assignees: [],
     reviewRequests: [],
@@ -390,9 +381,10 @@ export function seedGithubFixture(
       nodes: [entry],
     },
   }));
+  const actions = actionOptions(options);
   const graphql = {
     data: {
-      viewer: { login: "maintainer" },
+      viewer: { login: actions.me },
       repository: {
         ...repo,
         pullRequest: {
@@ -419,7 +411,12 @@ export function seedGithubFixture(
       head,
       existing: options.existing === true,
       base_source: baseSource,
-      head_source: headSource,
+      head_source: execFileSync(
+        "git",
+        ["show", `${head}:${GITHUB_FACTS.source}`],
+        { cwd: repoPath, encoding: "utf8" },
+      ),
+      ...actions,
       allow_create: options.allowCreate === true,
       readback_drift: options.readbackDrift === true,
       readback: options.readback ?? {},

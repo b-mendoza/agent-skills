@@ -9,7 +9,7 @@ Reviewer source: <user | CODEOWNERS | none-confirmed | none>
 Normalized reviewers:
 - <username/team | n/a>
 Solo repository condition: <yes | no | unknown>
-CODEOWNERS source: <.github/CODEOWNERS | CODEOWNERS | none>
+CODEOWNERS source: <owners-file path named by the platform playbook | none>
 CODEOWNERS matches:
 - <pattern -> requestable owners | none>
 Labels: <comma list | none>
@@ -22,4 +22,4 @@ Reason: <one line>
 Decision needed: <none | provide reviewers or none | choose existing labels or remove | choose assignable users or none | next action>
 ```
 
-`REVIEWERS=none` resolves to `Reviewers: none (user-confirmed)` and `PASS` when labels are valid. Use `INVALID_LABELS` for any override not reported by the platform as existing.
+`REVIEWERS=none` resolves to `Reviewers: none (user-confirmed)`. `PASS` requires valid assignees and labels: both invalid lists are `none`. `INVALID_LABELS` and `INVALID_ASSIGNEES` identify at least one invalid item in the corresponding list. `NEEDS_REVIEWER` leaves the reviewer decision open. `AUTH` denotes an authentication failure; `ERROR` denotes an unexpected failure.

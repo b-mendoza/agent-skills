@@ -9,6 +9,10 @@ import {
   GITHUB_FACTS,
   seedGithubFixture,
 } from "#/cases/pr-creator-fixtures.ts";
+import {
+  commands,
+  testRewriteFixtures,
+} from "#/cases/pr-creator-rewrite-fixture-tests.ts";
 import { makeFixture } from "#/fixtures/fixtures.ts";
 
 const SUCCESS = 0;
@@ -48,12 +52,10 @@ describe("pr-creator create fixture", () => {
         const args = [
           "pr",
           "create",
-          "-R",
-          GITHUB_FACTS.repository,
-          "--head",
-          GITHUB_FACTS.branch,
-          "--base",
-          "main",
+          "--repo",
+          `github.com/${GITHUB_FACTS.repository}`,
+          `--head=${GITHUB_FACTS.branch}`,
+          "--base=main",
           "--title",
           GITHUB_FACTS.title,
           "--body-file",
@@ -128,3 +130,273 @@ describe("pr-creator create fixture", () => {
     },
   );
 });
+
+const TARGET = ["17", "-R", GITHUB_FACTS.repository];
+const ISSUE = ["12", `--repo=github.com/${GITHUB_FACTS.repository}`];
+const ISSUES = [
+  { number: 12, title: "Price", state: "open" },
+  { number: 14, title: "Fix", state: "closed", isPr: true },
+] as const;
+const FIXTURE_TIMEOUT_MS = 30_000;
+it(
+  "preserves applied fields when ready fails, and derives closures from the edited body",
+  ({ onTestFinished }) => {
+    const fixture = commands({
+      existing: true,
+      allowEdit: true,
+      issues: ISSUES,
+      editFailsOn: "pr ready",
+    });
+    onTestFinished(fixture.cleanup);
+    const path = join(fixture.cwd, ".git/body");
+    writeFileSync(path, "Fixes #12, related to #14");
+    fixture.gh(
+      "pr",
+      "edit",
+      ...TARGET,
+      "--add-reviewer",
+      "peer",
+      "--body-file",
+      path,
+    );
+    expect(fixture.capture("pr-edit-1")).toMatchObject({
+      args: [
+        "pr",
+        "edit",
+        ...TARGET,
+        "--add-reviewer",
+        "peer",
+        "--body-file",
+        path,
+      ],
+    });
+    expect(() => fixture.gh("pr", "ready", ...TARGET)).toThrow();
+    expect(JSON.parse(fixture.gh("pr", "view", ...TARGET))).toMatchObject({
+      isDraft: true,
+      reviewRequests: [{ login: "peer" }],
+      closingIssuesReferences: [{ number: 12 }],
+    });
+    writeFileSync(path, "Related: #12");
+    fixture.gh("pr", "edit", ...TARGET, "--body-file", path);
+    expect(JSON.parse(fixture.gh("pr", "view", ...TARGET))).toMatchObject({
+      closingIssuesReferences: [],
+    });
+  },
+  FIXTURE_TIMEOUT_MS,
+);
+it(
+  "returns the baseline before simulating an external edit",
+  ({ onTestFinished }) => {
+    const fixture = commands({ existing: true, mutateBeforeEdit: true });
+    onTestFinished(fixture.cleanup);
+    const view = () =>
+      fixture.gh(
+        "pr",
+        "view",
+        ...TARGET,
+        "--json",
+        "title,body",
+        "--jq",
+        ".title",
+      );
+    expect(view()).toBe(GITHUB_FACTS.title);
+    expect(view()).not.toBe(GITHUB_FACTS.title);
+  },
+  FIXTURE_TIMEOUT_MS,
+);
+it(
+  "reads PR identity, exact issue comments, and the close reason",
+  ({ onTestFinished }) => {
+    const fixture = commands({
+      issues: ISSUES,
+      allowIssueWrites: true,
+      me: "author",
+    });
+    onTestFinished(fixture.cleanup);
+    const api = `repos/${GITHUB_FACTS.repository}/issues`;
+    expect(JSON.parse(fixture.gh("api", `${api}/14`))).toHaveProperty(
+      "pull_request",
+    );
+    const path = join(fixture.cwd, ".git/body");
+    const body = `${BODY}\r\n`;
+    writeFileSync(path, body);
+    const url = fixture.gh("issue", "comment", ...ISSUE, "--body-file", path);
+    const [, id] = url.split("#issuecomment-");
+    expect(
+      JSON.parse(fixture.gh("api", `${api}/comments/${id}`)),
+    ).toMatchObject({
+      body,
+      user: { login: "author" },
+    });
+    expect(fixture.capture("issue-comment-1")).toMatchObject({ body });
+    expect(
+      JSON.parse(fixture.gh("api", "--paginate", `${api}/12/comments`)),
+    ).toMatchObject([{ body, issue_url: `https://api.github.com/${api}/12` }]);
+    expect(fixture.gh("api", "user", "--jq", ".login")).toBe("author");
+    fixture.gh("issue", "close", ...ISSUE, "--reason=not planned");
+    expect(JSON.parse(fixture.gh("issue", "view", ...ISSUE))).toMatchObject({
+      state: "CLOSED",
+      stateReason: "NOT_PLANNED",
+    });
+  },
+  FIXTURE_TIMEOUT_MS,
+);
+it(
+  "enforces a pinned lease on a rewritten remote branch, then accepts a plain push",
+  ({ onTestFinished }) => {
+    const fixture = commands({
+      allowPush: true,
+      baseAhead: true,
+      headNotCheckedOut: true,
+    });
+    onTestFinished(fixture.cleanup);
+    const ref = `refs/heads/${GITHUB_FACTS.branch}`;
+    const old = fixture.git("rev-parse", `origin/${GITHUB_FACTS.branch}`);
+    const base = fixture.git("rev-parse", "origin/main");
+    expect(fixture.git("branch", "--show-current")).not.toBe(
+      GITHUB_FACTS.branch,
+    );
+    fixture.git("switch", "--detach", old);
+    fixture.git("rebase", base);
+    const tip = fixture.git("rev-parse", "HEAD");
+    expect(tip).not.toBe(old);
+    const push = (lease: string) =>
+      fixture.git(
+        "push",
+        `--force-with-lease=${ref}:${lease}`,
+        "origin",
+        `${tip}:${ref}`,
+      );
+    expect(() => push(base)).toThrow();
+    expect(fixture.git("ls-remote", "origin", ref)).toBe(`${old}\t${ref}`);
+    expect(fixture.capture("push-1")).toMatchObject({
+      old,
+      new: tip,
+      ref,
+      fastForward: false,
+      accepted: false,
+    });
+    push(old);
+    expect(fixture.capture("push-2")).toMatchObject({
+      old,
+      new: tip,
+      ref,
+      fastForward: false,
+      accepted: true,
+      args: [
+        "push",
+        `--force-with-lease=${ref}:${old}`,
+        "origin",
+        `${tip}:${ref}`,
+      ],
+    });
+    fixture.git("commit", "--allow-empty", "-qm", "next");
+    fixture.git("push", "origin", `HEAD:${ref}`);
+    expect(fixture.capture("push-3")).toMatchObject({
+      old: tip,
+      new: fixture.git("rev-parse", "HEAD"),
+      ref,
+      fastForward: true,
+      accepted: true,
+    });
+  },
+  FIXTURE_TIMEOUT_MS,
+);
+
+it(
+  "keeps a non-default PR target and produces a real rebase conflict",
+  ({ onTestFinished }) => {
+    const fixture = commands({
+      defaultBranch: "trunk",
+      baseConflict: true,
+      existing: true,
+      allowEdit: true,
+      issues: ISSUES,
+    });
+    onTestFinished(fixture.cleanup);
+    expect(
+      fixture.gh(
+        "api",
+        "--include",
+        "--method",
+        "GET",
+        `repos/${GITHUB_FACTS.repository}`,
+      ),
+    ).toContain('"default_branch": "trunk"');
+    expect(() => fixture.git("rebase", "origin/main")).toThrow();
+    expect(fixture.git("diff", "--name-only", "--diff-filter=U")).toBe(
+      GITHUB_FACTS.source,
+    );
+    const bodyPath = join(fixture.cwd, ".git/body");
+    writeFileSync(bodyPath, "Closes #12");
+    fixture.gh(
+      "pr",
+      "edit",
+      ...TARGET,
+      "--body-file",
+      bodyPath,
+      "--title",
+      "New",
+      "--add-label",
+      "review",
+      "--add-assignee",
+      "owner",
+    );
+    fixture.gh("pr", "ready", ...TARGET);
+    expect(JSON.parse(fixture.gh("pr", "view", ...TARGET))).toMatchObject({
+      title: "New",
+      labels: [{ name: "review" }],
+      assignees: [{ login: "owner" }],
+      isDraft: false,
+      closingIssuesReferences: [],
+    });
+    fixture.gh("pr", "ready", ...TARGET, "--undo");
+    expect(fixture.capture("pr-ready-2")).toMatchObject({ isDraft: true });
+  },
+  FIXTURE_TIMEOUT_MS,
+);
+
+testRewriteFixtures();
+
+it.for(["comment", "close"] as const)(
+  "refuses only the configured %s on issue 13",
+  { timeout: FIXTURE_TIMEOUT_MS },
+  (action, { onTestFinished }) => {
+    const number = 13;
+    const fixture = commands({
+      issues: [...ISSUES, { number, state: "open", title: "Other" }],
+      allowIssueWrites: true,
+      issueWriteFailsOn: { action, number },
+    });
+    onTestFinished(fixture.cleanup);
+    const body = join(fixture.cwd, ".git/body");
+    writeFileSync(body, BODY);
+    const write = (verb: "comment" | "close", issue: string) =>
+      fixture.gh(
+        "issue",
+        verb,
+        issue,
+        "-R",
+        GITHUB_FACTS.repository,
+        ...(verb === "comment"
+          ? ["--body-file", body]
+          : ["--reason", "not planned"]),
+      );
+    write(action, "12");
+    write(action === "comment" ? "close" : "comment", String(number));
+    expect(() => write(action, String(number))).toThrow(/unsupported command/);
+    expect(fixture.capture(`issue-${action}-1`)).toMatchObject({
+      args: [
+        "issue",
+        action,
+        "12",
+        "-R",
+        GITHUB_FACTS.repository,
+        ...(action === "comment"
+          ? ["--body-file", body]
+          : ["--reason", "not planned"]),
+      ],
+    });
+    expect(() => fixture.capture(`issue-${action}-2`)).toThrow(/ENOENT/);
+  },
+);
