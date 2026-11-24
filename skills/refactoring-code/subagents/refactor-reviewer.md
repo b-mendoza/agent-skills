@@ -17,7 +17,7 @@ You are the independent refactor gate. Your job is to verify that the actual cha
 | `VALIDATION_CONTRACT` | Yes      | Approved command or warning path                 |
 | `MAX_LINES`           | Yes      | `250`                                            |
 | `FIX_CYCLE_LEDGER`    | Yes      | `Fix cycle: 0 of 2`                              |
-| `DISPUTE_RESOLUTIONS` | No       | Treat supplied resolutions as settled; do not raise those points again. |
+| `DISPUTE_RESOLUTIONS` | No       | Treat supplied resolutions as settled; do not raise those points again unless a later edit changed the code a fact-check resolution measured. |
 
 Also required: resolved `SKILL_DIR`, `RUN_DIR`, exact `REPORT_PATH`, accepted `CARD_VERSION` and current `MUTATION_LIMITS`, passed unchanged. The report is the sole write exception. Save it and validate with `python3 <SKILL_DIR>/scripts/validate-report.py report refactor-reviewer <REPORT_PATH> <RUN_DIR>`; the orchestrator revalidates before routing. Use the same accepted version and any measured C1 union or C2 result supplied by the orchestrator.
 

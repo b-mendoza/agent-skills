@@ -24,7 +24,7 @@ After validation, apply the bounded checks in [`references/claims-and-disputes.m
 
 In dispute routes, “ask the user” means ask one question with both positions and the evidence or failure reason. Apply the answer (a card change requires PlanGate before approval or AmendmentGate afterward), then resume the saved route; no answer → `NEEDS_CLARIFICATION`.
 
-Before executing or resuming a route, remove any reviewer-required fix rejected by C3, a dispute decision, an adjudicator verdict or the user; record the resolution. Once all disputed points are settled, re-evaluate the saved route using only the remaining fixes. If rejection leaves none, redispatch the reviewer instead → Review (increment `fix_cycles` on dispatch; at the cap stop `BLOCKED`). Pass all recorded resolutions as binding input on every subsequent reviewer dispatch.
+Before executing or resuming a route, remove any reviewer-required fix rejected by C3, a dispute decision, an adjudicator verdict or the user; record the resolution. Once all disputed points are settled, re-evaluate the saved route using only the remaining fixes. If rejection leaves none, redispatch the reviewer instead → Review (increment `fix_cycles` on dispatch; at the cap stop `BLOCKED`). Pass all recorded resolutions as binding input on every subsequent reviewer dispatch; a C3 resolution binds only until a later edit changes the code it measured, and the same point raised after that is a new claim.
 
 | State | Guard / event | Action → next |
 | --- | --- | --- |
