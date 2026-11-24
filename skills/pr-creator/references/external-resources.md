@@ -1,6 +1,6 @@
 # External Resources
 
-Load this file only when current CLI syntax, platform behavior, or writing guidance changes a concrete decision. Fetched sources are background and syntax references only; this skill's local contracts remain authoritative.
+Load this file only when current CLI syntax, platform behavior, or writing guidance changes a concrete decision. Fetched sources are background and syntax references only; this skill's local contracts remain authoritative. Platform-specific sources are in the selected `PLATFORM_PLAYBOOK`.
 
 Current-state reference. Update when a linked command or reference changes.
 
@@ -14,14 +14,6 @@ Current-state reference. Update when a linked command or reference changes.
 | <https://git-scm.com/docs/git-push>      | Plain push and rejection behavior.                             |
 | <https://git-scm.com/docs/git-fetch>     | Updating specific remote refs.                                 |
 | <https://git-scm.com/docs/gitattributes> | `linguist-generated` attributes for generated-file exclusions. |
-
-## Other Platforms
-
-| Resource                                                                                    | Use                                                   |
-| ------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
-| <https://support.atlassian.com/bitbucket-cloud/docs/create-a-pull-request/>                 | Bitbucket PR creation and state capabilities.         |
-| <https://developer.atlassian.com/cloud/bitbucket/rest/api-group-pullrequests/>              | Bitbucket REST create/query/verify path.              |
-| <https://support.atlassian.com/bitbucket-cloud/docs/use-default-reviewers-on-a-repository/> | Bitbucket default reviewer analogue.                  |
 
 ## Writing And Safety
 

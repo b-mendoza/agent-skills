@@ -21,15 +21,10 @@ On leaving `InspectRepo`, the orchestrator selects one playbook from the inspect
 
 - `github` or `github-enterprise`: [`./references/platform-github.md`](./platform-github.md)
 - `gitlab`: [`./references/platform-gitlab.md`](./platform-gitlab.md)
+- `bitbucket`: [`./references/platform-bitbucket.md`](./platform-bitbucket.md)
+- `unknown`: select none and go to `GatePlatformTooling`.
 
 Pass the selected path as `PLATFORM_PLAYBOOK` to preflight, the metadata specialist and the submitter. Each reads that file and no other playbook.
-
-Use the selected playbook when one exists; otherwise use the existing platform guidance.
-
-| Platform                   | Create path                                                                                                              | Draft support                                                                    | Fork notes                                                         |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| Bitbucket Cloud            | Use approved CLI/API path if available; otherwise ask for approved tooling.                                              | No native draft PR state.                                                        | Source and destination repositories can differ.                    |
-| Unknown                    | Fetch one current platform/tooling document or ask the user which platform/tooling to use.                               | Unknown until confirmed.                                                         | Do not create until fields are mappable.                           |
 
 ## State Capability Gate
 
