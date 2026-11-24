@@ -2,44 +2,32 @@ import { execFileSync, spawnSync } from "node:child_process";
 import {
   chmodSync,
   mkdirSync,
-  mkdtempSync,
   readFileSync,
   rmSync,
   symlinkSync,
   unlinkSync,
+  utimesSync,
   writeFileSync,
 } from "node:fs";
-import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
-import { afterEach, describe, expect, test } from "vitest";
+import { describe, expect, test } from "vitest";
 
-const script = resolve(
-  "../skills/committing-scoped-changes/scripts/collect-state.py",
-);
+import {
+  COLLECTOR_ERROR_EXIT,
+  git,
+  repo,
+  script,
+  SUCCESS_EXIT,
+} from "#/cases/committing-scoped-changes-test-support.ts";
+
 const validator = resolve(
   "../skills/committing-scoped-changes/scripts/validate-output.sh",
 );
-const repos: string[] = [];
-const SUCCESS_EXIT = 0;
 const INVALID_EXIT = 1;
-const COLLECTOR_ERROR_EXIT = 2;
 const START_INDEX = 0;
 const DIGEST_LENGTH = 40;
 const EXECUTABLE_MODE = 0o755;
-function repo(): string {
-  const path = mkdtempSync(join(tmpdir(), "scoped-state-"));
-  repos.push(path);
-  git(path, "init", "-q");
-  git(path, "config", "user.name", "Fixture");
-  git(path, "config", "user.email", "fixture@example.invalid");
-  git(path, "config", "commit.gpgsign", "false");
-  writeFileSync(join(path, "a"), "a\n");
-  writeFileSync(join(path, "b"), "b\n");
-  git(path, "add", ".");
-  git(path, "commit", "-qm", "initial");
-  return path;
-}
 function submoduleRepo(): string {
   const source = repo();
   const cwd = repo();
@@ -56,9 +44,6 @@ function submoduleRepo(): string {
   git(cwd, "commit", "-qm", "add submodule");
   return cwd;
 }
-function git(cwd: string, ...args: string[]): string {
-  return execFileSync("git", args, { cwd, encoding: "utf8" });
-}
 function collect(cwd: string, mode: string, ...paths: string[]) {
   return spawnSync("python3", ["-I", script, mode, ...paths], {
     cwd,
@@ -72,12 +57,6 @@ function digest(cwd: string, mode: string, ...paths: string[]): string {
   expect(result.stdout.trim()).toMatch(/^[0-9a-f]{40}$/);
   return result.stdout;
 }
-afterEach(() => {
-  for (const path of repos.splice(START_INDEX)) {
-    rmSync(path, { recursive: true, force: true });
-  }
-});
-
 describe("shipped scoped state collector", () => {
   test("core.filemode=false predicts index modes and nonexecutable new files", () => {
     const cwd = repo();
@@ -135,19 +114,9 @@ describe("shipped scoped state collector", () => {
     "%s passes two literal arguments without word splitting",
     (shell) => {
       const cwd = repo();
-      const run = () =>
-        execFileSync(
-          shell,
-          [
-            "-c",
-            'python3 -I "$1" group "$2" "$3"',
-            "collector",
-            script,
-            "a",
-            "b",
-          ],
-          { cwd, encoding: "utf8" },
-        );
+      const command = 'python3 -I "$1" group "$2" "$3"';
+      const args = ["-c", command, "collector", script, "a", "b"];
+      const run = () => execFileSync(shell, args, { cwd, encoding: "utf8" });
       const before = run();
       writeFileSync(join(cwd, "a"), "changed a\n");
       expect(run()).not.toBe(before);
@@ -173,15 +142,106 @@ describe("shipped scoped state collector", () => {
     writeFileSync(join(cwd, "loose"), "two");
     expect(digest(cwd, "preserve", "a")).not.toBe(preserved);
   });
-  test("preservation excludes only approved paths and remains stable across their commit", () => {
+  test("preserves a stat-dirty staged path across a group commit without rewriting the index", () => {
     const cwd = repo();
     writeFileSync(join(cwd, "a"), "new a");
     writeFileSync(join(cwd, "b"), "unrelated staged");
     git(cwd, "add", "b");
     const before = digest(cwd, "preserve", "a");
+    const older = new Date("2000-01-01");
+    utimesSync(join(cwd, "b"), older, older);
+    const index = join(cwd, ".git/index");
+    const statDirtyIndex = readFileSync(index);
+    expect(digest(cwd, "preserve", "a")).toBe(before);
+    expect(readFileSync(index)).toEqual(statDirtyIndex);
     git(cwd, "commit", "--only", "-qm", "a", "--", "a");
     expect(digest(cwd, "preserve", "a")).toBe(before);
     expect(readFileSync(join(cwd, "b"), "utf8")).toBe("unrelated staged");
+    writeFileSync(join(cwd, "b"), "unrelated edit");
+    expect(digest(cwd, "preserve", "a")).not.toBe(before);
+  });
+  test("preserve launches the same number of Git processes as the tree grows", () => {
+    const cwd = repo();
+    git(cwd, "config", "core.filemode", "false");
+    const processCount = (size: number) => {
+      for (const index of Array.from({ length: size }).keys()) {
+        writeFileSync(join(cwd, `file-${index}`), "tracked");
+      }
+      git(cwd, "add", ".");
+      git(cwd, "commit", "-qm", `track ${size} files`);
+      const trace = join(cwd, ".git", `trace-${size}`);
+      execFileSync("python3", ["-I", script, "preserve", "a"], {
+        cwd,
+        env: { ...process.env, GIT_TRACE2_EVENT: trace },
+      });
+      return readFileSync(trace, "utf8")
+        .split("\n")
+        .filter((line) => line.includes('"event":"start"')).length;
+    };
+    const smallSize = 5;
+    const largeSize = 50;
+    const smallCount = processCount(smallSize);
+    expect(smallCount).toBeTruthy();
+    expect(processCount(largeSize)).toBe(smallCount);
+  });
+  test("distinguishes intent-to-add from a staged empty file", () => {
+    const cwd = repo();
+    writeFileSync(join(cwd, "empty"), "");
+    git(cwd, "add", "-N", "empty");
+    const intent = digest(cwd, "preserve", "a");
+    git(cwd, "add", "empty");
+    expect(digest(cwd, "preserve", "a")).not.toBe(intent);
+    git(cwd, "restore", "--staged", "empty");
+    git(cwd, "add", "-N", "empty");
+    expect(digest(cwd, "preserve", "a")).toBe(intent);
+  });
+  test("hashes bytes even when assume-unchanged hides a worktree edit", () => {
+    const cwd = repo();
+    const before = digest(cwd, "preserve", "a");
+    git(cwd, "update-index", "--assume-unchanged", "b");
+    expect(digest(cwd, "preserve", "a")).toBe(before);
+    writeFileSync(join(cwd, "b"), "hidden edit");
+    expect(git(cwd, "status", "--porcelain")).toBe("");
+    const hidden = digest(cwd, "preserve", "a");
+    expect(hidden).not.toBe(before);
+    git(cwd, "update-index", "--no-assume-unchanged", "b");
+    expect(digest(cwd, "preserve", "a")).not.toBe(hidden);
+    writeFileSync(join(cwd, "b"), "b\n");
+    expect(digest(cwd, "preserve", "a")).toBe(before);
+  });
+  test("binds the cleaned content of a dirty file and fails closed if conversion fails", () => {
+    const cwd = repo();
+    writeFileSync(join(cwd, ".git/info/attributes"), "b filter=checked\n");
+    writeFileSync(join(cwd, "b"), "dirty\n");
+    git(cwd, "config", "filter.checked.clean", "tr a-z A-Z");
+    const before = digest(cwd, "preserve", "a");
+    git(cwd, "config", "filter.checked.clean", "tr a-z 0-9");
+    expect(digest(cwd, "preserve", "a")).not.toBe(before);
+    git(cwd, "config", "filter.checked.clean", "false");
+    git(cwd, "config", "filter.checked.required", "true");
+    const failure = collect(cwd, "preserve", "a");
+    expect(failure.status).toBe(COLLECTOR_ERROR_EXIT);
+    expect(failure.stdout).toBe("");
+  });
+  test("does not inspect an excluded gitlink's broken Git directory", () => {
+    const cwd = submoduleRepo();
+    const before = digest(cwd, "preserve", "vendor/sub");
+    writeFileSync(join(cwd, "vendor/sub/.git"), "gitdir: missing\n");
+    expect(digest(cwd, "preserve", "vendor/sub")).toBe(before);
+  });
+  test("protects children and prefixed siblings of a supplied directory name", () => {
+    const cwd = repo();
+    mkdirSync(join(cwd, "dir"));
+    const paths = ["dir/child", "dir-extra"];
+    for (const path of paths) writeFileSync(join(cwd, path), "original");
+    const before = digest(cwd, "preserve", "dir", "a");
+    writeFileSync(join(cwd, "a"), "approved edit");
+    expect(digest(cwd, "preserve", "dir", "a")).toBe(before);
+    for (const path of paths) {
+      writeFileSync(join(cwd, path), "protected edit");
+      expect(digest(cwd, "preserve", "dir", "a")).not.toBe(before);
+      writeFileSync(join(cwd, path), "original");
+    }
   });
   test("preserves an uninitialized gitlink across an unrelated commit", () => {
     const cwd = submoduleRepo();
