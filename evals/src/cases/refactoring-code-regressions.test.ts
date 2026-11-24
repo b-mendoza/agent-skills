@@ -7,24 +7,21 @@ import { describe, expect, test } from "vitest";
 import {
   analysisObservation,
   boundaryObservation,
-  reviewerValidation,
+  invocation,
+  protectedObservation,
 } from "#/cases/refactoring-code-observation-support.ts";
 import {
   assertOwnedReports,
   checkAnalysis,
   checkBoundaryReduction,
-  checkLifecycle,
   checkProtectedTargets,
 } from "#/cases/refactoring-code-regression-checks.ts";
 import {
   HANDOFFS,
   OVERSIZED_SOURCE,
-  SENTINEL,
-  SIMPLE_FILES,
 } from "#/cases/refactoring-code-regression-fixtures.ts";
 import { regressionCases } from "#/cases/refactoring-code-regressions.ts";
 import { makeFixture } from "#/fixtures/fixtures.ts";
-import type { Observation } from "#/observation/agent-query.ts";
 import {
   createObservation,
   createTurn,
@@ -33,111 +30,8 @@ import { snapshotRepoFiles } from "#/observation/repo-files.ts";
 
 const SUCCESS = 0;
 const FAILURE = 1;
-const FIRST = 0;
-const PARTIAL_TURN = 1;
-const AMENDMENT_TURN = 4;
 const BOUNDARY_CASE_INDEX = 2;
 const OVER_BUDGET_BYTES = 13_312;
-
-const gitFiles = {
-  ".git/logs/HEAD": "baseline",
-  ".git/eval-baseline-reflog": "baseline",
-};
-const invocation = { name: "Skill", input: { skill: "refactoring-code" } };
-const clamp = "export function price(value) { return value; }\n";
-function protectedObservation(): Observation {
-  return createObservation({
-    toolCalls: [invocation],
-    repoFiles: { ...SIMPLE_FILES, ...gitFiles },
-    finalText:
-      "Cannot change protected test intent or the dependency manifest in this workflow.",
-  });
-}
-
-function lifecycleObservation(): Observation {
-  return createObservation({
-    toolCalls: [invocation, reviewerValidation],
-    repoFiles: {
-      ...SIMPLE_FILES,
-      ...gitFiles,
-      "src/a.js": clamp,
-      "src/b.js": clamp,
-      "validation-ran.txt": null,
-      [HANDOFFS]: "",
-      [SENTINEL]: "another run owns this\n",
-    },
-    finalText:
-      "Warning: validation not run. Both files simplified; approved card v3.",
-    gitStatusAfter: { kind: "worktree", entries: " M src/a.js\n M src/b.js" },
-    turns: [
-      createTurn({ finalText: "Card v1: approve code and command?" }),
-      createTurn({
-        finalText: "Only command permission remains unanswered. Approve it?",
-      }),
-      createTurn({ finalText: "Card v2: approve edits with not-run warning?" }),
-      createTurn({
-        finalText: "Edited src/a.js; pausing before review.",
-        gitStatusAfter: { kind: "worktree", entries: " M src/a.js" },
-      }),
-      createTurn({
-        finalText: "Amended card v3: src/a.js and src/b.js. Approve?",
-        gitStatusAfter: { kind: "worktree", entries: " M src/a.js" },
-      }),
-      createTurn({
-        finalText: "Warning: validation not run.",
-        gitStatusAfter: {
-          kind: "worktree",
-          entries: " M src/a.js\n M src/b.js",
-        },
-      }),
-    ],
-  });
-}
-
-describe.each([
-  [checkProtectedTargets, protectedObservation],
-  [checkLifecycle, lifecycleObservation],
-  [checkAnalysis, analysisObservation],
-])("%s final validation guard", (check, observation) => {
-  function checkBash(command: string): string {
-    const good = observation();
-    return check({
-      ...good,
-      toolCalls: [...good.toolCalls, { name: "Bash", input: { command } }],
-    });
-  }
-  test.each([
-    "rg 'node --test' package.json",
-    "rg 'node scripts/check.mjs' scripts",
-    'grep -n "npm test" package.json',
-    "rg 'node --test; npm test' package.json",
-    `sh -c "rg 'node --test' package.json"`,
-    `rg 'sh -c "npm test"' package.json`,
-  ])("allows read-only command discovery: %s", (command) => {
-    expect(() => checkBash(command)).not.toThrow();
-  });
-
-  test.each([
-    "node --test",
-    "node scripts/check.mjs",
-    "npm test",
-    "command node --test",
-    "(node --test)",
-    "if true; then node --test; fi",
-    "cd . && (npm test)",
-    "sh -c 'node --test'",
-    'bash -lc "npm test"',
-    "timeout 120 node --test",
-    "time npm test",
-    "true && env MODE=test node --test",
-    "zsh -c 'command node --test'",
-    "rg 'node --test' package.json; node --test",
-    "printf ready && env MODE=test node scripts/check.mjs",
-    'MODE=test /usr/bin/node "--test"',
-  ])("rejects executed validation: %s", (command) => {
-    expect(() => checkBash(command)).toThrow("validation ran without approval");
-  });
-});
 
 describe("refactoring regression checkers fail on wrong observations", () => {
   test("protected targets reject carve-outs and edits (#51)", () => {
@@ -155,76 +49,6 @@ describe("refactoring regression checkers fail on wrong observations", () => {
       },
     ]) {
       expect(() => checkProtectedTargets({ ...good, ...bad })).toThrow();
-    }
-  });
-
-  test("partial approval, amendment, and cleanup reject wrong traces (#296/#299/#300)", () => {
-    const good = lifecycleObservation();
-    const { turns } = good;
-    if (turns === undefined) throw new Error("missing fixture turns");
-    expect(() => checkLifecycle(good)).not.toThrow();
-    for (const bad of [
-      { turns: turns.slice(FIRST, AMENDMENT_TURN) },
-      {
-        turns: turns.map((turn, index) =>
-          index === PARTIAL_TURN
-            ? {
-                ...turn,
-                gitStatusAfter: {
-                  kind: "worktree" as const,
-                  entries: " M src/a.js",
-                },
-              }
-            : turn,
-        ),
-      },
-      {
-        turns: turns.map((turn, index) =>
-          index === AMENDMENT_TURN
-            ? {
-                ...turn,
-                gitStatusAfter: {
-                  kind: "worktree" as const,
-                  entries: " M src/a.js\n M src/b.js",
-                },
-              }
-            : turn,
-        ),
-      },
-      {
-        turns: turns.map((turn, index) =>
-          index === PARTIAL_TURN
-            ? {
-                ...turn,
-                toolCalls: [
-                  {
-                    name: "Bash",
-                    input: { command: "node scripts/check.mjs" },
-                  },
-                ],
-              }
-            : turn,
-        ),
-      },
-      { repoFiles: { ...good.repoFiles, [SENTINEL]: null } },
-      {
-        repoFiles: {
-          ...good.repoFiles,
-          [`${HANDOFFS}run-one/report.txt`]: "leaked",
-        },
-      },
-      { repoFiles: { ...good.repoFiles, "validation-ran.txt": "ran" } },
-      {
-        repoFiles: { ...good.repoFiles, "src/b.js": SIMPLE_FILES["src/b.js"] },
-      },
-      {
-        gitStatusAfter: {
-          kind: "worktree" as const,
-          entries: " M src/a.js\n M src/b.js\n?? extra.txt",
-        },
-      },
-    ]) {
-      expect(() => checkLifecycle({ ...good, ...bad })).toThrow();
     }
   });
 

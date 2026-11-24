@@ -2,6 +2,7 @@ import {
   ANALYSIS_FILES,
   BOUNDARY_FILES,
   HANDOFFS,
+  SIMPLE_FILES,
 } from "#/cases/refactoring-code-regression-fixtures.ts";
 import type { Observation } from "#/observation/agent-query.ts";
 import {
@@ -99,5 +100,22 @@ export function boundaryObservation(): Observation {
           "Card v1: D-code, D-size, D-boundary, D-validation; approve?",
       }),
     ],
+  });
+}
+
+export const gitFiles = {
+  ".git/logs/HEAD": "baseline",
+  ".git/eval-baseline-reflog": "baseline",
+};
+export const invocation = {
+  name: "Skill",
+  input: { skill: "refactoring-code" },
+};
+export function protectedObservation(): Observation {
+  return createObservation({
+    toolCalls: [invocation],
+    repoFiles: { ...SIMPLE_FILES, ...gitFiles },
+    finalText:
+      "Cannot change protected test intent or the dependency manifest in this workflow.",
   });
 }
