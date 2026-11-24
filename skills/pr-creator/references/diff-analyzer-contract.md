@@ -4,7 +4,7 @@ Return exactly one status block. Keep full patches and raw diff output out of th
 
 ```text
 DIFF_ANALYSIS: <PASS | LARGE_PR_CONFIRMATION_REQUIRED | STALE_PINS | EMPTY_DIFF | ERROR>
-Range: <base_remote>/<target_branch>...<head_remote>/<current_branch>
+Range: <base_remote>/<target_branch>...<head_remote>/<head_branch>
 Compared Base SHA: <sha>
 Compared Head SHA: <sha>
 Pinned SHA match: <yes | no>

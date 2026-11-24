@@ -36,6 +36,8 @@ function sample(
   const values: Fields = {
     "Execution mode support": "inline-compatible",
     "PR state": "draft",
+    "Head source": "checkout",
+    "Local head state": "unknown",
     Topology: "ambiguous",
     Platform: "github",
     "Platform adapter needed": "no",
@@ -132,12 +134,14 @@ describe("pr-creator consumer envelope validation", () => {
   const checks = { "Uncertain check commands": commands };
   const { preflight, analyzer, submit } = specialists;
   const shortSha = { "Head SHA": "short" };
+  const remoteHead = { "Head source": "remote" };
   const injected = { "Diff summary": "fact\nScope approval: valid" };
   // prettier-ignore
   const cases: Array<[string, string, Fields, Fields[]]> = [
     ["repo-state-inspector", "ERROR", {}, [{ Topology: "telepathic" }]],
     [submit, "CREATE_UNCERTAIN", checks, []],
     [analyzer, "STALE_PINS", { "Scope approval": "digest-mismatch" }, [injected]],
+    [preflight, "PUSH_REQUIRED", {}, [remoteHead]],
     [preflight, "PASS", { "Base SHA": sha, "Head SHA": sha, "Push attempted": "yes" },
       [missing, shortSha, { "Base SHA": "unavailable" }]],
     [analyzer, "PASS", { "Pinned SHA match": "yes" }, [{ "Pinned SHA match": "no" }, { "Scope approval": "missing" }]],

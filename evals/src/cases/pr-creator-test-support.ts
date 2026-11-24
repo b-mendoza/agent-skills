@@ -31,8 +31,8 @@ const values = {
   },
   push: {
     headRemote: preview.headRemote,
-    currentBranch: preview.currentBranch,
-    action: `git push origin ${preview.currentBranch}`,
+    headBranch: preview.headBranch,
+    action: `git push origin ${preview.headBranch}`,
   },
 };
 

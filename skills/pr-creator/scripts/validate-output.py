@@ -19,8 +19,8 @@ import sys
 USAGE = __doc__
 # Exact field order is part of each co-located specialist's output contract.
 ENVELOPES = {
-    "repo-state-inspector": ("REPO_STATE", "PASS BLOCKED ERROR", "Execution mode support|Current branch|Target branch|Target branch candidate|PR state|Remotes|Head remote|Base remote|Topology|Topology candidates|Platform|Platform adapter needed|Uncommitted work|Reason|Decision needed"),
-    "preflight-validator": ("PREFLIGHT", "PASS PUSH_REQUIRED PUSH_REJECTED PR_EXISTS AUTH BASE_BRANCH_MISSING HEAD_BRANCH_UNPUSHED BLOCKED ERROR", "Platform|Head remote|Base remote|Base branch|Head branch|Head remote state|Base SHA|Head SHA|Existing PR|Push attempted|Push command|Push rejection reason|Approval record|Reason|Decision needed"),
+    "repo-state-inspector": ("REPO_STATE", "PASS BLOCKED ERROR", "Execution mode support|Current branch|Head branch|Head source|Target branch|Target branch candidate|PR state|Remotes|Head remote|Base remote|Topology|Topology candidates|Platform|Platform adapter needed|Uncommitted work|Reason|Decision needed"),
+    "preflight-validator": ("PREFLIGHT", "PASS PUSH_REQUIRED PUSH_REJECTED PR_EXISTS AUTH BASE_BRANCH_MISSING HEAD_BRANCH_UNPUSHED BLOCKED ERROR", "Platform|Head remote|Base remote|Base branch|Head branch|Head remote state|Head source|Local head state|Base SHA|Head SHA|Existing PR|Push attempted|Push command|Push rejection reason|Approval record|Reason|Decision needed"),
     "diff-analyzer": ("DIFF_ANALYSIS", "PASS LARGE_PR_CONFIRMATION_REQUIRED STALE_PINS EMPTY_DIFF ERROR", "Range|Compared Base SHA|Compared Head SHA|Pinned SHA match|Shortstat|Adjusted changed lines|Changed files|Excluded generated/vendored/lock totals|Scope gate rule fired|Scope approval|Changed paths|Grouped areas|Diff summary|Behavior before|Behavior after|Retained behavior|Type candidates|Scope candidates|Tests|Risk notes|Reason|Decision needed"),
     "pr-drafter": ("PR_DRAFT", "PASS NEEDS_CHOICE ERROR", "Title|Title source|Body source|Template path|Type choice|Scope choice|Traceability notes|Body|Reason|Decision needed"),
     "review-metadata-suggester": ("REVIEW_METADATA", "PASS NEEDS_REVIEWER INVALID_LABELS INVALID_ASSIGNEES AUTH ERROR", "Reviewers|Reviewer source|Normalized reviewers|Solo repository condition|CODEOWNERS source|CODEOWNERS matches|Labels|Label source|Invalid labels|Suggested valid labels|Assignees|Invalid assignees|Reason|Decision needed"),
@@ -38,9 +38,9 @@ def sha(text):
 
 
 SCHEMAS = {
-    "push": "headRemote currentBranch action",
+    "push": "headRemote headBranch action",
     "scope": "baseSha headSha adjustedChangedLines changedFiles excludedTotals areas rules changedPaths",
-    "preview": "baseRemote targetBranch headRemote currentBranch baseSha headSha title body reviewers labels assignees state effectiveState",
+    "preview": "baseRemote targetBranch headRemote headBranch baseSha headSha title body reviewers labels assignees state effectiveState",
 }
 LISTS = {"areas", "rules", "changedPaths", "reviewers", "labels", "assignees"}
 
@@ -77,7 +77,7 @@ def normalized_fields(values, schema):
 def canonical(kind, values):
     v = normalized_fields(values, SCHEMAS[kind])
     if kind == "push":
-        require(v["action"] == "git push {headRemote} {currentBranch}".format(**v), "push action differs from target")
+        require(v["action"] == "git push {headRemote} {headBranch}".format(**v), "push action differs from target")
     return v
 
 
@@ -122,6 +122,8 @@ def preflight_envelope(status, v):
     if status == "PASS":
         for field in ("Base SHA", "Head SHA"):
             full_sha(field, v)
+    elif status == "PUSH_REQUIRED":
+        require(v["Head source"] == "checkout", "PUSH_REQUIRED requires checkout")
 
 
 def analyzer_envelope(status, v):
@@ -182,6 +184,7 @@ def envelope(specialist, text):
         "Scope approval": ("valid", "missing", "digest-mismatch", "n/a"),
         "Title source": ("override", "generated"),
         "Body source": ("override", "template", "generated"),
+        "Head source": ("checkout", "remote"),
         "Reviewer source": ("user", "CODEOWNERS", "none-confirmed", "none"),
         "Solo repository condition": ("yes", "no", "unknown"),
         "Label source": ("override", "inferred", "none"),

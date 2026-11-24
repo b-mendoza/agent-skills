@@ -4,6 +4,8 @@ Finite-state execution model for this skill. This table is the only normative li
 
 Six specialists stay separate: each owns a distinct status prefix and failure mode (topology, preflight/push, scope, draft, metadata, submit). That split is earned complexity, not decoration.
 
+When attached, an omitted head or the checked-out branch itself selects that branch with `Head source: checkout`. Any other named branch, including any named head while detached, selects `Head source: remote`; a local copy not checked out is only a reported fact. Report the selected name as `Head branch`. Detached HEAD without a named head is `BLOCKED`. Never switch branches.
+
 ## Transitions
 
 | From                       | To                         | Guard / event                                                                      |
@@ -34,13 +36,13 @@ Six specialists stay separate: each owns a distinct status prefix and failure mo
 | `GateStateFallback`        | `RunPreflight`             | proceed as `ready`                                                                 |
 | `RunPreflight`             | `AnalyzeDiff`              | `PREFLIGHT: PASS`                                                                  |
 | `RunPreflight`             | `TerminalPrExists`         | `PR_EXISTS`                                                                        |
-| `RunPreflight`             | `GatePush`                 | `PUSH_REQUIRED` and push cycles &lt; 3                                             |
+| `RunPreflight`             | `GatePush`                 | `PUSH_REQUIRED` for a checkout head and push cycles &lt; 3                                             |
 | `RunPreflight`             | `GatePushRejected`         | `PUSH_REJECTED`                                                                    |
 | `RunPreflight`             | `TerminalAuth`             | `AUTH`                                                                             |
 | `RunPreflight`             | `TerminalBaseMissing`      | `BASE_BRANCH_MISSING`                                                              |
-| `RunPreflight`             | `TerminalHeadUnpushed`     | `HEAD_BRANCH_UNPUSHED`                                                             |
+| `RunPreflight`             | `TerminalHeadUnpushed`     | `HEAD_BRANCH_UNPUSHED`, including a named remote head that is missing; never offer a plain push for `Head source: remote` |
 | `RunPreflight`             | `TerminalBlocked`          | `BLOCKED` or `ERROR`                                                               |
-| `RunPreflight`             | `FinalDecision`            | `PUSH_REQUIRED` and push cycles ≥ 3                                                |
+| `RunPreflight`             | `FinalDecision`            | `PUSH_REQUIRED` for a checkout head and push cycles ≥ 3                                                |
 | `GatePush`                 | `RunPreflight`             | plain push approved; redispatch with push `APPROVAL_RECORD`                        |
 | `GatePush`                 | `TerminalAwaitingUser`     | question pending; the proposal has no editable part, so a change request is answered with the available choices and asked again                                                                   |
 | `GatePush`                 | `TerminalHeadUnpushed`     | push declined                                                                      |

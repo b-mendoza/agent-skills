@@ -9,11 +9,9 @@ Current-state reference. Update when platform mappings or verified capabilities 
 | Base repository   | Repository that receives the PR/MR.                                                                                  |
 | Head repository   | Repository that contains the source branch. May differ from base in fork workflows.                                  |
 | Base branch       | `TARGET_BRANCH` on `BASE_REMOTE`.                                                                                    |
-| Head branch       | `CURRENT_BRANCH` on `HEAD_REMOTE`.                                                                                   |
+| Head branch       | `HEAD_BRANCH` on `HEAD_REMOTE` (not necessarily the checkout).                                                       |
 | Existing PR check | Query open PRs/MRs for the same base branch and same head branch/repository before drafting and again before create. |
 | Verification      | Query the created or found PR/MR and echo platform-returned fields, including body digest evidence.                  |
-
-In playbook commands, `HEAD_BRANCH` means the `CURRENT_BRANCH` input.
 
 ## Playbook selection
 

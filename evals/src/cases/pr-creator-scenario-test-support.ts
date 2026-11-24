@@ -5,6 +5,7 @@ import { previewValues } from "#/cases/pr-creator-behavior-checks.ts";
 import { type ApprovalKind, runValidator } from "#/cases/pr-creator-digest.ts";
 import { GITHUB_FACTS as facts } from "#/cases/pr-creator-fixtures.ts";
 import { RUNS } from "#/cases/pr-creator-scenario.ts";
+import { HEAD_LOG } from "#/fixtures/fixtures.ts";
 import type { Observation, ToolCall } from "#/observation/agent-query.ts";
 import {
   createObservation,
@@ -15,6 +16,8 @@ const SHA_LENGTH = 40;
 export const base = "a".repeat(SHA_LENGTH);
 export const head = "b".repeat(SHA_LENGTH);
 export const preview = previewValues(base, head);
+export const ref = `refs/heads/${facts.branch}`;
+export const oldRef = `.git/${ref}`;
 export function shell(content: string): ToolCall {
   return {
     name: "Bash",
@@ -33,16 +36,23 @@ export function gate(kind: ApprovalKind, values: unknown, prompt = "approved") {
   };
 }
 type Gate = ReturnType<typeof gate>;
-export function observation(gates: Gate[]): Observation {
+export function observation(
+  gates: Gate[],
+  extra: Record<string, string | null> = {},
+): Observation {
   return createObservation({
     toolCalls: gates.flatMap((item) => item.turn.toolCalls),
     turns: gates.map((item) => item.turn),
     repoFiles: {
       [RUNS]: "",
       [facts.log]: "",
+      [HEAD_LOG]: "original",
+      [facts.baselineLog]: "original",
+      [oldRef]: head,
       ...Object.fromEntries(
         gates.flatMap((item) => Object.entries(item.files)),
       ),
+      ...extra,
     },
   });
 }

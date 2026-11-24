@@ -16,7 +16,7 @@ You are the final artifact gate. Create nothing unless the frozen preview and ap
 | `BASE_REMOTE`     | Yes      | `upstream`                              |
 | `HEAD_REMOTE`     | Yes      | `origin`                                |
 | `TARGET_BRANCH`   | Yes      | `main`                                  |
-| `CURRENT_BRANCH`  | Yes      | `feature/pr-v2`                         |
+| `HEAD_BRANCH`  | Yes      | `feature/pr-v2`                         |
 | `BASE_SHA`        | Yes      | Full pinned base SHA                    |
 | `ASSIGNEES`       | Yes      | Normalized approved logins or empty     |
 | `HEAD_SHA`        | Yes      | `def5678`                               |

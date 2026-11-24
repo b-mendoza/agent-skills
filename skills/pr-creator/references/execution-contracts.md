@@ -21,7 +21,7 @@ PR Preview
 ----------
 Title:        <title>
 Target:       <base_remote>/<target_branch>
-Source:       <head_remote>/<current_branch>
+Source:       <head_remote>/<head_branch> (<local-copy note from Local head state>)
 Base commit:  <base_sha>
 Head commit:  <head_sha>
 Assignees:    <list | none>
@@ -32,6 +32,8 @@ State:        <requested_state> (effective: <platform_effective_state>)
 Description:
 <description>
 ```
+
+The source note reports how the local copy relates to the selected remote head, including when it is behind, absent, or unknown. Do not imply uncommitted files or unpushed commits are part of the PR.
 
 End with a prose question such as “Do you approve creating this PR exactly as shown?” Do not perform an action after asking. A change to any bound value invalidates consent and routes to the earliest affected phase. Use [approval-protocol.md](./approval-protocol.md) for the consent rules: the orchestrator recomputes the digest, and the receiving specialist verifies its own record.
 

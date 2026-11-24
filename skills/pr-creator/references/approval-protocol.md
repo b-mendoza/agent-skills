@@ -17,11 +17,17 @@ Exit 1 means invalid input; exit 2 means invalid invocation. An invalid envelope
 
 ## Kinds and exact values
 
-`push` values have exactly `headRemote`, `currentBranch`, `action`. The action must equal `git push <headRemote> <currentBranch>`.
+| Gate | Kind | Exact keys |
+| --- | --- | --- |
+| `GatePush` | `push` | `headRemote headBranch action` |
+| `GateScope` | `scope` | `baseSha headSha adjustedChangedLines changedFiles excludedTotals areas rules changedPaths` |
+| `GatePreview` | `preview` | `baseRemote targetBranch headRemote headBranch baseSha headSha effectiveState title body state reviewers labels assignees` |
 
-`scope` values have exactly `baseSha`, `headSha`, `adjustedChangedLines`, `changedFiles`, `excludedTotals`, `areas`, `rules`, `changedPaths`. Counts are nonnegative integers; the last three fields are string lists. `excludedTotals` is the displayed excluded accounting string. The gate shows both full SHAs, counts, exclusions, grouped areas, fired rules and paths. A scope record approves only continuing analysis for that evidence, never push or create. Recompute evidence and run `verify scope` on redispatch. Changed pins return `STALE_PINS` to refresh preflight; changed evidence or a missing/stale scope record returns `LARGE_PR_CONFIRMATION_REQUIRED` with a fresh proposal.
+- `push`: `action` is exactly `git push <headRemote> <headBranch>`.
 
-`preview` values have exactly `baseRemote`, `targetBranch`, `headRemote`, `currentBranch`, `baseSha`, `headSha`, `title`, `body`, `reviewers`, `labels`, `assignees`, `state`, `effectiveState`. Metadata fields are string lists, empty for none. States are `draft` or `ready`. These are the literal fields shown in the preview; base SHA binds the diff as well as head SHA. No environment-dependent display text enters the digest.
+- `scope`: Counts are nonnegative integers; the last three scope fields are string lists. `excludedTotals` is the displayed excluded accounting string. The gate shows both full SHAs, counts, exclusions, grouped areas, fired rules and paths. A scope record approves only continuing analysis for that evidence, never push or create. Recompute evidence and run `verify scope` on redispatch. Changed pins return `STALE_PINS` to refresh preflight; changed evidence or a missing/stale scope record returns `LARGE_PR_CONFIRMATION_REQUIRED` with a fresh proposal.
+
+- `preview`: Metadata fields are string lists, empty for none. States are `draft` or `ready`. These are the literal fields shown in the preview; base SHA binds the diff as well as head SHA. No environment-dependent display text enters the digest.
 
 The canonical serialization is Python `json.dumps(values, sort_keys=True, ensure_ascii=False, separators=(",", ":"), allow_nan=False)` encoded as UTF-8, no BOM and no appended newline. Object keys sort lexicographically; all list fields are sets, deduplicated by the producer and sorted by Unicode code point by the helper. Duplicate entries, unknown/missing fields, noninteger counts and nonlowercase/full Git SHAs are rejected. Strings are otherwise byte-preserved: no trimming, Unicode normalization, newline conversion or final-newline insertion. Body digest is SHA-256 of the body's UTF-8 bytes, not its JSON representation. Digests are 64 lowercase hexadecimal characters. Never independently reimplement this serialization in a specialist.
 

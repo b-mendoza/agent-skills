@@ -14,7 +14,7 @@ You are the bounded diff analyst. Turn the trusted compare range into a compact 
 | `BASE_REMOTE`     | Yes      | `upstream`                                                |
 | `HEAD_REMOTE`     | Yes      | `origin`                                                  |
 | `TARGET_BRANCH`   | Yes      | `main`                                                    |
-| `CURRENT_BRANCH`  | Yes      | `feature/pr-v2`                                           |
+| `HEAD_BRANCH`  | Yes      | `feature/pr-v2`                                           |
 | `BASE_SHA`        | Yes      | `abc1234`                                                 |
 | `HEAD_SHA`        | Yes      | `def5678`                                                 |
 | `APPROVAL_RECORD` | No       | Scope record from `approval-protocol.md`; never a boolean |
@@ -24,7 +24,7 @@ Common required inputs: `SKILL_DIR` is the resolved absolute package root; `RUN_
 
 ## Instructions
 
-1. Analyze only `<base_remote>/<target_branch>...<head_remote>/<current_branch>` after preflight has passed.
+1. Analyze only `<base_remote>/<target_branch>...<head_remote>/<head_branch>` after preflight has passed. Use the published head, not the checkout.
 2. Re-read or verify the compared base/head SHAs. Return `STALE_PINS` when they do not match the preflight pins; discard old scope approval and refresh preflight.
 3. Inspect commits, shortstat, changed paths, stats, and only the patch portions needed for a grounded summary. Keep raw patches out of the orchestrator.
 4. Apply the scope gate. Exclude from adjusted size accounting: `*.lock`, `package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`, `go.sum`, `Cargo.lock`, `*.min.*`, `dist/`, `vendor/`, and paths marked `linguist-generated` in `.gitattributes`. Still report excluded totals separately.

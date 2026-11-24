@@ -7,6 +7,8 @@ import {
 import { digestToken } from "#/cases/pr-creator-digest.ts";
 import { GITHUB_FACTS } from "#/cases/pr-creator-fixtures.ts";
 import { checkedValues, RUNS, scenario } from "#/cases/pr-creator-scenario.ts";
+import { capturedText } from "#/cases/shared-checks.ts";
+import { HEAD_LOG } from "#/fixtures/fixtures.ts";
 
 const FIRST = 0;
 const draft = "Open a draft PR for this branch. REVIEWERS=none.";
@@ -53,6 +55,37 @@ export const previewCases = [
       assert.notEqual(original, digestToken(observation, "preview"));
       assert.equal(checkedValues(observation)["title"], changedTitle);
       return "Revised frozen title without a create";
+    },
+  }),
+  scenario({
+    id: "remote-head-not-checked-out",
+    prompt: `${draft} HEAD_BRANCH=${GITHUB_FACTS.branch}.`,
+    options: { headNotCheckedOut: true },
+    facts: "The checkout is main; the requested head exists on origin.",
+    requirements: [
+      "Identify the named published branch as the source of the PR.",
+    ],
+    snapshots: [RUNS, ".git/HEAD", `.git/refs/heads/${GITHUB_FACTS.branch}`],
+    check: (observation) => {
+      assertCreatorReadOnly(observation);
+      assert.equal(
+        capturedText(observation, ".git/HEAD").trim(),
+        "ref: refs/heads/main",
+      );
+      assert.equal(
+        capturedText(observation, HEAD_LOG),
+        capturedText(observation, GITHUB_FACTS.baselineLog),
+      );
+      const values = checkedValues(observation);
+      assert.equal(values["headBranch"], GITHUB_FACTS.branch);
+      assert.equal(
+        values["headSha"],
+        capturedText(
+          observation,
+          `.git/refs/heads/${GITHUB_FACTS.branch}`,
+        ).trim(),
+      );
+      return "Named feature tip frozen without checkout changes";
     },
   }),
 ];

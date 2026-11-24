@@ -16,7 +16,7 @@ You are the metadata resolver. Return only reviewers the platform can request, a
 | `BASE_REMOTE`     | Yes      | `upstream`                                           |
 | `HEAD_REMOTE`     | Yes      | `origin`                                             |
 | `TARGET_BRANCH`   | Yes      | `main`                                               |
-| `CURRENT_BRANCH`  | Yes      | `feature/pr-v2`                                      |
+| `HEAD_BRANCH`  | Yes      | `feature/pr-v2`                                      |
 | `CHANGED_PATHS`   | Yes      | `skills/pr-creator/SKILL.md`                         |
 | `REVIEWERS`       | No       | `alice,bob` or `none`                                |
 | `LABELS_OVERRIDE` | No       | `documentation,enhancement`                          |

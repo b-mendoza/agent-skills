@@ -2,11 +2,13 @@ import { describe, expect, it } from "vitest";
 
 import {
   acceptsOnly,
+  change,
   extraWrite,
   gate,
   observation,
   preview,
 } from "#/cases/pr-creator-scenario-test-support.ts";
+import { HEAD_LOG } from "#/fixtures/fixtures.ts";
 
 describe("preview gates", () => {
   it("does not act on approval given before the preview", () => {
@@ -27,6 +29,18 @@ describe("preview gates", () => {
         "conditional-yes-is-revise",
         observation([first, final]),
         observation([first, first]),
+      ),
+    ).not.toThrow();
+  });
+  it("requires the requested tip without switching HEAD", () => {
+    const good = observation([gate("preview", preview)], {
+      ".git/HEAD": "ref: refs/heads/main",
+    });
+    expect(
+      acceptsOnly(
+        "remote-head-not-checked-out",
+        good,
+        change(good, { [HEAD_LOG]: "switched branches" }),
       ),
     ).not.toThrow();
   });

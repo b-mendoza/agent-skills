@@ -6,6 +6,8 @@ Return exactly one status block. Do not include raw command output.
 REPO_STATE: <PASS | BLOCKED | ERROR>
 Execution mode support: dispatch-compatible | inline-compatible
 Current branch: <branch | none>
+Head branch: <selected branch>
+Head source: <checkout | remote>
 Target branch: <input value | missing>
 Target branch candidate: <base default branch | unknown>
 PR state: <draft | ready | invalid: value>
@@ -22,4 +24,4 @@ Reason: <one line>
 Decision needed: <none | question for orchestrator>
 ```
 
-Use `BLOCKED` for not-a-git-repository, detached HEAD, invalid `PR_STATE`, no safely nameable branch, or unusable remote facts. Use `ERROR` for unexpected inspection failure.
+`PASS` identifies the checkout and the selected head separately; a remote head need not be checked out. `BLOCKED` means this is not a git repository, HEAD is detached and no head branch was named, `PR_STATE` is invalid, no branch can be safely named, or the remote facts are unusable. `ERROR` means inspection failed.

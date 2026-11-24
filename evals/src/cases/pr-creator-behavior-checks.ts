@@ -244,7 +244,7 @@ export function previewValues(baseSha: string, headSha: string) {
     baseRemote: "origin",
     headRemote: "origin",
     targetBranch: "main",
-    currentBranch: GITHUB_FACTS.branch,
+    headBranch: GITHUB_FACTS.branch,
     baseSha,
     headSha,
     title: GITHUB_FACTS.title,
