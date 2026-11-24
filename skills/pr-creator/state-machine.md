@@ -86,16 +86,16 @@ When attached, an omitted head or the checked-out branch itself selects that bra
 | `GatePreview`              | `DraftPr`                  | edits; earliest phase is title/body; cycles &lt; 3                                 |
 | `GatePreview`              | `SuggestMetadata`          | edits; earliest phase is reviewers/labels/assignees; cycles &lt; 3                 |
 | `GatePreview`              | `FinalDecision`            | preview-edit cycles ≥ 3                                                            |
-| `FreezeApproval`           | `SubmitPr`                 | freeze + preview `APPROVAL_RECORD` ready                                           |
-| `SubmitPr`                 | `RunPreflight`             | `HEAD_MOVED`; clear scope/preview approval (preview-edit cycle)                    |
-| `SubmitPr`                 | `TerminalCreatedWithDrift` | `CREATED_WITH_DRIFT`; retain URL, no retry or edit                                 |
-| `SubmitPr`                 | `VerifySubmit`             | `PR_SUBMIT: PASS`                                                                  |
-| `SubmitPr`                 | `TerminalCreateUncertain`  | `CREATE_UNCERTAIN`                                                                 |
-| `SubmitPr`                 | `TerminalCreateError`      | `CREATE_ERROR`                                                                     |
-| `SubmitPr`                 | `TerminalAuth`             | `AUTH`                                                                             |
-| `SubmitPr`                 | `TerminalBlocked`          | `BLOCKED` or `ERROR`                                                               |
-| `VerifySubmit`             | `TerminalSuccess`          | every echoed field and both body digests match                                     |
-| `VerifySubmit`             | `TerminalCreatedWithDrift` | any mismatch; retain confirmed URL, no retry or edit                               |
+| `FreezeApproval` | `SubmitPr` | freeze + preview `APPROVAL_RECORD` ready |
+| `SubmitPr` | `VerifySubmit` | `PR_SUBMIT: PASS`, `CREATED_WITH_ADDITIONS` or `CREATED_WITH_DRIFT` |
+| `SubmitPr` | `RunPreflight` | `HEAD_MOVED`; clear scope/preview approval (preview-edit cycle) |
+| `SubmitPr` | `TerminalCreateUncertain` | `CREATE_UNCERTAIN` |
+| `SubmitPr` | `TerminalCreateError` | `CREATE_ERROR` |
+| `SubmitPr` | `TerminalAuth` | `AUTH` |
+| `SubmitPr` | `TerminalBlocked` | `BLOCKED` or `ERROR` |
+| `VerifySubmit` | `TerminalSuccess` | status `PASS` and the orchestrator's `compare preview` outcome is `exact` |
+| `VerifySubmit` | `TerminalCreatedWithAdditions` | the worse of the two outcomes is `additions` |
+| `VerifySubmit` | `TerminalCreatedWithDrift` | the worse of the two outcomes is `drift`, or `compare` cannot run |
 | `FinalDecision`            | `InspectRepo`              | exact recovery targets repo/branch                                                 |
 | `FinalDecision`            | `RunPreflight`             | exact recovery targets preflight                                                   |
 | `FinalDecision`            | `AnalyzeDiff`              | exact recovery targets diff                                                        |
@@ -111,7 +111,8 @@ When attached, an omitted head or the checked-out branch itself selects that bra
 | `TerminalEmptyDiff`        | `[*]`                      | explain stop and next action in prose                                              |
 | `TerminalBlocked`          | `[*]`                      | explain stop and next action in prose                                              |
 | `TerminalCancelled`        | `[*]`                      | explain stop and next action in prose                                              |
-| `TerminalCreatedWithDrift` | `[*]`                      | report PR exists with each mismatched/unreadable field, not exact verified success |
+| `TerminalCreatedWithDrift` | `[*]` | report PR exists with each mismatched/unreadable field, not exact verified success |
+| `TerminalCreatedWithAdditions` | `[*]` | report the URL, that all approved content is present unchanged, and each addition; not exact agreement |
 | `TerminalCreateError`      | `[*]`                      | explain stop and next action in prose                                              |
 | `TerminalCreateUncertain`  | `[*]`                      | explain stop and next action in prose                                              |
 | `TerminalEscalated`        | `[*]`                      | explain stop and next action in prose                                              |
@@ -133,4 +134,4 @@ Independent counters (max 3 non-`PASS` redispatches per gate, then `FinalDecisio
 
 ## Terminal decisions
 
-Success: verified PR/MR URL. Internal failure/suspension outcomes: `AUTH`, `BASE_BRANCH_MISSING`, `HEAD_BRANCH_UNPUSHED`, `EMPTY_DIFF`, `PR_EXISTS`, `BLOCKED`, `AWAITING_USER`, `CANCELLED`, `CREATE_ERROR`, `CREATED_WITH_DRIFT`, `CREATE_UNCERTAIN`, `ESCALATED`. `AWAITING_USER` suspends rather than stops; never use `BLOCKED` for a pending question.
+Success: verified PR/MR URL. Report additions separately from exact success. Internal failure/suspension outcomes: `AUTH`, `BASE_BRANCH_MISSING`, `HEAD_BRANCH_UNPUSHED`, `EMPTY_DIFF`, `PR_EXISTS`, `BLOCKED`, `AWAITING_USER`, `CANCELLED`, `CREATE_ERROR`, `CREATED_WITH_DRIFT`, `CREATE_UNCERTAIN`, `ESCALATED`. `AWAITING_USER` suspends rather than stops; never use `BLOCKED` for a pending question.

@@ -61,7 +61,7 @@ function sample(
     "Body source": "generated",
     "Create attempted": "no",
     "Create retry used": "no",
-    Verification: "not-run",
+    URL: "unavailable",
     ...overrides,
   };
   return contractBlock(specialist)
@@ -148,7 +148,8 @@ describe("pr-creator consumer envelope validation", () => {
   };
   const exact = {
     URL: url,
-    Verification: "pass",
+    Outcome: "exact",
+    "Added fields": "none",
     "Mismatched fields": "none",
     ...hashes,
   };
@@ -203,10 +204,14 @@ describe("pr-creator consumer envelope validation", () => {
     [metadata, "PASS", {}, [badLabel, badAssignee]],
     [metadata, "INVALID_LABELS", badLabel, [{ "Invalid labels": "none" }]],
     [metadata, "INVALID_ASSIGNEES", badAssignee, [{ "Invalid assignees": "none" }]],
-    [submit, "PASS", { ...exact, "Create attempted": "yes" }, [missing, { URL: "unavailable" },
-      { Verification: "fail" }, { "Mismatched fields": "body" }, { "Returned body digest": "mismatch" }]],
-    [submit, "CREATED_WITH_DRIFT", { ...exact, Verification: "fail", "Mismatched fields": "body" },
-      [{ URL: "unavailable" }, { Verification: "pass" }, { "Mismatched fields": "none" }]],
+    [submit, "PASS", { ...exact, "Create attempted": "yes" }, [{ URL: "unavailable" },
+      missing, { Outcome: "drift" }, { "Mismatched fields": "body" }, { "Added fields": "labels" },
+      { "Returned body digest": "mismatch" }]],
+    [submit, "CREATED_WITH_ADDITIONS", { ...exact, Outcome: "additions", "Added fields": "labels" },
+      [{ URL: "unavailable" }, { Outcome: "exact" }, { "Added fields": "none" },
+      { "Mismatched fields": "state" }]],
+    [submit, "CREATED_WITH_DRIFT", { ...exact, Outcome: "drift", "Mismatched fields": "state" },
+      [{ URL: "unavailable" }, { Outcome: "exact" }, { "Mismatched fields": "none" }]],
   ];
   it.each(cases)(
     "checks %s %s evidence",
@@ -220,6 +225,17 @@ describe("pr-creator consumer envelope validation", () => {
       }
     },
   );
+  it.each([
+    "CREATE_ERROR",
+    "HEAD_MOVED",
+    "CREATE_UNCERTAIN",
+    "BLOCKED",
+    "AUTH",
+    "ERROR",
+  ])("rejects %s with a confirmed URL", (status) => {
+    expect(check(submit, status, {}).status).toBe(VALID);
+    expect(check(submit, status, { URL: url }).status).toBe(INVALID);
+  });
   it("requires numbered behavior facts", () => {
     const invalid = sample(analyzer).replace(
       "B1: observed fact",

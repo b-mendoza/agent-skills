@@ -3,6 +3,7 @@
 
 Usage: python3 -I validate-output.py <digest|verify> <kind>       (JSON on stdin)
        python3 -I validate-output.py title                        (JSON on stdin)
+       python3 -I validate-output.py compare preview              (JSON on stdin)
        python3 -I validate-output.py envelope <specialist>        (block on stdin)
        python3 -I validate-output.py body                         (exact bytes on stdin)
        python3 -I validate-output.py -h
@@ -25,7 +26,7 @@ ENVELOPES = {
     "diff-analyzer": ("DIFF_ANALYSIS", "PASS LARGE_PR_CONFIRMATION_REQUIRED STALE_PINS EMPTY_DIFF ERROR", "Range|Compared Base SHA|Compared Head SHA|Pinned SHA match|Shortstat|Adjusted changed lines|Changed files|Excluded generated/vendored/lock totals|Scope gate rule fired|Scope approval|Scope values|Changed paths|Grouped areas|Diff summary|Behavior before|Behavior after|Retained behavior|Type candidates|Scope candidates|Tests|Risk notes|Reason|Decision needed"),
     "pr-drafter": ("PR_DRAFT", "PASS NEEDS_CHOICE ERROR", "Title|Title source|Body source|Template path|Type choice|Scope choice|Traceability notes|Body|Reason|Decision needed"),
     "review-metadata-suggester": ("REVIEW_METADATA", "PASS NEEDS_REVIEWER INVALID_LABELS INVALID_ASSIGNEES AUTH ERROR", "Reviewers|Reviewer source|Normalized reviewers|Solo repository condition|CODEOWNERS source|CODEOWNERS matches|Labels|Label source|Invalid labels|Suggested valid labels|Assignees|Invalid assignees|Reason|Decision needed"),
-    "pr-submitter": ("PR_SUBMIT", "PASS CREATED_WITH_DRIFT HEAD_MOVED CREATE_UNCERTAIN BLOCKED CREATE_ERROR AUTH ERROR", "Approval record|Frozen head SHA|Remote head SHA before create|Existing PR race check|Create attempted|Create retry used|URL|Base returned|Head ref returned|Head SHA returned|Title returned|State returned|Reviewers returned|Labels returned|Assignees returned|Body first line returned|Body line count returned|Approved body digest|Returned body digest|Verification|Mismatched fields|Uncertain check commands|Reason|Decision needed"),
+    "pr-submitter": ("PR_SUBMIT", "PASS CREATED_WITH_ADDITIONS CREATED_WITH_DRIFT HEAD_MOVED CREATE_UNCERTAIN BLOCKED CREATE_ERROR AUTH ERROR", "Approval record|Frozen head SHA|Remote head SHA before create|Existing PR race check|Create attempted|Create retry used|URL|Base returned|Head ref returned|Head SHA returned|Title returned|State returned|Reviewers returned|Labels returned|Assignees returned|Body first line returned|Body line count returned|Approved body digest|Returned body digest|Outcome|Mismatched fields|Added fields|Returned values file|Uncertain check commands|Reason|Decision needed"),
 }
 
 
@@ -205,6 +206,44 @@ def validate_title(payload):
     require(not findings, "; ".join(findings))
 
 
+def compare(kind, payload):
+    exact_keys(payload, "values returned", "compare")
+    v = canonical(kind, payload["values"])
+    returned = payload["returned"]
+    exact_keys(returned, "baseRef headRef headSha title body state reviewers labels assignees", "returned")
+    expected = dict(v)
+    expected.update(baseRef=v["targetBranch"], headRef=v["headBranch"], state=v["effectiveState"])
+    fields, extras = {}, {}
+    for key, actual in returned.items():
+        if key in v["unsupported"]:
+            fields[key] = "unsupported" if actual is None else "changed"
+        elif actual is None:
+            fields[key] = "unreadable"
+        elif key in LISTS:
+            members = set(string_list(key, actual))
+            approved = set(expected[key])
+            if members == approved:
+                fields[key] = "exact"
+            elif members > approved:
+                fields[key] = "added"
+                extras[key] = sorted(members - approved)
+            else:
+                fields[key] = "changed"
+        else:
+            require(isinstance(actual, str), "invalid returned " + key)
+            if actual == expected[key]:
+                fields[key] = "exact"
+            elif key == "body" and actual.startswith(v[key]):
+                fields[key] = "appended"
+                extras[key] = actual[len(v[key]):]
+            else:
+                fields[key] = "changed"
+    statuses = set(fields.values())
+    outcome = "drift" if statuses & {"changed", "unreadable"} else "additions" if extras else "exact"
+    return {"outcome": outcome, "fields": fields, "extras": extras, "notCompared": v["unsupported"],
+            "approvedBodyDigest": sha(v["body"]), "returnedBodyDigest": None if returned["body"] is None else sha(returned["body"])}
+
+
 def count(field, v):
     require(re.fullmatch(r"[0-9]+", v[field]), field + " must be a nonnegative integer")
     return int(v[field])
@@ -212,6 +251,10 @@ def count(field, v):
 
 def full_sha(field, v):
     require(re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", v[field]), field + " must be a full SHA")
+
+
+def https_url(value):
+    return re.fullmatch(r"https://[^\s/]+(?:/\S*)?", value) is not None
 
 
 def equal_body_digests(v):
@@ -286,14 +329,21 @@ def metadata_envelope(status, v):
 def submit_envelope(status, v):
     if v["Create attempted"] == "yes":
         approved(v)
-    require(v["Verification"] in ("pass", "fail", "not-run"), "invalid Verification")
-    if status in ("PASS", "CREATED_WITH_DRIFT"):
-        require(v["URL"].startswith("https://"), "confirmed PR requires URL")
-    if status == "PASS":
-        require(v["Verification"] == "pass" and v["Mismatched fields"] == "none", "PASS requires exact verification")
-        equal_body_digests(v)
+    created = {"PASS": "exact", "CREATED_WITH_ADDITIONS": "additions", "CREATED_WITH_DRIFT": "drift"}
+    if status not in created:
+        require(v["URL"] == "unavailable", status + " requires URL: unavailable")
+        return
+    require(https_url(v["URL"]), "confirmed PR requires an HTTPS URL")
+    require(v["Outcome"] == created[status], "Outcome differs from status")
     if status == "CREATED_WITH_DRIFT":
-        require(v["Verification"] != "pass" and v["Mismatched fields"] != "none", "drift requires mismatches or unreadable fields")
+        require(v["Mismatched fields"] not in ("none", "n/a"), "drift requires mismatched fields")
+    else:
+        require(v["Mismatched fields"] == "none", "unexpected mismatched fields")
+        if status == "PASS":
+            require(v["Added fields"] == "none", "PASS forbids additions")
+            equal_body_digests(v)
+        else:
+            require(v["Added fields"] not in ("none", "n/a"), "additions require added fields")
 
 
 def envelope(specialist, text):
@@ -334,6 +384,7 @@ def envelope(specialist, text):
         "Title source": ("override", "generated"),
         "Body source": ("override", "template", "generated"),
         "Head source": ("checkout", "remote"),
+        "Outcome": ("exact", "additions", "drift", "n/a"),
         "Reviewer source": ("user", "CODEOWNERS", "none-confirmed", "none"),
         "Solo repository condition": ("yes", "no", "unknown"),
         "Label source": ("override", "inferred", "none"),
@@ -369,7 +420,7 @@ def main():
     if args in (["-h"], ["--help"]):
         print(USAGE)
         return 0
-    modes = {"digest": SCHEMAS, "verify": SCHEMAS, "envelope": ENVELOPES}
+    modes = {"digest": SCHEMAS, "verify": SCHEMAS, "envelope": ENVELOPES, "compare": ("preview",)}
     valid = (len(args) == 1 and args[0] in ("body", "title")) or (len(args) == 2 and args[1] in modes.get(args[0], ()))
     if not valid:
         print(USAGE, file=sys.stderr)
@@ -385,6 +436,8 @@ def main():
             payload = json.loads(text, object_pairs_hook=unique_object)
             if args[0] == "digest":
                 print(json.dumps({"kind": args[1], **digests(args[1], payload)}, sort_keys=True))
+            elif args[0] == "compare":
+                print(json.dumps(compare(args[1], payload), sort_keys=True))
             else:
                 if args[0] == "title":
                     validate_title(payload)

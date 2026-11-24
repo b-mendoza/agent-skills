@@ -11,8 +11,9 @@ Use `python3 -I "${SKILL_DIR}/scripts/validate-output.py"` in both runtimes. The
 | `digest <kind>` | The exact values object | JSON with `kind`, `valuesDigest` and `bodyDigest`. Keep digests in tool output, never in a reply. |
 | `verify <kind>` | `{ "values": <values>, "approval": <record> }`, plus `observed` for `scope` only | `valid` |
 | `envelope <specialist>` | The complete specialist block | `valid` |
-| `title` | `{ "convention": "<clauses, empty string, or override>", "title": "<title>" }` | `valid`; see [title grammar](./drafting-inputs.md#title-constraint) |
 | `body` | Exact UTF-8 body bytes | SHA-256 of those bytes; keep it in tool output, never in a reply |
+| `title` | `{ "convention": "<clauses, empty string, or override>", "title": "<title>" }` | `valid`; see [title grammar](./drafting-inputs.md#title-constraint) |
+| `compare preview` | `{ "values": <values>, "returned": <readback> }` | Comparison JSON, even for `drift`; see below |
 
 Exit 1 means invalid input (for `title`, findings are on stderr); exit 2 means invalid invocation. An invalid envelope permits one redispatch with findings (`validation`), then `TerminalBlocked`. A passing structural check never establishes user consent.
 
@@ -49,6 +50,14 @@ python3 -I "$SKILL_DIR/scripts/validate-output.py" digest <kind> < "$RUN_DIR/<ki
 
 Let the JSON appear unchanged in tool output: do not capture it in a variable, redirect it away, or replace it with an exit code. Never copy a digest into a reply to the user.
 
+## Readback comparison
+
+`returned` has exactly `baseRef headRef headSha title body state reviewers labels assignees`. For `preview`, compare base and head refs to `targetBranch` and `headBranch`, and state to `effectiveState`. Use `null` for an unreadable field: it is `unreadable` unless the approved values mark the field unsupported, in which case `null` is `unsupported` and a non-null value is `changed`. A platform without drafts reads back `ready`, not `null`.
+
+Scalars are `exact` or `changed`; reviewers, labels and assignees can also be `added` for a strict superset. A body with the exact approved body as a strict byte prefix is `appended`, not `exact`. Any `changed` or `unreadable` field is `drift`; otherwise additions or appended text give `additions`, and the rest is `exact`.
+
+Output keys are `outcome`, `fields` (per-field results), `extras` (extra members or appended text), `notCompared` (the approved `unsupported` list), `approvedBodyDigest`, and `returnedBodyDigest` (`null` if the body was unreadable). A listed field with a non-null readback still causes drift even though it appears in `notCompared`.
+
 ## Plain approval
 
 **One approval, one proposal.** A plain affirmative in any language approves only the one proposal shown in the immediately preceding assistant turn, when the whole reply is unconditional and at most restates it. An approval covers the writes that proposal showed, in the order shown, and nothing else. A push also sends what the git settings listed in its proposal add to it. The digest stays out of user replies, and nothing said earlier counts.
@@ -74,6 +83,6 @@ Store the exact approved body as UTF-8, display it without rewriting, and submit
 Derive `RUN_DIR=.handoffs/pr-creator/<run-id>/` once in `NormalizeInputs`, with `<run-id>` formed from UTC `YYYYMMDDTHHMMSSZ` plus four random hex characters. Require `git check-ignore --quiet -- "$RUN_DIR/probe"` before the first write. If it fails, ask for a scratch directory outside the repository and use that as `RUN_DIR`, or stop; never write a run file to an unignored path. Keep only these recorded paths under the run directory:
 
 - `pending.json` is the exact digest output (`kind`, `valuesDigest`, `bodyDigest`). Keep `<kind>-{values,record}.json` (one values file and one record file per kind).
-- `body.md` for exact body bytes.
+- `body.md` and `returned.json` for exact body bytes and readback.
 
 At every terminal except `TerminalAwaitingUser`, clean up only recorded run files.

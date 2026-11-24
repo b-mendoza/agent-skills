@@ -115,16 +115,41 @@ const captureSchema = Schema.Struct({
 });
 const readbackSchema = Schema.Struct({
   url: Schema.String,
-  body: Schema.String,
-  title: Schema.String,
-  baseRefName: Schema.String,
-  headRefName: Schema.String,
-  headRefOid: Schema.String,
-  isDraft: Schema.Boolean,
-  assignees: Schema.Array(Schema.Struct({ login: Schema.String })),
-  labels: Schema.Array(Schema.Struct({ name: Schema.String })),
-  reviewRequests: Schema.Array(Schema.Unknown),
+  body: Schema.NullOr(Schema.String),
+  title: Schema.NullOr(Schema.String),
+  baseRefName: Schema.NullOr(Schema.String),
+  headRefName: Schema.NullOr(Schema.String),
+  headRefOid: Schema.NullOr(Schema.String),
+  isDraft: Schema.NullOr(Schema.Boolean),
+  assignees: Schema.NullOr(
+    Schema.Array(Schema.Struct({ login: Schema.String })),
+  ),
+  labels: Schema.NullOr(Schema.Array(Schema.Struct({ name: Schema.String }))),
+  reviewRequests: Schema.NullOr(
+    Schema.Array(Schema.Struct({ login: Schema.String })),
+  ),
 });
+
+function members<T>(items: readonly T[] | null, name: (item: T) => string) {
+  return items?.map(name) ?? null;
+}
+function readbackState(isDraft: boolean | null) {
+  if (isDraft === null) return null;
+  return isDraft ? "draft" : "ready";
+}
+function comparisonFields(returned: typeof readbackSchema.Type) {
+  return {
+    title: returned.title,
+    body: returned.body,
+    baseRef: returned.baseRefName,
+    headRef: returned.headRefName,
+    headSha: returned.headRefOid,
+    state: readbackState(returned.isDraft),
+    labels: members(returned.labels, ({ name }) => name),
+    assignees: members(returned.assignees, ({ login }) => login),
+    reviewers: members(returned.reviewRequests, ({ login }) => login),
+  };
+}
 
 function option(args: readonly string[], key: string): string | undefined {
   const index = args.indexOf(key);
@@ -240,6 +265,8 @@ function isReadbackCall(args: readonly string[]): boolean {
   );
 }
 
+export type CreateOutcome = "exact" | "additions" | "drift";
+
 export function previewValues(baseSha: string, headSha: string) {
   return {
     repository: GITHUB_FACTS.repository,
@@ -260,7 +287,10 @@ export function previewValues(baseSha: string, headSha: string) {
   };
 }
 
-export function checkCreated(observation: Observation, drift: boolean): string {
+export function checkCreated(
+  observation: Observation,
+  expected: CreateOutcome | boolean,
+): string {
   assertRunHappened(observation);
   assertAssigneeLookup(observation, "maintainer");
   assertAssigneeStatus(observation, "maintainer", true);
@@ -303,18 +333,22 @@ export function checkCreated(observation: Observation, drift: boolean): string {
     JSON.parse(capturedText(observation, READBACK_CAPTURE)),
   );
   assert.equal(returned.url, GITHUB_FACTS.url);
-  assert.equal(returned.title, GITHUB_FACTS.title);
-  assert.equal(returned.baseRefName, "main");
-  assert.equal(returned.headRefName, GITHUB_FACTS.branch);
-  assert.equal(returned.headRefOid, plantedPins(observation).head);
-  assert.equal(returned.isDraft, true);
-  assert.deepEqual(returned.assignees, [{ login: "maintainer" }]);
-  assert.deepEqual(returned.reviewRequests, []);
-  assert.equal(
-    returned.body,
-    drift ? `${EXACT_BODY}\nAutomation footer\n` : EXACT_BODY,
-  );
-  assert.deepEqual(returned.labels, drift ? [{ name: "automation" }] : []);
+  const pins = plantedPins(observation);
+  const result = runValidator(["compare", "preview"], {
+    values: previewValues(pins.base, pins.head),
+    returned: comparisonFields(returned),
+  });
+  const { outcome } = Schema.decodeUnknownSync(
+    Schema.Struct({
+      outcome: Schema.Literals(["exact", "additions", "drift"]),
+    }),
+  )(JSON.parse(result));
+  // Legacy readbackDrift appends a footer and label: additions, not drift.
+  let expectedOutcome = expected;
+  if (typeof expected === "boolean") {
+    expectedOutcome = expected ? "additions" : "exact";
+  }
+  assert.equal(outcome, expectedOutcome);
   assertNoGithubWrites({
     ...observation,
     repoFiles: {
@@ -325,9 +359,7 @@ export function checkCreated(observation: Observation, drift: boolean): string {
         .join("\n"),
     },
   });
-  return drift
-    ? "One approved create with machine-observed body/label drift and no edit"
-    : "One exact approved create with matching machine readback";
+  return `One approved create with ${outcome} machine readback and no edit`;
 }
 
 function assertTitleStructure(reply: string, convention: string): void {

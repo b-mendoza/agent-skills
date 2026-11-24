@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { READBACK_CAPTURE } from "#/cases/pr-creator-behavior-checks.ts";
 import { GITHUB_FACTS as facts } from "#/cases/pr-creator-fixtures.ts";
 import {
   acceptsOnly,
@@ -10,6 +11,7 @@ import {
   preview,
   shell,
 } from "#/cases/pr-creator-scenario-test-support.ts";
+import { createdObservation } from "#/cases/pr-creator-test-support.ts";
 import { HEAD_LOG } from "#/fixtures/fixtures.ts";
 
 describe("preview gates", () => {
@@ -65,6 +67,21 @@ describe("preview gates", () => {
   });
 });
 describe("confirmed creates", () => {
+  it("distinguishes additive automation from a changed title", () => {
+    const additive = createdObservation("additions");
+    const original = createdObservation();
+    const changed = change(original, {
+      [READBACK_CAPTURE]:
+        original.repoFiles?.[READBACK_CAPTURE]?.replace(
+          facts.title,
+          "Externally changed title",
+        ) ?? null,
+    });
+    expect(
+      acceptsOnly("created-with-additions", additive, changed),
+    ).not.toThrow();
+    expect(acceptsOnly("created-with-drift", changed, additive)).not.toThrow();
+  });
   it("resolves the authenticated identity before assigning", () => {
     const endpoint = `repos/${facts.repository}/assignees/cart-owner`;
     const good = observation(

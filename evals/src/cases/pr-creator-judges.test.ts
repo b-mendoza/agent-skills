@@ -35,7 +35,8 @@ function caseWithJudge(id: string): EvalCase {
 describe("pr-creator prose quality stays in judge rubrics", () => {
   it.each([
     ["approved-exact-bytes-assignee", "Accurately explain that the PR exists"],
-    ["created-with-drift", "each body/label mismatch"],
+    ["created-with-additions", "all approved content"],
+    ["created-with-drift", "changed title"],
     ["template-title-observed-retained", "not unit-price simplification"],
     [
       "unknown-verification-no-assignee",

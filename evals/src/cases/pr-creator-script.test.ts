@@ -51,6 +51,14 @@ const scope = {
   ...scopeObserved,
   rules: ["adjusted-lines>1000", "unrelated-areas>=3"],
 };
+const refs = { baseRef: "main", headRef: branch.headBranch, headSha: head };
+const returned = {
+  ...refs,
+  title,
+  body,
+  state: "draft",
+  ...metadata,
+};
 function hash(text: string) {
   return createHash("sha256").update(text).digest("hex");
 }
@@ -264,6 +272,26 @@ describe("pr-creator shipped approval validator", () => {
   ] as const)("checks %s against %s", (convention, title, status) => {
     expect(run("title", "", { convention, title }).status).toBe(status);
   });
+  // prettier-ignore
+  it.each([
+    ["exact", {}, {}, { fields: { title: "exact" }, notCompared: [] }],
+    ["additions", {}, { body: `${preview.body}footer` }, { fields: { body: "appended" }, extras: { body: "footer" } }],
+    ["additions", {}, { labels: [...preview.labels, "bot"] }, { extras: { labels: ["bot"] } }],
+    ["drift", {}, { title: "changed" }, { fields: { title: "changed" } }],
+    ["drift", {}, { labels: null }, { fields: { labels: "unreadable" } }],
+    ["exact", { labels: [], unsupported: ["labels"] }, { labels: null }, { fields: { labels: "unsupported" }, notCompared: ["labels"] }],
+    ["drift", { labels: [], unsupported: ["labels"] }, { labels: [] }, { fields: { labels: "changed" } }],
+  ] as const)(
+    "classifies readback as %s",
+    (outcome, changes, readback, details) => {
+      const result = run("compare", "preview", {
+        values: { ...preview, ...changes },
+        returned: { ...returned, ...readback },
+      });
+      expect(result.status).toBe(VALID);
+      expect(JSON.parse(result.stdout)).toMatchObject({ outcome, ...details });
+    },
+  );
   it("rejects a push approval naming a different command", () => {
     const values = { ...push, extras: [] };
     const record = { ...approval("push", values), action: "git push --force" };

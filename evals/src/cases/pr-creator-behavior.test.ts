@@ -176,14 +176,34 @@ describe("pr-creator machine approval boundaries", () => {
 });
 
 describe("pr-creator machine create and readback checks", () => {
-  it.each([false, true])(
-    "accepts exact captured args/body and readback, drift=%s",
-    (drift) => {
+  it.each(["exact", "additions", "drift"] as const)(
+    "accepts exact captured args/body and readback, outcome=%s",
+    (outcome) => {
       expect(() =>
-        checkCreated(createdObservation(drift), drift),
+        checkCreated(createdObservation(outcome), outcome),
       ).not.toThrow();
     },
   );
+  it("does not mistake additions for drift", () => {
+    expect(() =>
+      checkCreated(createdObservation("additions"), "drift"),
+    ).toThrow();
+  });
+  it("classifies an explicitly unreadable supported field as drift", () => {
+    const original = createdObservation();
+    const readback = original.repoFiles?.[READBACK_CAPTURE];
+    if (typeof readback !== "string") {
+      throw new Error("missing readback fixture");
+    }
+    const repoFiles = {
+      ...original.repoFiles,
+      [READBACK_CAPTURE]: readback.replace('"labels":[]', '"labels":null'),
+    };
+    expect(() =>
+      checkCreated({ ...original, repoFiles }, "drift"),
+    ).not.toThrow();
+    expect(() => checkCreated({ ...original, repoFiles }, "exact")).toThrow();
+  });
   it.each(
     [
       CREATE_ARGS.map((arg) => (arg === "--repo" ? "-R" : arg)),
@@ -210,7 +230,9 @@ describe("pr-creator machine create and readback checks", () => {
         reviewers: [],
       }),
     };
-    expect(() => checkCreated({ ...original, repoFiles }, false)).not.toThrow();
+    expect(() =>
+      checkCreated({ ...original, repoFiles }, "exact"),
+    ).not.toThrow();
   });
   it.each([
     { body: EXACT_BODY.trimEnd() },
@@ -233,7 +255,7 @@ describe("pr-creator machine create and readback checks", () => {
         ...wrong,
       }),
     };
-    expect(() => checkCreated({ ...original, repoFiles }, false)).toThrow();
+    expect(() => checkCreated({ ...original, repoFiles }, "exact")).toThrow();
   });
   it("rejects missing or changed readback, absent lookup and edit/retry writes", () => {
     const original = createdObservation();
@@ -249,7 +271,7 @@ describe("pr-creator machine create and readback checks", () => {
         [GITHUB_FACTS.log]: `${original.repoFiles?.[GITHUB_FACTS.log] ?? ""}["pr","edit"]\n`,
       },
     ]) {
-      expect(() => checkCreated({ ...original, repoFiles }, false)).toThrow();
+      expect(() => checkCreated({ ...original, repoFiles }, "exact")).toThrow();
     }
   });
   it("rejects altered body, head and state in the actual readback snapshot", () => {
@@ -272,14 +294,14 @@ describe("pr-creator machine create and readback checks", () => {
             ...original,
             repoFiles: { ...original.repoFiles, [READBACK_CAPTURE]: wrong },
           },
-          false,
+          "exact",
         ),
       ).toThrow();
     }
   });
   it("rejects missing approval and an earlier write even if final captures match", () => {
     expect(() =>
-      checkCreated({ ...createdObservation(), turns: [] }, false),
+      checkCreated({ ...createdObservation(), turns: [] }, "exact"),
     ).toThrow();
     const original = createdObservation();
     const early = createTurn({
@@ -295,7 +317,7 @@ describe("pr-creator machine create and readback checks", () => {
           ...original,
           turns: [early, createTurn({ prompt: "approved" })],
         },
-        false,
+        "exact",
       ),
     ).toThrow();
   });

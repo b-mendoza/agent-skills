@@ -409,7 +409,7 @@ describe("pr-creator second-run machine regressions", () => {
     "does not regex-grade semantic completion text: $name",
     ({ finalText }) => {
       expect(() =>
-        checkCreated({ ...createdObservation(), finalText }, false),
+        checkCreated({ ...createdObservation(), finalText }, "exact"),
       ).not.toThrow();
     },
   );

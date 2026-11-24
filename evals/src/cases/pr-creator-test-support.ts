@@ -1,5 +1,6 @@
 import {
   CREATE_CAPTURE,
+  type CreateOutcome,
   EXACT_BODY,
   previewValues,
   READBACK_CAPTURE,
@@ -83,7 +84,15 @@ export const CREATE_ARGS = [
   "maintainer",
 ];
 
-export function createdObservation(drift = false): Observation {
+const readbackBodies = {
+  exact: EXACT_BODY,
+  additions: `${EXACT_BODY}\nAutomation footer\n`,
+  drift: "Replaced body",
+};
+
+export function createdObservation(
+  outcome: CreateOutcome = "exact",
+): Observation {
   const initial = createTurn({
     finalText: "Create this PR?",
     toolCalls: [digestCall()],
@@ -127,13 +136,13 @@ export function createdObservation(drift = false): Observation {
       [READBACK_CAPTURE]: JSON.stringify({
         url: GITHUB_FACTS.url,
         title: GITHUB_FACTS.title,
-        body: drift ? `${EXACT_BODY}\nAutomation footer\n` : EXACT_BODY,
+        body: readbackBodies[outcome],
         baseRefName: "main",
         headRefName: GITHUB_FACTS.branch,
         headRefOid: HEAD_SHA,
         isDraft: true,
         assignees: [{ login: "maintainer" }],
-        labels: drift ? [{ name: "automation" }] : [],
+        labels: outcome === "additions" ? [{ name: "automation" }] : [],
         reviewRequests: [],
       }),
     },

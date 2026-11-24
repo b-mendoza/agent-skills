@@ -108,12 +108,16 @@ Maintain independent counters. Count the relevant recovery or repair cycle, not 
 | `validation` | 1 | `TerminalBlocked` on another invalid envelope; applies to every registered specialist. |
 | `approval-reask[gate]` | 1 | `TerminalAwaitingUser` if still unclear. |
 
-Submission has no cycle counter beyond the bounded create retry inside `pr-submitter`.
+Submission has no cycle counter beyond the bounded retry for an unconfirmed create in `pr-submitter`.
 
-## Final success output
+## Final creation outputs
 
-Report the verified PR URL in prose, followed by the execution mode and platform-returned base, head ref and SHA, title, state, reviewers, labels, assignees, body digest comparison, and exact description. Readable Markdown is fine; do not add a status line or routing envelope.
+The orchestrator reruns `compare preview` on the saved readback. Use the worse of the two outcomes (`exact` < `additions` < `drift`); if comparison cannot run, treat verification as drift. A confirmed URL is never a create error and never authorizes retry, edit, relabeling, or reassignment.
 
-The orchestrator reports verified success only after it compares every platform-echoed field from `PR_SUBMIT: PASS` against the frozen preview and both body digests match.
+For all three outputs, lead with what happened: with `Create attempted: no`, say a matching open PR already existed, was verified against the preview, and this run did not create it. Verification here means the comparison was performed, not that all fields matched. With `Create attempted: yes`, report the observed creation outcome.
 
-For `CREATED_WITH_DRIFT`, say that the PR exists and retain its URL. Explicitly list each mismatched or unreadable field with approved versus returned values, including body digests. State that exact verification did not pass. This is not a failed create or permission to retry, edit, relabel, or reassign. Stop and suggest manual inspection. Never accept a body prefix or a metadata subset as exact agreement.
+- **Exact (`TerminalSuccess`).** Give the verified URL and execution mode, and list the read-back base, head ref and SHA, title, effective state, reviewers, labels, assignees and exact description where compared. Say that each compared field matched the preview, including the body digest comparison.
+- **Additions (`TerminalCreatedWithAdditions`).** Give the verified URL, and say that all compared approved values are present unchanged but exact agreement was not observed. List each extra label, reviewer and assignee and the exact appended text, as applicable. Say these additions were not in the approved preview; do not guess who added them.
+- **Drift (`TerminalCreatedWithDrift`).** Say that the PR exists and give the confirmed URL. List each changed or unreadable field with approved and returned values (or why readback was unavailable). Say verification did not pass, including the body comparison if it failed. If comparison could not run, say so rather than inventing returned values. Suggest manual inspection, not retry or editing.
+
+Include any push extras report above. For unsupported readbacks, include one line in the final output: “Not compared, because <platform> has no such field: <fields>”. Never describe those fields as matching. An unexpected non-null readback for a field approved as unsupported is drift; list that discrepancy too.

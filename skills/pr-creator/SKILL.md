@@ -67,7 +67,7 @@ Dispatch only the selected specialist with its path, contract path, absolute `SK
 In `NormalizeInputs`, derive `RUN_DIR=.handoffs/pr-creator/<run-id>/` once: the ID is the UTC timestamp `YYYYMMDDTHHMMSSZ` followed by four random hex characters. Before the first write, require `git check-ignore --quiet -- "$RUN_DIR/probe"` to succeed. If it fails, ask for a scratch directory outside the repository and use that as `RUN_DIR`, or stop; never write a run file to an unignored path. Shell variables do not survive between commands: start each command that needs them by assigning the literal `RUN_DIR` and `SKILL_DIR` values, and never save them to a file elsewhere, such as `/tmp`. Record only the files this run uses:
 
 - `pending.json` and `<kind>-{values,record}.json` for each approval kind.
-- `body.md` for exact body bytes.
+- `body.md` and `returned.json` for exact body bytes and readback.
 
 At every terminal except `TerminalAwaitingUser`, remove only this run's recorded files.
 
@@ -109,7 +109,7 @@ Advance states in [`state-machine.md`](./state-machine.md). Summary:
 5. `AnalyzeDiff` only after `PREFLIGHT: PASS`. Never defer authentication, hosting resolution, or the existing-PR lookup until creation; unresolved preflight stops before drafting or preview. For a large or mixed diff, show the pinned SHAs, paths, exclusions, counts and fired rules at `GateScope`. Save its `Scope values` JSON verbatim. On approval redispatch with the record; the analyzer runs `verify scope` against fresh observations before continuing. `STALE_PINS` refreshes preflight and discards scope/preview approval.
 6. `DraftPr` then `SuggestMetadata` with exact changed-file paths and preflight’s `Unsupported fields` as `UNSUPPORTED_FIELDS`. Title/template, reviewer, label and assignee gates redispatch only the affected specialist. `REVIEWERS=none` satisfies reviewer resolution.
 7. `ShowPreview` / `GatePreview`: load `./references/execution-contracts.md`, show exact preview (head SHA, effective state). Edits invalidate approval and return to the earliest affected state. Decline without edits → `TerminalCancelled`.
-8. `FreezeApproval` then `SubmitPr`. `HEAD_MOVED` → explain, discard both approvals, and refresh `RunPreflight` (preview-edit cycle). On `PASS`, `VerifySubmit` compares every echoed field and both body digests before `TerminalSuccess`. A confirmed URL with mismatches goes to `TerminalCreatedWithDrift`, never a create retry.
+8. `FreezeApproval` then `SubmitPr`. `HEAD_MOVED` → explain, discard both approvals, and refresh `RunPreflight` (preview-edit cycle). At `VerifySubmit`, rerun `compare preview` on the saved readback. Use the worse of the two outcomes (`exact` < `additions` < `drift`); if comparison cannot run, treat verification as drift. Never retry or edit a confirmed create.
 9. Independent three-cycle ledgers: push, scope, type/scope, reviewer, label, assignee, preview-edit; validation repair cap is one. Exhaustion → `FinalDecision` then recovery or `TerminalEscalated`.
 
 ## Core Rules
