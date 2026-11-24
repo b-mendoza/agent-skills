@@ -79,7 +79,7 @@ For code work, use `claude-fable-5-2` only when one of these conditions is true.
 - **Design decision:** The brief must ask the model to make or review a design decision, and no spec, plan, or convention makes that decision. A design decision selects an architecture, a service or module boundary, a data model, or a migration strategy.
 - **Failed check:** `gpt-6.2-astra` fails the same verification check two times, and the last attempt used `high` effort.
 
-The size of a task is not a condition. Send a large task that has a settled design to `gpt-6.2-astra`.
+Send a large task that has a settled design to `gpt-6.2-astra`.
 
 For a design decision, do these steps in order.
 
