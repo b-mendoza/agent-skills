@@ -45,7 +45,8 @@ beforeAll(() => {
       const scenario = process.env.OFFLINE_SCENARIO;
       if (scenario === "provider-error") return { error: "offline provider error" };
       const observation = ${JSON.stringify(createObservation({ subtype: "error_max_budget_usd", isError: true }))};
-      if (context.vars.caseId.endsWith("/trigger-positive")) {
+      if (context.vars.caseId.endsWith("/trigger-positive") ||
+          context.vars.caseId === "committing-scoped-changes/trigger-plan-only") {
         const [skill] = context.vars.caseId.split("/");
         observation.toolCalls = [{ name: "Skill", input: { skill } }];
       }

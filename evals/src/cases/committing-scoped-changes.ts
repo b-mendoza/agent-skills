@@ -5,6 +5,10 @@ import { join } from "node:path";
 
 import type { EvalCase, SeedContext } from "#/cases/case-contract.ts";
 import { behavioralDefaults, routingDefaults } from "#/cases/case-contract.ts";
+import { candidateSeries } from "#/cases/committing-scoped-changes-candidate-series.ts";
+import { hunkSeries } from "#/cases/committing-scoped-changes-hunk-series.ts";
+import { intakeCases } from "#/cases/committing-scoped-changes-intake.ts";
+import { pushCases } from "#/cases/committing-scoped-changes-push.ts";
 import { scenarios } from "#/cases/committing-scoped-changes-scenarios.ts";
 import {
   assertFileMatches,
@@ -93,6 +97,10 @@ const suiteDefaults = {
 
 export const cases = [
   ...scenarios,
+  ...intakeCases,
+  ...pushCases,
+  candidateSeries,
+  hunkSeries,
   {
     id: "committing-scoped-changes/trigger-positive",
     ...routingDefaults,

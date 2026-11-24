@@ -47,12 +47,16 @@ function scoped(groups: readonly PlanFacts[]): boolean {
     COMMIT_SCOPE.every((path) => paths.includes(path))
   );
 }
+export function validEnvelope(
+  payload: string,
+  mode: "plan" | "execute",
+): boolean {
+  return (
+    spawnSync("sh", [VALIDATOR, mode], { input: payload }).status === SUCCESS
+  );
+}
 function parseEnvelope(payload: string): PlanFacts[] | undefined {
-  const validation = spawnSync("sh", [VALIDATOR, "plan"], {
-    input: payload,
-    encoding: "utf8",
-  });
-  if (validation.status !== SUCCESS) return undefined;
+  if (!validEnvelope(payload, "plan")) return undefined;
   const lines = payload.split("\n");
   const groups: PlanFacts[] = [];
   for (
@@ -72,6 +76,16 @@ function parseEnvelope(payload: string): PlanFacts[] | undefined {
   }
   return scoped(groups) ? groups : undefined;
 }
+export function agentOutputs(calls: readonly ToolCall[]) {
+  return calls
+    .filter(({ name }) => name === "Agent" || name === "Task")
+    .flatMap(({ result }) =>
+      result !== undefined && !result.truncated && !result.isError
+        ? [result.content]
+        : [],
+    );
+}
+
 function successfulValidator(call: ToolCall): boolean {
   if (call.name !== "Bash") return false;
   if (call.result?.isError !== false) return false;
