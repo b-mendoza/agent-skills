@@ -89,8 +89,8 @@ Verification evidence: checkout retry test passed
 Verification scope: shared worktree; not an isolated commit tree
 ```
 
-Final: Created `53eb984` with the approved message and paths. Nothing remains uncommitted in scope, and the unrelated-work digest matched. `npm test -- checkout` exited 0 and reported the checkout retry test passed on the shared worktree, not an isolated commit tree. Review the local commits; this skill never pushes.
+Final: Created `53eb984` with the approved message and paths. Nothing remains uncommitted in scope, and the unrelated-work digest matched. `npm test -- checkout` exited 0 and reported the checkout retry test passed on the shared worktree, not an isolated commit tree. Nothing was pushed. Review the local commits.
 
-**B. Gate wait.** Plan lists two groups and `Warnings: src/checkout/config.ts is MM; the worktree version will be committed`. Output: the readable plan with exact messages, paths, and warnings, then "Reply `approve` to commit these 2 groups in order, `revise: <what to change>`, or `stop`.". State that no commits have been made and end the turn.
+**B. Gate wait.** Plan lists two groups and `Warnings: src/checkout/config.ts is MM; the worktree version will be committed`. Output: the readable plan with exact messages, paths, and warnings, then "Reply `approve` to commit these 2 groups in order, `revise: <what to change>`, or `stop`.". State that no commits have been made and nothing was pushed, then end the turn.
 
 **C. Hook mutation.** Executor returns `COMMIT_EXECUTE: HOOK_MUTATION`, `Reason: pre-commit rewrote src/checkout/retry.ts; tree OID differs from the pre-commit blob`, `Commit: 9a1c2d3 fix(checkout): retry failed payment authorizations`, and the four verification fields showing the command, observed exit and result, and shared-worktree scope. Final: Stopped because the hook modified commit `9a1c2d3`. `tests/checkout/retry.test.ts` remains uncommitted, and the unrelated-work digest matched. Review `9a1c2d3`; if the hook's changes are wanted, create a follow-up commit, never amend.
