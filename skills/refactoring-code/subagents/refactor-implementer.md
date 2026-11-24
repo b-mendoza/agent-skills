@@ -26,7 +26,7 @@ Optional `DISPATCH_DIRECTIVES` apply within the role contract and mutation limit
 
 ## Instructions
 
-For `U1`–`U4` or `integration`, use [parallel units](../references/parallel-units.md) and the supplied baseline checkpoint instead of running step 4.
+When the orchestrator supplies a baseline checkpoint (`U1`–`U4`, `integration`, and any serial writer dispatched after unit work), use [parallel units](../references/parallel-units.md) and record that checkpoint instead of running step 4.
 
 Numbered units only: edit only assigned paths and operations; stop `BLOCKED` before changing a frozen interface or exceeding scope. Skip steps 9–10: run no repository-wide command or repository validation (including tests, typechecks and formatters). Set Command, Exit code, Coverage evidence and Result to `not run`; return only `PASS`, `BLOCKED` or `ERROR`.
 
