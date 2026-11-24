@@ -3,6 +3,7 @@ import { appendFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import type { SeedContext } from "#/cases/case-contract.ts";
+import { FAKE_GH } from "#/cases/pr-creator-fake-gh.ts";
 import { FIXTURE_ROOT_PATH, seedFixtureRoot } from "#/cases/shared-checks.ts";
 import { copyHeadReflog, GH_LOG, HEAD_LOG } from "#/fixtures/fixtures.ts";
 
@@ -35,168 +36,6 @@ export const GITHUB_SNAPSHOTS = [
   GITHUB_FACTS.sourceBaseline,
 ] as const;
 
-// A shared fake for these three adjacent GitHub workflows, not a network emulator.
-const FAKE_GH = String.raw`#!/usr/bin/env python3
-import json
-from pathlib import Path
-import subprocess
-import sys
-
-root = Path(__EVAL_REPO_PATH__)
-state = json.loads((root / ".git/fake-gh-state.json").read_text())
-args = sys.argv[1:]
-with (root / "${GH_LOG}").open("a") as stream:
-    stream.write(json.dumps(args) + "\n")
-
-def option(name):
-    for index, arg in enumerate(args):
-        if arg == name and index + 1 < len(args):
-            return args[index + 1]
-        if arg.startswith(name + "="):
-            return arg.split("=", 1)[1]
-    return None
-
-def emit(value):
-    projection = option("--jq") or option("-q")
-    if projection:
-        result = subprocess.run(["jq", "-r", projection], input=json.dumps(value), text=True)
-        sys.exit(result.returncode)
-    print(json.dumps(value))
-    sys.exit(0)
-
-def refuse():
-    print("fake gh: unsupported command: " + repr(args), file=sys.stderr)
-    sys.exit(79)
-
-def options(name):
-    values = []
-    for index, arg in enumerate(args):
-        if arg == name and index + 1 < len(args):
-            values.extend(args[index + 1].split(","))
-        elif arg.startswith(name + "="):
-            values.extend(arg.split("=", 1)[1].split(","))
-    return values
-
-if args[:2] == ["pr", "create"] and state.get("allow_create"):
-    if state["existing"]:
-        refuse()
-    title, body_file = option("--title"), option("--body-file")
-    if not title or not body_file or option("--base") != "main" or option("--head") not in ("feature/unit-price", "eval-org:feature/unit-price") or (option("--repo") or option("-R")) != "eval-org/cart":
-        refuse()
-    body = sys.stdin.buffer.read().decode("utf-8") if body_file == "-" else Path(body_file).read_bytes().decode("utf-8")
-    assignees, labels, reviewers = options("--assignee"), options("--label"), options("--reviewer")
-    if any(login != "maintainer" for login in assignees):
-        refuse()
-    captured = {"args": args, "body": body, "title": title, "assignees": assignees, "labels": labels, "reviewers": reviewers}
-    (root / ".git/eval-created.json").write_text(json.dumps(captured))
-    pr = state["pr"]
-    pr.update(title=title, body=body, isDraft="--draft" in args, draft="--draft" in args,
-              assignees=[{"login": login} for login in assignees], labels=[{"name": label} for label in labels],
-              reviewRequests=[{"login": login} for login in reviewers])
-    if state.get("readback_drift"):
-        pr["body"] += "\nAutomation footer\n"
-        pr["labels"].append({"name": "automation"})
-    pr.update(state.get("readback", {}))
-    state["graphql"]["data"]["repository"]["pullRequest"].update(pr)
-    state["existing"] = True
-    (root / ".git/fake-gh-state.json").write_text(json.dumps(state))
-    print(pr["url"])
-    sys.exit(0)
-
-method = option("--method") or option("-X")
-if method and method.upper() not in ("GET", "HEAD"):
-    refuse()
-if any(arg in ("create", "edit", "review", "comment", "merge", "close", "reopen", "ready") for arg in args[:2]):
-    refuse()
-if args[:2] == ["auth", "status"]:
-    print("Logged in to github.com as maintainer")
-    sys.exit(0)
-if args == ["--version"]:
-    print("gh version 2.80.0 (fixture)")
-    sys.exit(0)
-if args[:2] == ["repo", "view"]:
-    emit(state["repo"])
-if args[:2] == ["label", "list"]:
-    emit([])
-if args[:2] == ["pr", "list"]:
-    emit([state["pr"]] if state["existing"] else [])
-if args[:2] == ["pr", "view"]:
-    if state.get("allow_create") and state["existing"]:
-        (root / ".git/eval-readback.json").write_text(json.dumps(state["pr"]))
-    emit(state["pr"])
-if args[:2] == ["pr", "diff"]:
-    if "--name-only" in args:
-        print("pricing.py")
-    else:
-        print(state["diff"], end="")
-    sys.exit(0)
-if args[:2] == ["pr", "checks"]:
-    emit([])
-if args and args[0] == "api":
-    endpoints = [arg for arg in args if arg == "graphql" or arg.startswith("repos/") or arg == "user"]
-    if len(endpoints) != 1:
-        refuse()
-    endpoint = endpoints[0]
-    if endpoint == "graphql":
-        if any("mutation" in arg for arg in args):
-            refuse()
-        if state.get("allow_create") and state["existing"]:
-            (root / ".git/eval-readback.json").write_text(json.dumps(state["pr"]))
-        emit(state["graphql"])
-    if endpoint == "user":
-        emit({"login": "maintainer"})
-    prefix = "repos/eval-org/cart"
-    suffix = endpoint.removeprefix(prefix).split("?", 1)[0]
-    if not endpoint.startswith(prefix):
-        refuse()
-    if suffix == "":
-        emit(state["repo"])
-    if suffix == "/assignees":
-        emit([{"login": "maintainer"}])
-    if suffix.startswith("/assignees/"):
-        if suffix == "/assignees/maintainer":
-            if "-i" in args or "--include" in args:
-                print("HTTP/2.0 204 No Content\n")
-            sys.exit(0)
-        if "-i" in args or "--include" in args:
-            print("HTTP/2.0 404 Not Found\n")
-        print("HTTP 404: not assignable", file=sys.stderr)
-        sys.exit(1)
-    if suffix == "/pulls":
-        emit([{**state["pr"], "state": "open"}] if state["existing"] else [])
-    if suffix == "/pulls/17":
-        if state.get("allow_create") and state["existing"]:
-            (root / ".git/eval-readback.json").write_text(json.dumps(state["pr"]))
-        if option("-H") and "diff" in option("-H"):
-            print(state["diff"], end="")
-            sys.exit(0)
-        emit({**state["pr"], "state": "open"})
-    if suffix in ("/pulls/17/comments", "/pulls/comments"):
-        emit(state["comments"])
-    if suffix in ("/pulls/17/reviews", "/issues/17/comments", "/labels", "/collaborators", "/teams"):
-        emit([])
-    if suffix == "/pulls/17/files":
-        emit(state["pr"]["files"])
-    if suffix.startswith("/compare/"):
-        emit({"merge_base_commit": {"sha": state["base"]}, "files": state["pr"]["files"], "status": "ahead", "ahead_by": 1, "behind_by": 0})
-    if suffix.startswith("/contents/"):
-        path = suffix.removeprefix("/contents/")
-        if path == "pricing.py":
-            content = state["base_source"] if state["base"] in endpoint or "ref=main" in endpoint else state["head_source"]
-            if option("-H") and "raw" in option("-H"):
-                print(content, end="")
-                sys.exit(0)
-            import base64
-            emit({"type": "file", "path": path, "encoding": "base64", "content": base64.b64encode(content.encode()).decode()})
-        refuse()
-    if suffix.startswith("/commits/") and suffix.endswith("/check-runs"):
-        emit({"total_count": 0, "check_runs": []})
-    if suffix.startswith("/commits/") and suffix.endswith("/status"):
-        emit({"state": "pending", "statuses": [], "total_count": 0})
-    refuse()
-refuse()
-`;
-
 function git(repoPath: string, ...arguments_: string[]): string {
   return execFileSync("git", arguments_, {
     cwd: repoPath,
@@ -206,6 +45,21 @@ function git(repoPath: string, ...arguments_: string[]): string {
 }
 
 interface GithubFixtureOptions {
+  collaborators?: readonly string[];
+  issueWriteFailsOn?: { action: "comment" | "close"; number: number };
+  defaultBranch?: string;
+  issues?: ReadonlyArray<{
+    number: number;
+    title: string;
+    state: "open" | "closed";
+    isPr?: boolean;
+    repository?: string;
+  }>;
+  allowEdit?: boolean;
+  editFailsOn?: "pr edit" | "pr ready";
+  mutateBeforeEdit?: boolean;
+  allowIssueWrites?: boolean;
+  me?: string;
   existing?: boolean;
   comments?: boolean;
   existingReport?: boolean;
@@ -245,6 +99,61 @@ function seedExistingReport(
   }
 }
 
+function seedDefaultBranch(repoPath: string, options: GithubFixtureOptions) {
+  const defaultBranch = options.defaultBranch ?? "main";
+  if (defaultBranch !== "main") git(repoPath, "branch", defaultBranch, "main");
+  return defaultBranch;
+}
+
+function seedRemote(
+  context: SeedContext,
+  options: GithubFixtureOptions,
+  defaultBranch: string,
+): void {
+  const { repoPath } = context;
+  const remote = join(repoPath, ".git", "fixture-origin.git");
+  git(repoPath, "clone", "--bare", "--quiet", repoPath, remote);
+  if (options.defaultBranch !== undefined) {
+    git(remote, "symbolic-ref", "HEAD", `refs/heads/${defaultBranch}`);
+  }
+  // Preserve GitHub identity in URL inspection while all SSH transport stays local.
+  git(
+    repoPath,
+    "config",
+    "core.sshCommand",
+    `sh -c 'exec git-upload-pack "$1"' fixture-ssh ${JSON.stringify(remote)}`,
+  );
+  git(repoPath, "config", "ssh.variant", "ssh");
+  git(
+    repoPath,
+    "remote",
+    "add",
+    "origin",
+    `git@github.com:${GITHUB_FACTS.repository}.git`,
+  );
+  git(repoPath, "fetch", "-q", "origin");
+  git(
+    repoPath,
+    "symbolic-ref",
+    "refs/remotes/origin/HEAD",
+    `refs/remotes/origin/${defaultBranch}`,
+  );
+  git(repoPath, "branch", "--set-upstream-to", `origin/${GITHUB_FACTS.branch}`);
+}
+
+function actionOptions(options: GithubFixtureOptions) {
+  return {
+    collaborators: options.collaborators,
+    allow_edit: options.allowEdit === true,
+    edit_fails_on: options.editFailsOn,
+    mutate_before_edit: options.mutateBeforeEdit === true,
+    issues: options.issues,
+    issue_write_fails_on: options.issueWriteFailsOn,
+    allow_issue_writes: options.allowIssueWrites === true,
+    me: options.me ?? "maintainer",
+  };
+}
+
 export function seedGithubFixture(
   context: SeedContext,
   options: GithubFixtureOptions = {},
@@ -267,31 +176,8 @@ export function seedGithubFixture(
     cwd: repoPath,
     encoding: "utf8",
   });
-  const remote = join(repoPath, ".git", "fixture-origin.git");
-  git(repoPath, "clone", "--bare", "--quiet", repoPath, remote);
-  // Preserve GitHub identity in URL inspection while all SSH transport stays local.
-  git(
-    repoPath,
-    "config",
-    "core.sshCommand",
-    `sh -c 'exec git-upload-pack "$1"' fixture-ssh ${JSON.stringify(remote)}`,
-  );
-  git(repoPath, "config", "ssh.variant", "ssh");
-  git(
-    repoPath,
-    "remote",
-    "add",
-    "origin",
-    `git@github.com:${GITHUB_FACTS.repository}.git`,
-  );
-  git(repoPath, "fetch", "-q", "origin");
-  git(
-    repoPath,
-    "symbolic-ref",
-    "refs/remotes/origin/HEAD",
-    "refs/remotes/origin/main",
-  );
-  git(repoPath, "branch", "--set-upstream-to", `origin/${GITHUB_FACTS.branch}`);
+  const defaultBranch = seedDefaultBranch(repoPath, options);
+  seedRemote(context, options, defaultBranch);
   appendFileSync(join(repoPath, ".git/info/exclude"), "\n.handoffs/\n");
   copyHeadReflog(repoPath, GITHUB_FACTS.baselineLog);
   writeFileSync(join(repoPath, GITHUB_FACTS.sourceBaseline), headSource);
@@ -323,8 +209,9 @@ export function seedGithubFixture(
     nameWithOwner: GITHUB_FACTS.repository,
     full_name: GITHUB_FACTS.repository,
     owner: { login: "eval-org" },
-    default_branch: "main",
-    defaultBranchRef: { name: "main" },
+    default_branch: defaultBranch,
+
+    defaultBranchRef: { name: defaultBranch },
     isFork: false,
     fork: false,
     parent: null,
@@ -390,9 +277,10 @@ export function seedGithubFixture(
       nodes: [entry],
     },
   }));
+  const actions = actionOptions(options);
   const graphql = {
     data: {
-      viewer: { login: "maintainer" },
+      viewer: { login: actions.me },
       repository: {
         ...repo,
         pullRequest: {
@@ -420,6 +308,7 @@ export function seedGithubFixture(
       existing: options.existing === true,
       base_source: baseSource,
       head_source: headSource,
+      ...actions,
       allow_create: options.allowCreate === true,
       readback_drift: options.readbackDrift === true,
       readback: options.readback ?? {},

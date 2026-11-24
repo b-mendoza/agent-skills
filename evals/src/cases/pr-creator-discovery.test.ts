@@ -1,0 +1,68 @@
+import { execFileSync, spawnSync } from "node:child_process";
+
+import { expect, it } from "vitest";
+
+import {
+  GITHUB_FACTS as facts,
+  seedGithubFixture,
+} from "#/cases/pr-creator-fixtures.ts";
+import { makeFixture } from "#/fixtures/fixtures.ts";
+
+const SUCCESS = 0;
+const FAILURE = 1;
+const reviewer = "cart-reviewer";
+it("lists only the configured requestable collaborators", () => {
+  const fixture = makeFixture("clean", [], (context) => {
+    seedGithubFixture(context, { collaborators: [reviewer] });
+  });
+  try {
+    const stdout = execFileSync(
+      "gh",
+      ["api", `repos/${facts.repository}/collaborators`],
+      {
+        cwd: fixture.cwd,
+        encoding: "utf8",
+        env: {
+          ...process.env,
+          PATH: `${fixture.binPath}:${process.env["PATH"] ?? ""}`,
+        },
+      },
+    );
+    expect(JSON.parse(stdout)).toEqual([{ login: reviewer }]);
+  } finally {
+    fixture.cleanup();
+  }
+});
+const collaboratorCheck = (login: string) => [
+  "api",
+  "--hostname",
+  "github.com",
+  "--method",
+  "GET",
+  "--include",
+  `repos/${facts.repository}/collaborators/${login}`,
+];
+it("returns collaborator status for the requested login", () => {
+  const fixture = makeFixture("clean", [], (context) => {
+    seedGithubFixture(context, { collaborators: [reviewer] });
+  });
+  try {
+    const check = (login: string) =>
+      spawnSync("gh", collaboratorCheck(login), {
+        cwd: fixture.cwd,
+        encoding: "utf8",
+        env: {
+          ...process.env,
+          PATH: `${fixture.binPath}:${process.env["PATH"] ?? ""}`,
+        },
+      });
+    const listed = check(reviewer);
+    expect(listed.status).toBe(SUCCESS);
+    expect(listed.stdout).toContain("204 No Content");
+    const missing = check("not-listed");
+    expect(missing.status).toBe(FAILURE);
+    expect(missing.stdout).toContain("404 Not Found");
+  } finally {
+    fixture.cleanup();
+  }
+});
