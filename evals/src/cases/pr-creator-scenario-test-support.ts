@@ -18,9 +18,30 @@ export const NEXT = 1;
 const SHA_LENGTH = 40;
 export const base = "a".repeat(SHA_LENGTH);
 export const head = "b".repeat(SHA_LENGTH);
+export const rebased = "c".repeat(SHA_LENGTH);
 export const preview = previewValues(base, head);
 export const ref = `refs/heads/${facts.branch}`;
 export const oldRef = `.git/${ref}`;
+export const backup = ".git/refs/pr-creator/backup/";
+export const rebase = {
+  sourceSha: head,
+  baseSha: base,
+  oldHeadSha: head,
+  baseRemote: "origin",
+  targetBranch: "main",
+  headBranch: facts.branch,
+  headRemote: "origin",
+};
+export const force = {
+  source: "rebase",
+  extras: [],
+  headRemote: "origin",
+  headBranch: facts.branch,
+  baseSha: base,
+  oldHeadSha: head,
+  newHeadSha: rebased,
+  action: `git push --force-with-lease=${ref}:${head} origin ${rebased}:${ref}`,
+};
 export function shell(content: string): ToolCall {
   return {
     name: "Bash",
@@ -55,6 +76,7 @@ export function observation(
       [facts.source]: facts.headSource,
       [facts.sourceBaseline]: facts.headSource,
       [oldRef]: head,
+      ".git/refs/heads/main": base,
       ...Object.fromEntries(
         gates.flatMap((item) => Object.entries(item.files)),
       ),

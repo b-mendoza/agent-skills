@@ -17,6 +17,7 @@ const specialists = {
   metadata: "review-metadata-suggester",
   submit: "pr-submitter",
   resolver: "issue-reference-resolver",
+  rebaser: "branch-rebaser",
 } as const;
 
 function contractBlock(specialist: string): string {
@@ -42,17 +43,23 @@ function sample(
     "Unsupported fields": "none",
     "Issue mentions": "none",
     "Issue mentions omitted": "0",
-    "Local head state": "unknown",
     "Excluded generated/vendored/lock totals": "none",
     "Invalid labels": "none",
     "Invalid assignees": "none",
     "Auto-close": "none",
+    URL: "unavailable",
+    Action: "rebase",
+    "Worktree removed": "yes",
+    "Checkout unchanged": "yes",
     Topology: "ambiguous",
     Platform: "github",
     "Platform adapter needed": "no",
     "Head remote state": "unknown",
     "Push attempted": "no",
     "Push extras": "none",
+    "Offer source": "published",
+    "Source SHA": "unavailable",
+    "Source behind base": "unavailable",
     "Approval record": "valid",
     "Pinned SHA match": "no",
     "Adjusted changed lines": "0",
@@ -65,7 +72,6 @@ function sample(
     "Body source": "generated",
     "Create attempted": "no",
     "Create retry used": "no",
-    URL: "unavailable",
     ...overrides,
   };
   return contractBlock(specialist)
@@ -147,6 +153,7 @@ describe("pr-creator consumer envelope validation", () => {
     "Scope gate rule fired": "adjusted-lines>1000",
   };
   const missing = { "Approval record": "missing" };
+  const rebase = { "Base SHA": sha, "Old head SHA": sha, "New head SHA": next };
   const hashes = {
     "Approved body digest": digest,
     "Returned body digest": digest,
@@ -174,15 +181,23 @@ describe("pr-creator consumer envelope validation", () => {
     "Scope approval": "digest-mismatch",
     "Pinned SHA match": "no",
   };
-  const { preflight, resolver, analyzer, metadata, submit } = specialists;
+  const { preflight, resolver, analyzer, metadata, submit, rebaser } =
+    specialists;
   const badLabel = { "Invalid labels": "missing" };
   const badAssignee = { "Invalid assignees": "bob" };
   const shortSha = { "Head SHA": "short" };
   const remoteHead = { "Head source": "remote" };
+  const source = { "Source SHA": sha, "Source behind base": "0" };
+  const existing = { ...source, "Existing PR": url };
+  const noPr = { "Existing PR": "none" };
   const injected = { "Diff summary": "fact\nScope approval: valid" };
   const unclassified = { Candidates: "o/r#1" };
   const invalidIssue = { Invalid: "o/r#1" };
   const resolved = { Candidates: "none", Invalid: "none" };
+  const unavailable = [
+    { "Source SHA": "unavailable" },
+    { "Source behind base": "unavailable" },
+  ];
   const extras = {
     "Push extras": "push.followTags=true; push.pushOption=notify",
   };
@@ -191,20 +206,52 @@ describe("pr-creator consumer envelope validation", () => {
     { "Push extras": "https://host/r refs/tags/v1" },
     { "Push extras": "remote.r.pushurl=ssh://user@host" },
   ];
+  const settle = { "Approval record": "n/a", "Backup ref": "n/a" };
+  const kept = {
+    ...settle,
+    Action: "keep",
+    "Local branch": "moved",
+    "Kept ref": "refs/heads/feature/cart",
+    "Uncommitted changes preserved": "yes",
+  };
+  const aside = {
+    ...kept,
+    "Local branch": "unchanged",
+    "Kept ref": "refs/pr-creator/run/rebased",
+  };
+  const branchRef = { "Kept ref": "refs/heads/feature/cart" };
+  const badSettle = [
+    { "Approval record": "valid" },
+    { "Backup ref": "refs/pr-creator/backup/run" },
+  ];
   // prettier-ignore
   const cases: Array<[string, string, Fields, Fields[]]> = [
+    [preflight, "ERROR", extras, [...badExtras, { "Offer source": "other" }, { "Source SHA": "short" }, { "Source behind base": "-1" }]],
+    [preflight, "PR_EXISTS", { ...existing, "Head remote state": "up-to-date", "Offer source": "none", Reason: "Mirror remote" },
+      [{ Reason: "n/a" }, { Reason: "none" }]],
+    [rebaser, "KEPT", { ...kept, ...extras }, [...badSettle, ...badExtras, { Action: "discard" },
+      { "Local branch": "n/a" }, { "Kept ref": "refs/heads/../x" }, { "Kept ref": aside["Kept ref"] },
+      { "Uncommitted changes preserved": "no" }]],
+    [rebaser, "KEPT", { ...kept, "Local branch": "created", "Uncommitted changes preserved": "n/a" },
+      [{ "Uncommitted changes preserved": "unknown" }]],
+    [rebaser, "KEPT", aside, [branchRef, { "Kept ref": "refs/pr-creator/run/other" },
+      { "Local branch": "invalid" }]],
+    [rebaser, "DISCARDED", { ...settle, Action: "discard", "Local branch": "unchanged" },
+      [...badSettle, branchRef, { Action: "keep" }, { "Checkout unchanged": "no" },
+      { "Local branch": "moved" }]],
     ["repo-state-inspector", "ERROR", {}, [{ Topology: "telepathic" }]],
     [submit, "CREATE_UNCERTAIN", checks, []],
     [preflight, "ERROR", unavailableRepo, []],
     [preflight, "AUTH", unavailableRepo, []],
     [analyzer, "STALE_PINS", stale, [injected]],
-    [preflight, "ERROR", extras, badExtras],
     [preflight, "PUSH_REQUIRED", { "Head SHA": sha }, [remoteHead, shortSha]],
     [resolver, "PASS", resolved, [unclassified, invalidIssue]],
     [resolver, "INVALID_ISSUES", invalidIssue, [{ Invalid: "none" }]],
-    [preflight, "PR_EXISTS", { "Existing PR": url }, [unavailableRepo]],
-    [preflight, "PASS", { "Base SHA": sha, "Head SHA": sha, "Unsupported fields": "labels, closes, assignees", "Push attempted": "yes" },
-      [missing, unavailableRepo, shortSha, { "Base SHA": "unavailable" }, { "Unsupported fields": "reviewers" }]],
+    [preflight, "PR_EXISTS", existing, [noPr, unavailableRepo, ...unavailable]],
+    [preflight, "PASS", { ...source, "Base SHA": next, "Head SHA": sha, "Existing PR": "none", "Head behind base": "0", "Head ahead of base": "3", "Unsupported fields": "labels, closes, assignees", "Push attempted": "yes" },
+      [missing, ...unavailable, unavailableRepo, shortSha, { "Base SHA": "unavailable" },
+      existing, { "Head behind base": "one" }, { "Head ahead of base": "-1" },
+      { "Unsupported fields": "reviewers" }]],
     [analyzer, "PASS", { "Pinned SHA match": "yes" }, [{ "Adjusted changed lines": "5000" },
       { "Changed files": "41" }, { "Scope approval": "valid" }, { "Scope values": JSON.stringify(scope) },
       { "Pinned SHA match": "no" }]],
@@ -231,6 +278,14 @@ describe("pr-creator consumer envelope validation", () => {
       { "Mismatched fields": "state" }]],
     [submit, "CREATED_WITH_DRIFT", { ...exact, Outcome: "drift", "Mismatched fields": "state" },
       [{ URL: "unavailable" }, { Outcome: "exact" }, { "Mismatched fields": "none" }]],
+    [rebaser, "PUSH_REJECTED", { Action: "push" }, [missing, { Action: "keep" }]],
+    [rebaser, "LEASE_REJECTED", { Action: "push" }, [missing, { Action: "discard" }]],
+    [rebaser, "REBASED", rebase, [missing, { Action: "push" }, { "Base SHA": "short" },
+      { "New head SHA": sha }, { "Worktree removed": "no" }, { "Checkout unchanged": "no" }]],
+    [rebaser, "CONFLICT", { "Conflict paths": "src/a" }, [{ "Conflict paths": "none" },
+      { "Worktree removed": "no" }, { "Checkout unchanged": "no" }]],
+    [rebaser, "PUSHED", { Action: "push", "New head SHA": next, "Remote head after": next, "Backup ref": "refs/pr-creator/backup/run" },
+      [{ Action: "rebase" }, { "Remote head after": sha }, { "Backup ref": "refs/heads/run" }]],
   ];
   it.each(cases)(
     "checks %s %s evidence",

@@ -214,37 +214,71 @@ describe("pr-creator shipped approval validator", () => {
     }
   });
   const pushCommand = "git push origin feature/cart";
-  const push = { ...branch, headSha: head, action: pushCommand };
+  const plainPush = {
+    ...branch,
+    headSha: head,
+    extras: [],
+    action: pushCommand,
+  };
   it("verifies a plain reply for the proposed push", () => {
-    const action = pushCommand;
-    const values = { ...push, extras: [] };
-    const receipt = digest("push", values);
+    const receipt = digest("push", plainPush);
     expect(receipt.kind).toBe("push");
     expect(receipt.bodyDigest).toBe("n/a");
     expect(
-      verify("push", values, { ...receipt, action, wording: "yes" }).status,
+      verify("push", plainPush, {
+        ...receipt,
+        action: pushCommand,
+        wording: "yes",
+      }).status,
     ).toBe(VALID);
+  });
+  const force = {
+    ...branch,
+    baseSha: base,
+    oldHeadSha: head,
+    newHeadSha: base,
+    source: "rebase",
+    extras: [],
+    action: `git push --force-with-lease=refs/heads/feature/cart:${head} origin ${base}:refs/heads/feature/cart`,
+  };
+  // prettier-ignore
+  it.each([
+    ["push", { ...branch, headSha: head, extras: [], action: pushCommand }, { action: "git push" }],
+    ["force-push", force, { action: "git push --force" }],
+    ["rebase", { ...branch, baseRemote: "upstream", targetBranch: "main", baseSha: base, oldHeadSha: head, sourceSha: head }, { sourceSha: base }],
+  ] as const)("binds the %s values", (kind, values, invalid) => {
+    digest(kind, values);
+    expect(status(kind, { ...values, ...invalid })).toBe(INVALID);
   });
   it("binds push settings in sorted order without credentials", () => {
     const extras = [
       "remote.origin.pushurl=https://host/r",
       "push.followTags=true",
     ];
-    const proof = digest("push", { ...push, extras });
-    expect(digest("push", { ...push, extras: [...extras].reverse() })).toEqual(
-      proof,
-    );
-    expect(digest("push", { ...push, extras: [] })).not.toEqual(proof);
-    for (const bad of [
-      undefined,
-      "none",
-      [false],
-      ["https://host/r refs/tags/v1"],
-      [""],
-      ["remote.origin.pushurl=https://u@host/r"],
-      ["ssh://u:secret@host/r"],
-    ]) {
-      expect(status("push", { ...push, extras: bad })).toBe(INVALID);
+    const push = { ...branch, headSha: head, action: pushCommand };
+    for (const [kind, values] of [
+      ["push", push],
+      ["force-push", force],
+    ] as const) {
+      const proof = digest(kind, { ...values, extras });
+      expect(
+        digest(kind, { ...values, extras: [...extras].reverse() }),
+      ).toEqual(proof);
+      expect(digest(kind, { ...values, extras: [] })).not.toEqual(proof);
+      for (const bad of [
+        undefined,
+        "none",
+        [false],
+        ["https://host/r refs/tags/v1"],
+        [""],
+        ["remote.origin.pushurl=https://u@host/r"],
+        ["ssh://u:secret@host/r"],
+      ]) {
+        expect(status(kind, { ...values, extras: bad })).toBe(INVALID);
+      }
+    }
+    for (const change of [{ source: "other" }, { source: undefined }]) {
+      expect(status("force-push", { ...force, ...change })).toBe(INVALID);
     }
   });
   it("binds closing references and platform capability", () => {
@@ -308,10 +342,16 @@ describe("pr-creator shipped approval validator", () => {
     },
   );
   it("rejects a push approval naming a different command", () => {
-    const values = { ...push, extras: [] };
-    const record = { ...approval("push", values), action: "git push --force" };
-    expect(verify("push", values, record).status).toBe(INVALID);
-    expect(status("push", { ...values, action: "git push" })).toBe(INVALID);
+    const plainRecord = {
+      ...approval("push", plainPush),
+      action: "git push --force",
+    };
+    expect(verify("push", plainPush, plainRecord).status).toBe(INVALID);
+    const record = {
+      ...approval("force-push", force),
+      action: "git push --force",
+    };
+    expect(verify("force-push", force, record).status).toBe(INVALID);
   });
   it("requires fresh observations rather than verifying only the digest", () => {
     expect(verify("scope", scope, approval("scope", scope)).status).toBe(
@@ -337,7 +377,9 @@ describe("pr-creator shipped approval validator", () => {
   it("declares usage and rejects unsupported modes", () => {
     const help = run("-h", "", {});
     expect(help.status).toBe(VALID);
-    expect(help.stdout).toContain("Kinds: push, scope, preview.");
+    expect(help.stdout).toContain(
+      "Kinds: push, scope, rebase, force-push, preview.",
+    );
     expect(run("unknown", "preview", preview).status).toBe(USAGE_ERROR);
   });
 });

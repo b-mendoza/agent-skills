@@ -23,11 +23,14 @@ Exit 1 means invalid input (for `title`, findings are on stderr); exit 2 means i
 | --- | --- | --- |
 | `GatePush` | `push` | `headRemote headBranch headSha extras action` |
 | `GateScope` | `scope` | `baseSha headSha changedPaths excludedPaths adjustedChangedLines excludedLines rules` |
+| `GateRebase` | `rebase` | `baseRemote targetBranch baseSha headRemote headBranch oldHeadSha sourceSha` |
+| `GateForcePush` | `force-push` | `headRemote headBranch baseSha oldHeadSha newHeadSha source extras action` |
 | `GatePreview` | `preview` | `repository baseRemote targetBranch headRemote headBranch baseSha headSha effectiveState title body state reviewers labels assignees closes related autoClose unsupported` |
 
 - `push`: `action` is exactly `git push <headRemote> <headBranch>`.
-
-`extras` holds one `key=value` string per active git setting, with no credentials: `push.followTags=true`, `remote.<R>.pushurl=<url>` once per push URL that differs from the fetch URL, `push.recurseSubmodules=on-demand`, and `push.pushOption=<text>` once per option. Use `[]` when no setting is active. The checker requires a single-line git-setting form, rejects URL credentials and sorts the list for hashing without deduplicating it. The specialist checks which settings actually apply.
+- `rebase`: `sourceSha` is the published tip to replay, equal to `oldHeadSha`, and must differ from `baseSha`. `oldHeadSha` is always the published tip, which supplies the lease at the next gate.
+- `force-push`: `source` is `rebase` for this run's rebase result. `newHeadSha` differs from `oldHeadSha`, and `action` is exactly `git push --force-with-lease=refs/heads/<headBranch>:<oldHeadSha> <headRemote> <newHeadSha>:refs/heads/<headBranch>`.
+- For either push, `extras` holds one `key=value` string per active git setting, with no credentials: `push.followTags=true`, `remote.<R>.pushurl=<url>` once per push URL that differs from the fetch URL, `push.recurseSubmodules=on-demand`, and `push.pushOption=<text>` once per option. Use `[]` when no setting is active. The checker requires a single-line git-setting form, rejects URL credentials and sorts the list for hashing without deduplicating it. The specialist checks which settings actually apply.
 
 - `scope`: the analyzer emits `Scope values`; store that JSON line verbatim. `changedPaths` lists all changed paths, including `excludedPaths`, which must be a subset. Nonempty `rules` can contain only `adjusted-lines>1000`, `changed-files>40`, `unrelated-areas>=3`. The first two appear if and only if the corresponding threshold is exceeded (`changed-files` counts `changedPaths`). Display-only grouping and judgments are not added to the values.
 
@@ -39,7 +42,7 @@ The canonical serialization is Python `json.dumps(values, sort_keys=True, ensure
 
 ## Records and fresh observations
 
-The approval record has exactly `kind`, `valuesDigest`, `bodyDigest`, `wording`, `action`. Non-preview `bodyDigest` is `n/a`. `wording` is the user's reply verbatim and `action` describes the action they saw; for `push`, `action` must equal the exact command in the values. The checker requires nonblank `wording` and `action`, rejects a bare 64-hex digest with or without an approval prefix, and checks the kind and both digests. The reply itself is evaluated by the orchestrator, not the checker.
+The approval record has exactly `kind`, `valuesDigest`, `bodyDigest`, `wording`, `action`. Non-preview `bodyDigest` is `n/a`. `wording` is the user's reply verbatim and `action` describes the action they saw; for either push kind, `action` must equal the exact command in the values. The checker requires nonblank `wording` and `action`, rejects a bare 64-hex digest with or without an approval prefix, and checks the kind and both digests. The reply itself is evaluated by the orchestrator, not the checker.
 
 For `scope`, `observed` has exactly `baseSha headSha changedPaths excludedPaths adjustedChangedLines excludedLines`. The analyzer recomputes them from the pinned diff; `verify` checks equality with the approved values. Keep the approved `rules` and do not re-judge `unrelated-areas>=3`. No other kind takes `observed`.
 
@@ -63,7 +66,7 @@ Output keys are `outcome`, `fields` (per-field results), `extras` (extra members
 
 **One approval, one proposal.** A plain affirmative in any language approves only the one proposal shown in the immediately preceding assistant turn, when the whole reply is unconditional and at most restates it. An approval covers the writes that proposal showed, in the order shown, and nothing else. A push also sends what the git settings listed in its proposal add to it. The digest stays out of user replies, and nothing said earlier counts.
 
-The approval gates are `GatePush`, `GateScope`, and `GatePreview`.
+The approval gates are `GatePush`, `GateScope`, `GateRebase`, `GateForcePush`, and `GatePreview`. `GateRebaseResult` is a choice gate: accept `preserve` or `discard`, not an approval, and write no approval record.
 
 1. A proposal is the complete artifact for exactly one approval kind, followed by one approval question. Before showing it, save `<kind>-values.json` and run the command above for that kind. Require a successful digest and a saved `pending.json` containing exactly the emitted JSON.
 2. A turn that shows a proposal shows only that proposal, ends with its question, and performs no action after it. There is at most one pending proposal; showing another, or changing any value, replaces it.
@@ -85,5 +88,6 @@ Derive `RUN_DIR=.handoffs/pr-creator/<run-id>/` once in `NormalizeInputs`, with 
 
 - `pending.json` is the exact digest output (`kind`, `valuesDigest`, `bodyDigest`). Keep `<kind>-{values,record}.json` (one values file and one record file per kind).
 - `body.md` and `returned.json` for exact body bytes and readback.
+- `rebase/` for the temporary worktree.
 
-At every terminal except `TerminalAwaitingUser`, clean up only recorded run files.
+At every terminal except `TerminalAwaitingUser`, clean up only recorded run files and run-owned refs. When nothing was published, delete the backup ref together with the rebased ref, if present. A rebased ref explicitly kept aside at `GateRebaseResult` survives cleanup; remove the backup and report the kept ref. After a verified push, remove the rebased ref and retain `refs/pr-creator/backup/<run-id>`. If a push outcome is uncertain, retain any backup for recovery and say the result could not be confirmed. Whenever a backup is retained, name it and say: "The backup exists only on this machine."

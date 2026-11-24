@@ -8,7 +8,7 @@ Usage: python3 -I validate-output.py <digest|verify> <kind>       (JSON on stdin
        python3 -I validate-output.py body                         (exact bytes on stdin)
        python3 -I validate-output.py -h
 Input always arrives on stdin, from a pipe or a quoted heredoc. Never stage a file to feed it.
-Kinds: push, scope, preview.
+Kinds: push, scope, rebase, force-push, preview.
 Environment variables: none. Side effects: none; stdin in, stdout/stderr out, no files.
 Exit 0: valid/result; 1: invalid input (repair or new approval); 2: usage error.
 Smoke: printf '{}' | python3 -I validate-output.py digest preview # exit 1
@@ -21,13 +21,14 @@ import sys
 USAGE = __doc__
 # Exact field order is part of each co-located specialist's output contract.
 ENVELOPES = {
-    "repo-state-inspector": ("REPO_STATE", "PASS BLOCKED ERROR", "Execution mode support|Current branch|Head branch|Head source|Target branch|Target branch candidate|PR state|Remotes|Head remote|Base remote|Topology|Topology candidates|Platform|Platform adapter needed|Uncommitted work|Reason|Decision needed"),
-    "preflight-validator": ("PREFLIGHT", "PASS PUSH_REQUIRED PUSH_REJECTED PR_EXISTS AUTH BASE_BRANCH_MISSING HEAD_BRANCH_UNPUSHED BLOCKED ERROR", "Platform|Unsupported fields|Head remote|Base remote|Base repository|Base branch|Head branch|Head remote state|Head source|Local head state|Base SHA|Head SHA|Existing PR|Push attempted|Push command|Push extras|Push rejection reason|Approval record|Reason|Decision needed"),
+    "branch-rebaser": ("REBASE", "REBASED PUSHED CONFLICT LEASE_REJECTED PUSH_REJECTED KEPT DISCARDED BLOCKED ERROR", "Action|Approval record|Head remote|Head branch|Base SHA|Old head SHA|New head SHA|Commits before|Commits after|Patches changed|Conflict paths|Backup ref|Push command|Push extras|Remote head after|Worktree removed|Checkout unchanged|Local branch|Kept ref|Uncommitted changes preserved|Reason|Decision needed"),
     "diff-analyzer": ("DIFF_ANALYSIS", "PASS LARGE_PR_CONFIRMATION_REQUIRED STALE_PINS EMPTY_DIFF ERROR", "Range|Compared Base SHA|Compared Head SHA|Pinned SHA match|Shortstat|Adjusted changed lines|Changed files|Excluded generated/vendored/lock totals|Scope gate rule fired|Scope approval|Scope values|Changed paths|Issue mentions|Issue mentions omitted|Grouped areas|Diff summary|Behavior before|Behavior after|Retained behavior|Type candidates|Scope candidates|Tests|Risk notes|Reason|Decision needed"),
     "issue-reference-resolver": ("ISSUE_REFS", "PASS NEEDS_DECISION INVALID_ISSUES AUTH ERROR", "Repository|Default branch|Target branch|Auto-close|Closes|Related|Candidates|Dropped candidates|Invalid|Warnings|Reason|Decision needed"),
     "pr-drafter": ("PR_DRAFT", "PASS NEEDS_CHOICE ERROR", "Title|Title source|Body source|Template path|Type choice|Scope choice|Traceability notes|Body|Reason|Decision needed"),
-    "review-metadata-suggester": ("REVIEW_METADATA", "PASS NEEDS_REVIEWER INVALID_LABELS INVALID_ASSIGNEES AUTH ERROR", "Reviewers|Reviewer source|Normalized reviewers|Solo repository condition|CODEOWNERS source|CODEOWNERS matches|Labels|Label source|Invalid labels|Suggested valid labels|Assignees|Invalid assignees|Reason|Decision needed"),
     "pr-submitter": ("PR_SUBMIT", "PASS CREATED_WITH_ADDITIONS CREATED_WITH_DRIFT HEAD_MOVED CREATE_UNCERTAIN BLOCKED CREATE_ERROR AUTH ERROR", "Approval record|Frozen head SHA|Remote head SHA before create|Existing PR race check|Create attempted|Create retry used|URL|Base returned|Head ref returned|Head SHA returned|Title returned|State returned|Reviewers returned|Labels returned|Assignees returned|Body first line returned|Body line count returned|Approved body digest|Returned body digest|Outcome|Mismatched fields|Added fields|Closing issues returned|Returned values file|Uncertain check commands|Reason|Decision needed"),
+    "preflight-validator": ("PREFLIGHT", "PASS PUSH_REQUIRED PUSH_REJECTED PR_EXISTS AUTH BASE_BRANCH_MISSING HEAD_BRANCH_UNPUSHED BLOCKED ERROR", "Platform|Unsupported fields|Head remote|Base remote|Base repository|Base branch|Head branch|Head remote state|Head source|Local head state|Offer source|Source SHA|Source behind base|Head behind base|Head ahead of base|Base SHA|Head SHA|Existing PR|Push attempted|Push command|Push extras|Push rejection reason|Approval record|Reason|Decision needed"),
+    "repo-state-inspector": ("REPO_STATE", "PASS BLOCKED ERROR", "Execution mode support|Current branch|Head branch|Head source|Target branch|Target branch candidate|PR state|Remotes|Head remote|Base remote|Topology|Topology candidates|Platform|Platform adapter needed|Uncommitted work|Reason|Decision needed"),
+    "review-metadata-suggester": ("REVIEW_METADATA", "PASS NEEDS_REVIEWER INVALID_LABELS INVALID_ASSIGNEES AUTH ERROR", "Reviewers|Reviewer source|Normalized reviewers|Solo repository condition|CODEOWNERS source|CODEOWNERS matches|Labels|Label source|Invalid labels|Suggested valid labels|Assignees|Invalid assignees|Reason|Decision needed"),
 }
 
 
@@ -45,6 +46,8 @@ RESULT = "title body state reviewers labels assignees closes related autoClose u
 SCHEMAS = {
     "push": "headRemote headBranch headSha extras action",
     "scope": SCOPE_OBSERVED + " rules",
+    "rebase": "baseRemote targetBranch baseSha headRemote headBranch oldHeadSha sourceSha",
+    "force-push": "headRemote headBranch baseSha oldHeadSha newHeadSha source extras action",
     "preview": "repository baseRemote targetBranch headRemote headBranch baseSha headSha effectiveState " + RESULT,
 }
 OBSERVED = {"scope": SCOPE_OBSERVED}
@@ -143,6 +146,14 @@ def canonical(kind, values):
         validate_scope(v)
     elif kind == "push":
         require(v["action"] == "git push {headRemote} {headBranch}".format(**v), "push action differs from target")
+    elif kind == "force-push":
+        require(v["source"] == "rebase", "invalid force-push source")
+        command = "git push --force-with-lease=refs/heads/{headBranch}:{oldHeadSha} {headRemote} {newHeadSha}:refs/heads/{headBranch}"
+        require(v["action"] == command.format(**v), "force-push action differs from pinned lease")
+        require(v["newHeadSha"] != v["oldHeadSha"], "newHeadSha equals oldHeadSha")
+    elif kind == "rebase":
+        require(v["baseSha"] != v["sourceSha"], "baseSha equals sourceSha")
+        require(v["sourceSha"] == v["oldHeadSha"], "sourceSha differs from published head")
     elif kind == "preview":
         validate_result(v)
     return v
@@ -163,7 +174,7 @@ def verify(kind, payload):
     require(not re.fullmatch(r"(?:approved\s+)?[0-9a-f]{64}", record["wording"].strip(), re.I), "digest is not approval wording")
     expected = digests(kind, payload["values"])
     require(all(record[key] == expected[key] for key in ("valuesDigest", "bodyDigest")), "approval digest mismatch")
-    if kind == "push":
+    if kind in ("push", "force-push"):
         require(record["action"] == payload["values"]["action"], "approval action differs from push command")
     if kind in OBSERVED:
         fields = OBSERVED[kind]
@@ -299,7 +310,19 @@ def approved(v):
     require(v["Approval record"] == "valid", "expected Approval record: valid")
 
 
+
+def validate_offer(status, v):
+    required = status in ("PASS", "PR_EXISTS")
+    if required or v["Source SHA"] != "unavailable":
+        full_sha("Source SHA", v)
+    if required or v["Source behind base"] != "unavailable":
+        count("Source behind base", v)
+    if v["Offer source"] == "none":
+        require(v["Reason"].casefold() not in ("none", "n/a", "unavailable"), "withheld offer requires a reason")
+
+
 def preflight_envelope(status, v):
+    validate_offer(status, v)
     if v["Push attempted"] == "yes":
         approved(v)
     repository = v["Base repository"]
@@ -308,6 +331,11 @@ def preflight_envelope(status, v):
     if status == "PASS":
         for field in ("Base SHA", "Head SHA"):
             full_sha(field, v)
+        for field in ("Head behind base", "Head ahead of base"):
+            count(field, v)
+        require(v["Existing PR"] == "none", "PASS requires no existing PR")
+    elif status == "PR_EXISTS":
+        require(https_url(v["Existing PR"]), "PR_EXISTS requires an HTTPS URL")
     elif status == "PUSH_REQUIRED":
         full_sha("Head SHA", v)
         require(v["Head source"] == "checkout", "PUSH_REQUIRED requires checkout")
@@ -383,6 +411,48 @@ def submit_envelope(status, v):
             require(v["Added fields"] not in ("none", "n/a"), "additions require added fields")
 
 
+def valid_ref(ref):
+    return (ref.startswith("refs/") and not re.search(r"[\x00-\x20\x7f~^:?*\[\\]|\.\.|@\{", ref)
+            and not ref.endswith(".") and all(part and not part.startswith(".") and not part.endswith(".lock") for part in ref.split("/")))
+
+
+def rebase_envelope(status, v):
+    kept = v["Kept ref"]
+    require(kept == "n/a" or valid_ref(kept), "invalid Kept ref")
+    if status in ("KEPT", "DISCARDED"):
+        require(v["Approval record"] == v["Backup ref"] == "n/a", status + " requires no approval or backup")
+        if status == "KEPT":
+            require(v["Action"] == "keep", "KEPT requires keep action")
+            if v["Local branch"] == "unchanged":
+                require(re.fullmatch(r"refs/pr-creator/[^/]+/rebased", kept), "expected run's rebased ref")
+            else:
+                require(v["Local branch"] in ("moved", "created") and kept.startswith("refs/heads/")
+                        and v["Uncommitted changes preserved"] != "no", "invalid kept branch evidence")
+        else:
+            require(v["Action"] == "discard" and kept == "n/a" and v["Checkout unchanged"] == "yes"
+                    and v["Local branch"] in ("unchanged", "n/a"), "invalid discard evidence")
+    if status in ("REBASED", "PUSHED", "CONFLICT", "LEASE_REJECTED", "PUSH_REJECTED"):
+        approved(v)
+    if status == "LEASE_REJECTED":
+        require(v["Backup ref"] == "n/a", "LEASE_REJECTED requires Backup ref: n/a")
+    if status in ("LEASE_REJECTED", "PUSH_REJECTED"):
+        require(v["Action"] == "push", status + " requires push action")
+    require(v["Action"] in ("rebase", "push", "keep", "discard"), "invalid rebase Action")
+    if status in ("REBASED", "CONFLICT"):
+        require(v["Action"] == "rebase", status + " requires rebase action")
+        require(v["Checkout unchanged"] == v["Worktree removed"] == "yes", status + " requires cleanup and unchanged checkout")
+    if status == "REBASED":
+        for field in ("Base SHA", "Old head SHA", "New head SHA"):
+            full_sha(field, v)
+        require(v["Old head SHA"] != v["New head SHA"], "rebased head must change")
+    elif status == "CONFLICT":
+        require(v["Conflict paths"] not in ("none", "n/a"), "CONFLICT requires conflict paths")
+    elif status == "PUSHED":
+        full_sha("New head SHA", v)
+        require(v["Action"] == "push" and v["Remote head after"] == v["New head SHA"], "PUSHED requires new remote head")
+        require(re.fullmatch(r"refs/pr-creator/backup/[^\s/]+(?:/[^\s/]+)*", v["Backup ref"]) and ".." not in v["Backup ref"], "invalid Backup ref")
+
+
 def resolver_envelope(status, v):
     if status == "PASS":
         require(v["Candidates"] == v["Invalid"] == "none", "PASS requires Candidates: none and Invalid: none")
@@ -420,6 +490,9 @@ def envelope(specialist, text):
         "Platform": ("github", "github-enterprise", "gitlab", "bitbucket", "unknown"),
         "Platform adapter needed": ("yes", "no"),
         "Head remote state": ("up-to-date", "missing", "local-ahead", "diverged", "unknown"),
+        "Offer source": ("published", "none"),
+        "Local branch": ("moved", "created", "unchanged", "n/a"),
+        "Uncommitted changes preserved": ("yes", "no", "n/a"),
         "Push attempted": ("yes", "no"),
         "Push rejection reason": ("diverged", "protected branch", "permission", "other", "n/a"),
         "Approval record": ("valid", "missing", "digest-mismatch", "n/a"),
@@ -446,7 +519,8 @@ def envelope(specialist, text):
     if specialist == "repo-state-inspector":
         require(values["PR state"] in ("draft", "ready") or values["PR state"].startswith("invalid: "), "invalid PR state")
     checks = {"issue-reference-resolver": resolver_envelope, "preflight-validator": preflight_envelope, "diff-analyzer": analyzer_envelope,
-              "review-metadata-suggester": metadata_envelope, "pr-submitter": submit_envelope}
+              "review-metadata-suggester": metadata_envelope, "pr-submitter": submit_envelope,
+              "branch-rebaser": rebase_envelope}
     if specialist in checks:
         checks[specialist](status, values)
     print("valid")

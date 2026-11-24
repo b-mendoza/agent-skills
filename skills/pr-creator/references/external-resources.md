@@ -14,6 +14,9 @@ Current-state reference. Update when a linked command or reference changes.
 | <https://git-scm.com/docs/git-push>      | Plain push and rejection behavior.                             |
 | <https://git-scm.com/docs/git-fetch>     | Updating specific remote refs.                                 |
 | <https://git-scm.com/docs/gitattributes> | `linguist-generated` attributes for generated-file exclusions. |
+| <https://git-scm.com/docs/git-rebase> | Rebase behavior and options. |
+| <https://git-scm.com/docs/git-worktree> | Detached worktrees and cleanup. |
+| <https://git-scm.com/docs/git-push#Documentation/git-push.txt---force-with-leaseltrefnamegtltexpectgt> | Explicit expected-old-tip lease. |
 
 ## Writing And Safety
 

@@ -1,12 +1,12 @@
 # State Machine — pr-creator
 
-Finite-state execution model for this skill. This table is the only normative list of states, transitions, guards, and terminals. `ResolveMode` sets `EXECUTION_MODE` to `dispatch` or `inline`.
-
-When attached, an omitted head or the checked-out branch itself selects that branch with `Head source: checkout`. Any other named branch, including any named head while detached, selects `Head source: remote`; a local copy not checked out is only a reported fact. Report the selected name as `Head branch`. Detached HEAD without a named head is `BLOCKED`. Never switch branches.
+This table is the only normative list of states, transitions, guards and terminals. `ResolveMode` sets `EXECUTION_MODE` to `dispatch` or `inline`. For each state, evaluate competing guards in first-match order, from top to bottom.
 
 Guard terms:
 
 - **Issue step needed:** `CLOSES_ISSUES` or `RELATED_ISSUES` names at least one issue, or discovery is on and `Issue mentions` is not `none`. Discovery is on by default; `ISSUE_DISCOVERY=off` or setting both issue lists to `none` turns it off.
+- **Offer:** the flag for this run's one rebase offer: `open` initially, then `declined` or `done`.
+- **Offer source**, **Source behind base**: preflight's fields.
 
 ## Transitions
 
@@ -36,8 +36,8 @@ Guard terms:
 | `GatePlatformTooling`      | `AdaptPlatform`            | tooling answered                                                                   |
 | `GateStateFallback`        | `TerminalCancelled`        | user stops                                                                         |
 | `GateStateFallback`        | `RunPreflight`             | proceed as `ready`                                                                 |
-| `RunPreflight`             | `AnalyzeDiff`              | `PREFLIGHT: PASS`                                                                  |
-| `RunPreflight`             | `TerminalPrExists`         | `PR_EXISTS`                                                                        |
+| `RunPreflight` | `GateRebase` | `PASS` or `PR_EXISTS`; `Offer source` is `published`; `Source behind base` > 0; `REBASE` is not `never`; offer `open`; rebase cycles < 2 |
+| `RunPreflight` | `ContinueRequest` | `PASS` or `PR_EXISTS` otherwise, including `Offer source: none` (a series over 200 commits, a mirror remote or `push.recurseSubmodules=only`); if the base is ahead of the source or no offer was made, report that and why |
 | `RunPreflight`             | `GatePush`                 | `PUSH_REQUIRED` for a checkout head and push cycles &lt; 3                                             |
 | `RunPreflight`             | `GatePushRejected`         | `PUSH_REJECTED`                                                                    |
 | `RunPreflight`             | `TerminalAuth`             | `AUTH`                                                                             |
@@ -50,6 +50,28 @@ Guard terms:
 | `GatePush`                 | `TerminalHeadUnpushed`     | push declined                                                                      |
 | `GatePushRejected`         | `RunPreflight`             | user confirms manual resolution                                                    |
 | `GatePushRejected`         | `TerminalHeadUnpushed`     | stop                                                                               |
+| `GateRebase` | `TerminalAwaitingUser` | question pending; the offer has no editable part, so a change request is answered with the three choices and asked again |
+| `GateRebase` | `RunRebase` | approved; `rebase` record written |
+| `GateRebase` | `TerminalCancelled` | user stops the run |
+| `GateRebase` | `ContinueRequest` | declined; offer `declined` |
+| `RunRebase` | `GateForcePush` | `REBASE: REBASED` |
+| `RunRebase` | `TerminalRebaseStopped` | `CONFLICT` or `BLOCKED` |
+| `RunRebase` | `TerminalBlocked` | `ERROR`, or a status of another action (`PUSHED`, `LEASE_REJECTED`, `PUSH_REJECTED`, `KEPT`, `DISCARDED`) |
+| `GateForcePush` | `TerminalAwaitingUser` | question pending |
+| `GateForcePush` | `RunForcePush` | approved; `force-push` record written |
+| `GateForcePush` | `GateRebaseResult` | declined or change requested, after a rebase this run produced; nothing pushed |
+| `GateForcePush` | `TerminalCancelled` | user stops the run |
+| `GateRebaseResult` | `TerminalAwaitingUser` | question pending; any answer other than the two choices or a stop is answered with the choices and asked again |
+| `GateRebaseResult` | `SettleRebase` | `preserve` or `discard` chosen |
+| `GateRebaseResult` | `TerminalCancelled` | user stops the run; this run's two refs removed at cleanup |
+| `SettleRebase` | `ContinueRequest` | `KEPT` or `DISCARDED`; offer `declined`; published head and pins unchanged |
+| `SettleRebase` | `TerminalBlocked` | `BLOCKED`, `ERROR` or any other status |
+| `RunForcePush` | `RunPreflight` | `PUSHED`; offer `done`; re-pin |
+| `RunForcePush` | `RunPreflight` | `LEASE_REJECTED`; discard the result; offer `open`; count one rebase cycle |
+| `RunForcePush` | `TerminalRebaseStopped` | `PUSH_REJECTED` or `BLOCKED` |
+| `RunForcePush` | `TerminalBlocked` | `ERROR`, or a status of another action (`REBASED`, `CONFLICT`, `KEPT`, `DISCARDED`) |
+| `ContinueRequest` | `TerminalPrExists` | open PR |
+| `ContinueRequest` | `AnalyzeDiff` | no open PR |
 | `AnalyzeDiff` | `ResolveIssues` | `DIFF_ANALYSIS: PASS` and issue step needed |
 | `AnalyzeDiff` | `DraftPr` | `DIFF_ANALYSIS: PASS` otherwise |
 | `AnalyzeDiff`              | `GateScope`                | `LARGE_PR_CONFIRMATION_REQUIRED`: rule fired with missing or stale approval; scope cycles &lt; 3                           |
@@ -134,14 +156,15 @@ Guard terms:
 | `TerminalCreateError`      | `[*]`                      | explain stop and next action in prose                                              |
 | `TerminalCreateUncertain`  | `[*]`                      | explain stop and next action in prose                                              |
 | `TerminalEscalated`        | `[*]`                      | explain stop and next action in prose                                              |
+| `TerminalRebaseStopped` | `[*]` | explain why the rebase, the publish or its push stopped, what did and did not change, and the next action |
 
-`RunPreflight` is read-only unless entered with the plain push approved at `GatePush`.
+`SettleRebase` moves a local branch only after `preserve` is chosen at `GateRebaseResult`. `RunPreflight` is read-only unless entered with the plain push approved at `GatePush`.
 
 ## Consumer validation
 
 Before routing on output from every registered specialist, the orchestrator runs the shipped `envelope` validator for that specialist. An invalid envelope gets one redispatch with findings; a second invalid result, a usage failure or missing Python/shell goes to `TerminalBlocked`. Never route on unchecked fields. Before leaving `DraftPr`, the orchestrator runs the validator's `title` mode on the title.
 
-Approval gates: `GatePush`, `GateScope`, `GatePreview`. All others are choice gates. Use the plain-approval rule in [approval-protocol.md](references/approval-protocol.md). `GateTypeScope` also resolves template selection and bounded title conventions.
+Approval gates: `GatePush`, `GateScope`, `GateRebase`, `GateForcePush`, `GatePreview`. All others, including `GateRebaseResult`, are choice gates. Use the plain-approval rule in [approval-protocol.md](references/approval-protocol.md). `GateTypeScope` also resolves template selection and bounded title conventions.
 
 ## Cycle ledgers
 
@@ -150,7 +173,8 @@ Independent counters (max 3 non-`PASS` redispatches per gate, then `FinalDecisio
 - `validation`: 1; `TerminalBlocked`. Applies to every registered specialist.
 - `approval-reask[gate]`: 1; `TerminalAwaitingUser`.
 - `review`: 2; `ReviewResults` to `ShowPreview` with findings disclosed, or `FinalDecision` when no digest can be computed.
+- `rebase`: 2 stale leases; over the cap, no further offer.
 
 ## Terminal decisions
 
-Success: verified PR/MR URL. Report additions separately from exact success. Internal failure/suspension outcomes: `AUTH`, `BASE_BRANCH_MISSING`, `HEAD_BRANCH_UNPUSHED`, `EMPTY_DIFF`, `PR_EXISTS`, `BLOCKED`, `AWAITING_USER`, `CANCELLED`, `CREATE_ERROR`, `CREATED_WITH_DRIFT`, `CREATE_UNCERTAIN`, `ESCALATED`. `AWAITING_USER` suspends rather than stops; never use `BLOCKED` for a pending question.
+Success: verified PR/MR URL. Report additions separately from exact success. Internal failure/suspension outcomes: `AUTH`, `BASE_BRANCH_MISSING`, `HEAD_BRANCH_UNPUSHED`, `EMPTY_DIFF`, `PR_EXISTS`, `REBASE_STOPPED`, `BLOCKED`, `AWAITING_USER`, `CANCELLED`, `CREATE_ERROR`, `CREATED_WITH_DRIFT`, `CREATE_UNCERTAIN`, `ESCALATED`. `AWAITING_USER` suspends rather than stops; never use `BLOCKED` for a pending question.

@@ -4,15 +4,21 @@ import { READBACK_CAPTURE } from "#/cases/pr-creator-behavior-checks.ts";
 import { GITHUB_FACTS as facts } from "#/cases/pr-creator-fixtures.ts";
 import {
   acceptsOnly,
+  backup,
   change,
   CLOSING,
   extraWrite,
   finished,
   FIRST_RELATED,
+  force,
   gate,
+  head,
   NEXT,
   observation,
   preview,
+  rebase,
+  rebased,
+  ref,
   shell,
 } from "#/cases/pr-creator-scenario-test-support.ts";
 import { createdObservation } from "#/cases/pr-creator-test-support.ts";
@@ -163,5 +169,86 @@ describe("confirmed creates", () => {
       ],
     };
     expect(acceptsOnly("assignee-me-alias", observed, good)).not.toThrow();
+  });
+});
+describe("rebase proposal boundaries", () => {
+  it("continues on the original head after a decline", () => {
+    const initial = gate("rebase", rebase);
+    const final = gate(
+      "preview",
+      preview,
+      "Continue with the unrebased remote head.",
+    );
+    const good = observation([initial, final], {
+      ".git/eval-push-1.json": null,
+    });
+    expect(
+      acceptsOnly(
+        "rebase-declined-continues",
+        good,
+        change(good, { ".git/eval-push-1.json": "{}" }),
+      ),
+    ).not.toThrow();
+  });
+  it("requires evidence of the conflict with no published result", () => {
+    const good = observation([gate("rebase", rebase), finished], {
+      ".git/eval-push-1.json": null,
+      [backup]: null,
+    });
+    expect(
+      acceptsOnly(
+        "rebase-conflict-stops",
+        { ...good, toolCalls: [...good.toolCalls, shell("REBASE: CONFLICT")] },
+        good,
+      ),
+    ).not.toThrow();
+  });
+  it("rejects an unpinned push even when the tips match", () => {
+    const push = {
+      url: "git@github.com:eval-org/cart.git",
+      old: head,
+      new: rebased,
+      ref,
+      fastForward: false,
+      accepted: true,
+      args: force.action.split(" ").slice(NEXT),
+    };
+    const good = observation(
+      [
+        gate("rebase", rebase),
+        gate("force-push", force),
+        gate("preview", { ...preview, headSha: rebased }),
+      ],
+      {
+        [backup]: "",
+        [`${backup}test`]: `${head}\n`,
+        ".git/refs/pr-creator/": "",
+        ".git/worktrees/": null,
+        [`.git/fixture-origin.git/${ref}`]: rebased,
+        ".git/eval-push-1.json": JSON.stringify(push),
+        ".git/eval-push-2.json": null,
+      },
+    );
+    for (const invalid of [
+      { ".git/refs/pr-creator/test/rebased": `${rebased}\n` },
+      { [`${backup}test`]: `${rebased}\n` },
+      { [`.git/fixture-origin.git/${ref}`]: head },
+    ]) {
+      expect(
+        acceptsOnly("rebase-then-lease-push", good, change(good, invalid)),
+      ).not.toThrow();
+    }
+    expect(
+      acceptsOnly(
+        "rebase-then-lease-push",
+        good,
+        change(good, {
+          ".git/eval-push-1.json": JSON.stringify({
+            ...push,
+            args: ["push", "--force"],
+          }),
+        }),
+      ),
+    ).not.toThrow();
   });
 });

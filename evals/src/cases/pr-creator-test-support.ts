@@ -39,6 +39,23 @@ const values = {
     extras: [],
     action: `git push origin ${branch.headBranch}`,
   },
+  rebase: {
+    ...branch,
+    baseRemote: "origin",
+    targetBranch: "main",
+    baseSha: BASE_SHA,
+    oldHeadSha: HEAD_SHA,
+    sourceSha: HEAD_SHA,
+  },
+  "force-push": {
+    ...branch,
+    baseSha: BASE_SHA,
+    oldHeadSha: HEAD_SHA,
+    newHeadSha: BASE_SHA,
+    source: "rebase",
+    extras: [],
+    action: `git push --force-with-lease=refs/heads/${branch.headBranch}:${HEAD_SHA} origin ${BASE_SHA}:refs/heads/${branch.headBranch}`,
+  },
 };
 
 export function digestCall(gate: ApprovalKind = "preview"): ToolCall {

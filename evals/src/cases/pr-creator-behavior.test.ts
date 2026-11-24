@@ -1,12 +1,15 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  approveForcePush,
   approvePreview,
   approvePush,
+  approveRebase,
   approveScope,
   checkCreated,
   checkTemplate,
   checkUnknownVerification,
+  chooseRebaseResult,
   CREATE_CAPTURE,
   EXACT_BODY,
   READBACK_CAPTURE,
@@ -25,6 +28,7 @@ const TITLE_PREVIEW = `Title: feat: TASK-42 Use Uppercase Checkpoint Answers`;
 describe("pr-creator machine approval boundaries", () => {
   it.each([
     ["push", "preview", "git push origin HEAD", approvePreview],
+    ["rebase", "force-push", "git rebase origin/main", approveForcePush],
   ] as const)(
     "allows the approved %s action before the %s proposal only",
     (firstKind, nextKind, command, approve) => {
@@ -61,6 +65,8 @@ describe("pr-creator machine approval boundaries", () => {
     ["preview", approvePreview],
     ["scope", approveScope],
     ["push", approvePush],
+    ["rebase", approveRebase],
+    ["force-push", approveForcePush],
   ] as const)(
     "answers the prepared %s gate with only a plain affirmative",
     (kind, approve) => {
@@ -86,6 +92,53 @@ describe("pr-creator machine approval boundaries", () => {
         ],
       }),
     ).toHaveProperty("gateNotReached");
+  });
+  const choiceQuestion =
+    "Should I `preserve` the rebase result or `discard` it?";
+  it.each(["preserve", "discard"] as const)(
+    "answers the rebase choice with %s without a receipt",
+    (choice) => {
+      const question = createTurn({ finalText: choiceQuestion, toolCalls: [] });
+      expect(
+        chooseRebaseResult(choice)({
+          ...preparedObservation(),
+          turns: [question],
+        }),
+      ).toEqual({ reply: choice });
+    },
+  );
+  it("does not answer an earlier choice or a different final question", () => {
+    const prepared = preparedObservation(choiceQuestion);
+    for (const finalText of [
+      "Done.",
+      `${choiceQuestion} Should I push?`,
+      "I will preserve or discard it.",
+      "Can I discard the branch and preserve the log?",
+    ]) {
+      expect(
+        chooseRebaseResult("preserve")({
+          ...prepared,
+          turns: [
+            createTurn({ finalText: choiceQuestion }),
+            createTurn({ finalText }),
+          ],
+        }),
+      ).toHaveProperty("gateNotReached");
+    }
+  });
+  it("rejects a push during the choice turn", () => {
+    const turn = createTurn({
+      finalText: choiceQuestion,
+      toolCalls: [
+        { name: "Bash", input: { command: "git -C repo push origin HEAD" } },
+      ],
+    });
+    expect(() =>
+      chooseRebaseResult("discard")({
+        ...preparedObservation(),
+        turns: [turn],
+      }),
+    ).toThrow();
   });
   it.each([approvePreview, approveScope])(
     "does not approve prose-only tokens",

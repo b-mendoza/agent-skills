@@ -3,6 +3,7 @@ import { join } from "node:path";
 
 import { expect, it } from "vitest";
 
+import { chooseRebaseResult } from "#/cases/pr-creator-behavior-checks.ts";
 import { assertPushDestination } from "#/cases/pr-creator-checks.ts";
 import { assertNoWriteCalls } from "#/cases/pr-creator-read-only.ts";
 import { commands } from "#/cases/pr-creator-rewrite-fixture-tests.ts";
@@ -86,13 +87,23 @@ it("recognizes a run-file Write when the specialist was read by shell", () => {
     read,
     {
       name: "Write",
-      input: { file_path: `${root}/${RUNS}one/preview-values.json` },
+      input: { file_path: `${root}/${RUNS}one/rebase-values.json` },
     },
   ];
   expect(() => {
     assertNoWriteCalls(createObservation({ toolCalls }));
   }).not.toThrow();
 });
+it.each(["preserve", "discard"] as const)(
+  "answers a pending %s choice followed by explanatory text",
+  (choice) => {
+    const finalText =
+      "Do you want to preserve the rebased result locally or discard it?\n\nEither way, I’ll continue from the published head.";
+    expect(
+      chooseRebaseResult(choice)(createObservation({ finalText })),
+    ).toEqual({ reply: choice });
+  },
+);
 it("keeps issue and PR identity distinct and captures file bytes before terminal cleanup", ({
   onTestFinished,
 }) => {

@@ -6,7 +6,13 @@ import { Schema } from "effect";
 
 import type { Observation, ToolCall } from "#/observation/agent-query.ts";
 
-export const approvalKinds = ["preview", "push", "scope"] as const;
+export const approvalKinds = [
+  "preview",
+  "push",
+  "scope",
+  "rebase",
+  "force-push",
+] as const;
 export type ApprovalKind = (typeof approvalKinds)[number];
 
 const SUCCESS = 0;

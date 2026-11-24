@@ -104,6 +104,38 @@ function approvalReply(gate: ApprovalKind) {
 export const approvePreview = approvalReply("preview");
 export const approveScope = approvalReply("scope");
 export const approvePush = approvalReply("push");
+export const approveRebase = approvalReply("rebase");
+export const approveForcePush = approvalReply("force-push");
+
+function asksRebaseChoice(text: string): boolean {
+  const reply = normalizeReplyText(text).trim();
+  const sentences = reply.split(/(?<=[.!?])\s+/);
+  const ending =
+    sentences
+      .filter(
+        (part) =>
+          part.endsWith("?") ||
+          /^(?:please\s+)?(?:choose|reply|select)\b/i.test(part),
+      )
+      .at(LAST_TURN) ?? "";
+  const words = ending.match(/\b(?:preserve|discard|or)\b|\//gi) ?? [];
+  const options = words.join(" ");
+  return (
+    /(?:preserve (?:or|\/) discard|discard (?:or|\/) preserve)/i.test(
+      options,
+    ) && /(?:\?$|^(?:please\s+)?(?:choose|reply|select)\b)/i.test(ending)
+  );
+}
+export function chooseRebaseResult(choice: "preserve" | "discard") {
+  return (observation: Observation): FollowUpReply => {
+    assertRunHappened(observation);
+    const latest = observation.turns?.at(LAST_TURN) ?? observation;
+    assertNoWriteCalls({ ...observation, ...latest, turns: [] }, observation);
+    return asksRebaseChoice(latest.finalText)
+      ? { reply: choice }
+      : { gateNotReached: "final preserve or discard question missing" };
+  };
+}
 
 const captureSchema = Schema.Struct({
   args: Schema.Array(Schema.String),

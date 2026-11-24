@@ -6,7 +6,7 @@ At `ReviewResults`, before a create preview, check the envelopes and records for
 
 | Id | Check | Evidence |
 | --- | --- | --- |
-| R1 | Pins agree across preflight and analyzer. | Specialist envelopes. |
+| R1 | Pins agree across preflight and analyzer and, after a rebase, with the new head. | Specialist envelopes. |
 | R2 | Every `Bn` is covered in the body or listed as omitted with a reason. | Analyzer facts and `Traceability notes`. |
 | R3 | No retained behavior is described as a change. | `Retained behavior`. |
 | R4 | Every traceability entry cites an [allowed source](./drafting-inputs.md#before-and-after-facts); spot-read cited locators. | Traceability entries and pinned source lines. |
