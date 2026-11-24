@@ -53,6 +53,7 @@ Before executing or resuming a route, remove any reviewer-required fix rejected 
 | Join | All settled; at least one validated `PASS` | Preserve every failed dimension and overflow disclosure → Synthesize |
 | Join | All failed | `ERROR` with failed dimensions; do not fabricate a plan |
 | Any | Editable target-group card about to be presented; its map exceeds 12 files to edit or create | Ask for a smaller group → `NEEDS_CLARIFICATION`; do not start or resume mutation |
+| Any | Card about to be presented; its map changes, moves or deletes an existing `DOC` file and the baseline has no commit | Ask for a committed baseline or a card without that file → `NEEDS_CLARIFICATION`; do not start or resume mutation |
 | Synthesize | Bounded validated reports | Build card v1 (or revised version); include all total/included/omitted counts and defer each omitted category → PlanGate |
 | PlanGate | Decline | `NEEDS_CLARIFICATION`; preserve requested plan |
 | PlanGate | Adjust, below cap | Increment `plan_adjustments`, synthesize a new version from same reports → PlanGate |
