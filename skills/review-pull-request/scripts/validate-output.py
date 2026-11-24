@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 r"""Usage: python3 -I validate-output.py <context|chunk|author|verify> < payload | -h
 Proves envelope, exact JSON keys/types, enums, identities and declared cross-field constraints.
+VERIFY: PASS and FAIL require at least one nonempty observed_checks entry.
 Does not prove evidence, coverage, review quality, live identity, approval or external effects.
-Exit 0 conforms; 1 one "<mode>: line N: <message>" finding per defect (repair);
-     2 bad/missing mode or invocation (ERROR). Missing python3 is the caller's TOOLS_MISSING.
+Exit 0 conforms/help; 1 one "<mode>: line N: <message>" finding per defect;
+     2 bad/missing mode or invocation. Missing python3 is the caller's TOOLS_MISSING.
 Side effects: none. Environment: none.
 Check (expect 0): printf 'VERIFY: PASS\n{"issues":[],"observed_checks":["ok"]}' | python3 -I validate-output.py verify; echo $?
 """
@@ -14,6 +15,30 @@ from urllib.parse import urlsplit
 
 MODES = ("context", "chunk", "author", "verify")
 FAILURES = ("NEEDS_CONTEXT", "TOOLS_MISSING", "ERROR")
+
+PUBLIC_LABEL = r"(?:blocking|important|nit|suggestion|severity|blocked|blocker|critical|major|minor|priority|P[0-3])"
+LABEL_QUALIFIER = r"(?:[ \t]*\([^()\r\n]+\))?[ \t]*"
+PUBLIC_LABEL_PREFIX = re.compile(
+    rf"""
+    ^[ \t]*(?:(?:[-+*]|[0-9]+[.)])[ \t]+)*(?:\#{{1,6}}[ \t]*)?
+    (?P<emphasis>\*{{1,3}}|_{{1,3}}|)
+    (?:
+        # Brackets alone can mark a label, as in [P1].
+        \[ {PUBLIC_LABEL} {LABEL_QUALIFIER} (?: : [ \t]* )? \]
+      | {PUBLIC_LABEL} (?:
+            {LABEL_QUALIFIER} :
+          | {LABEL_QUALIFIER} (?P=emphasis) [ \t]* :
+          | (?P=emphasis) {LABEL_QUALIFIER} :
+        )
+    )
+    """,
+    re.IGNORECASE | re.MULTILINE | re.VERBOSE,
+)
+# A code span can cross a soft line break, not a new paragraph, list, heading or quote.
+INLINE_BLOCK_BREAK = re.compile(r"\n(?=[ \t]*(?:\r?\n|[-+*][ \t]+|1[.)][ \t]+|#{1,6}[ \t]+|>))")
+# Only an even number of backslashes can precede an opening backtick delimiter.
+INLINE_CODE = re.compile(r"(?<![`\\])(?:\\\\)*(`+)(?!`).*?(?<!`)\1(?!`)", re.DOTALL)
+
 
 def text(value):
     return isinstance(value, str) and bool(value.strip())
@@ -37,9 +62,14 @@ def prose_errors(value):
     errors = []
     if len(prose.split()) >= 130:
         errors.append("expected fewer than 130 prose words (fenced code excluded)")
-    if re.search(r"(?im)^\s*(?:#{1,6}\s*)?(?:\[(?:P[0-3]|blocking|important|nit|suggestion)\]|(?:blocking|important|nit|suggestion|severity)\s*:)", prose):
+    # Inline code still counts toward the word limit. Keep non-whitespace markers
+    # so masking a starting span does not turn the next word into a line prefix.
+    def mask(code):
+        return re.sub(r"[^\r\n]+", "\x00", code[0])
+    public_text = "\n".join(INLINE_CODE.sub(mask, block) for block in INLINE_BLOCK_BREAK.split(prose))
+    if PUBLIC_LABEL_PREFIX.search(public_text):
         errors.append("public severity labels are not allowed")
-    if re.search(r"(?i)\b(?:footgun|under the hood|at the end of the day|nice catch|great job)\b", prose):
+    if re.search(r"(?i)\b(?:footgun|under the hood|at the end of the day|nice catch|great job)\b", public_text):
         errors.append("replace idiom or praise filler with literal language")
     if re.search(r"(?ms)^\s*```suggestion\s*\n\s*none\s*\n\s*```", value):
         errors.append("unsafe placeholder suggestion")
@@ -106,7 +136,7 @@ def validate(mode, raw):
             if authored:
                 others += " placement" + (" root_comment_id" if placement == "reply" else "")
                 strings += " body" if placement in ("inline", "reply") else ""
-            value = record(value, path, strings, others)
+            value = record(value, path, strings, others, "reopen" if authored and placement == "reply" else "")
             if not authored and text(data.get("dimension")) and text(value.get("id")):
                 check(re.fullmatch(re.escape(data["dimension"]) + r"-[1-9][0-9]*", value["id"]),
                       path + ".id", "expected dimension-N id (N >= 1)")
@@ -127,6 +157,7 @@ def validate(mode, raw):
                     check(value["anchor"] is not None, path + ".anchor", "inline requires non-null anchor")
                 if placement == "reply":
                     fields(value, "root_comment_id", path, positive, "expected integer >= 1")
+                    fields(value, "reopen", path, lambda v: v is True, "expected literal true")
     def unpack(value, path=""):
         if isinstance(value, tuple):
             result = {}
@@ -199,9 +230,9 @@ def validate(mode, raw):
         threads = array(data, "threads")
         unique(threads, "threads", "root_comment_id")
         for value, path in records(threads, "threads", "thread_id summary",
-                                   "path is_resolved line root_comment_id root_url"):
+                                   "path is_resolved viewer_can_unresolve line root_comment_id root_url"):
             fields(value, "path", path, repo_path, "expected repository-relative path")
-            fields(value, "is_resolved", path, lambda v: type(v) is bool, "expected boolean")
+            fields(value, "is_resolved viewer_can_unresolve", path, lambda v: type(v) is bool, "expected boolean")
             fields(value, "line", path, lambda v: v is None or positive(v), "expected integer >= 1 or null")
             fields(value, "root_comment_id", path, positive, "expected integer >= 1")
             fields(value, "root_url", path, url, "expected HTTPS URL with host")
@@ -244,7 +275,9 @@ def validate(mode, raw):
         issues = array(data, "issues", predicate=text)
         if isinstance(data.get("issues"), list):
             check(bool(issues) == (status == "FAIL"), "issues", "must be empty on PASS and non-empty on FAIL")
-        array(data, "observed_checks", predicate=text)
+        observed_checks = array(data, "observed_checks", predicate=text)
+        if status in ("PASS", "FAIL") and isinstance(data.get("observed_checks"), list):
+            check(bool(observed_checks), "observed_checks", "expected non-empty array")
     if mode in ("context", "chunk", "author"):
         for key in (("risk_areas", "limitations") if mode == "context" else ("residual_risks",)):
             array(data, key, predicate=text)

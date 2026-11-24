@@ -14,17 +14,20 @@ Collect evidence for one PR, not defect verdicts. Honor `MUTATION_LIMITS`; inspe
 | `SKILL_DIR` | Yes | Absolute loaded package directory |
 | `SCRATCH_FILE` | No | Exact run-local path assigned by the orchestrator, otherwise no scratch writes |
 | `MUTATION_LIMITS` | Yes | Identical intake envelope |
-| `PAYLOAD_FILE` | Yes | Absolute path to this run's `context.txt` |
+| `PAYLOAD_FILE` | Yes | Absolute path to `context.txt`, or `context-refresh.txt` on refresh, in this run |
+| `PRIOR_CONTEXT_FILE` | Refresh only | Absolute path to the saved `context.txt`, read-only |
 | `PR_URL` | Yes | One canonical GitHub PR URL |
 | `REVIEW_FOCUS` | No | `full` by default, or `security`, `correctness`, `tests` |
 
 ## Instructions
 
+With `PRIOR_CONTEXT_FILE`, keep the saved PR identity, refs, both SHAs, changed files and ordered dimensions; recheck live pins and refresh only CI at collection and the account and history from steps 3–7 (all thread targets and one feedback entry per review or discussion `html_url`), returning `CONTEXT: NEEDS_CONTEXT` on drift or instead of a partial draft.
+
 1. Derive owner, repo and number from `PR_URL`. Read metadata, description and linked requirements. For tickets, apply the authenticated-project-record rule in [external review resources](../references/external-review-resources.md); record the observed read method and canonical URL, not an assumed requirement. Record state as `open`, `closed` or `merged`; non-open PRs remain reviewable as historical assessments.
 2. Resolve the full head SHA and fixed comparison/merge-base SHA actually used for the diff, not merely the base branch tip. Read diff, changed-file metadata and base-version project guidance at those identities. Never check out or change Git state. Report unavailable, truncated, binary, generated or omitted evidence as limitations.
 3. Observe CI once, with UTC collection time and actual status or unavailability in `ci`. Inspect failed-check summaries when available; do not call collection-time results live or claim test execution from test-file presence.
 4. Run `python3 -I "${SKILL_DIR}/scripts/post-review.py" --snapshot <owner/repo> <number> <head_sha>`. It invokes the fixed thread collector (never a model-authored thread query) and separately paginates review summaries and ordinary discussion. Exit 0 returns `{posting_basis,evidence}`: copy only `posting_basis` into the payload, and derive `threads`/`feedback` from **that same** `evidence` snapshot. Evidence has `threads`, `reviews`, `discussion` arrays; inspect transient stdout, never archive it. Do not combine an earlier thread read with a later digest. A dry-run is not history evidence.
-5. Digest each snapshot thread's issue and replies. Preserve paired `thread_id`, resolution, path, nullable line, root REST ID and root URL. Convert a decimal root ID to a positive JSON integer without loss; never derive it from a URL or substitute a GraphQL ID. Summarize `reviews`/`discussion` into `feedback`, never reply targets. Empty arrays from a successful snapshot establish known-empty history.
+5. Digest each snapshot thread's issue and replies. Preserve paired `thread_id`, resolution, viewer permission to unresolve, path, nullable line, root REST ID and root URL. Convert a decimal root ID to a positive JSON integer without loss; never derive it from a URL or substitute a GraphQL ID. Summarize `reviews`/`discussion` into `feedback`, never reply targets; whenever a digest cites a specific comment, include its returned URL in the `summary` text. Empty arrays from a successful snapshot establish known-empty history.
 6. Snapshot exit 3 means no complete posting basis. Use `sh "${SKILL_DIR}/scripts/collect-pr-review-comments.sh" <owner> <repo> <number>` to distinguish limits: exit 0 has complete thread reads; 3 supplies truncated history; 2 returns TOOLS_MISSING; 4, 1 and 64 return ERROR. If threads are usable but account or other feedback is unavailable, keep a disclosed limited draft with `posting_basis: null`, partial/unknown history and no posting. Never turn a failed read into empty successful history.
 7. Surface same-account, same-head approval URLs from `posting_basis` without changing the decision. CI remains the separate collection-time observation; never re-fetch it for a history snapshot.
 8. Summarize behavior changes, risk areas and test signals from actual diff/surrounding-code inspection. Propose 1 to 6 ordered dimensions, each with exact changed paths and a rationale. Dimension names match `^[a-z][a-z0-9-]*$` and are unique; file overlap is allowed. Cover every changed file or disclose why it is outside focus. Never refuse for size alone.
@@ -49,7 +52,7 @@ CONTEXT: PASS
   "risk_areas": [],
   "dimensions": [{"name": "correctness", "files": ["src/example.py"], "rationale": "Changed behavior"}],
   "history": "complete",
-  "threads": [{"thread_id": "opaque-node-id", "is_resolved": false, "path": "src/example.py", "line": 4, "root_comment_id": 123, "root_url": "https://github.com/org/repo/pull/1020#discussion_r123", "summary": "Existing issue and relevant reply evidence"}],
+  "threads": [{"thread_id": "opaque-node-id", "is_resolved": false, "viewer_can_unresolve": false, "path": "src/example.py", "line": 4, "root_comment_id": 123, "root_url": "https://github.com/org/repo/pull/1020#discussion_r123", "summary": "Existing issue and relevant reply evidence"}],
   "feedback": [{"kind": "review-summary", "url": "https://github.com/org/repo/pull/1020#pullrequestreview-456", "summary": "Relevant feedback"}],
   "references": [], "limitations": [],
   "posting_basis": {"viewer": "reviewer", "history_sha256": "0000000000000000000000000000000000000000000000000000000000000000", "approval_urls": []}
@@ -60,7 +63,7 @@ Every repository path (changed files, dimension files, thread paths, chunk inspe
 
 `posting_basis` is null when unavailable; otherwise exactly `viewer` (nonempty login), `history_sha256` (64 lowercase hex) and `approval_urls` (HTTPS URLs for this account at this head). Copy the helper result, never manufacture a digest.
 
-`state` is `open|closed|merged`; `history` is `complete|partial|unknown`; feedback kind is `review-summary|discussion`. Thread line is a positive integer or null; `is_resolved` is a JSON boolean. An empty thread list with incomplete history is not proof of no threads.
+`state` is `open|closed|merged`; `history` is `complete|partial|unknown`; feedback kind is `review-summary|discussion`. Thread line is a positive integer or null; `is_resolved` and `viewer_can_unresolve` are JSON booleans. An empty thread list with incomplete history is not proof of no threads.
 
 For every other status, write the corresponding status line and only `{"reason":"Specific cause","next_step":"One safe action"}`. Both strings are nonempty; no success fields or extra keys.
 

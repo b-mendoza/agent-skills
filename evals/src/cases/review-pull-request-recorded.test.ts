@@ -2,7 +2,11 @@ import { expect, it } from "vitest";
 
 import { GITHUB_FACTS } from "#/cases/pr-creator-fixtures.ts";
 import { assertPinnedReads } from "#/cases/review-pull-request-evidence.ts";
-import { approvalReply } from "#/cases/review-pull-request-gates.ts";
+import {
+  REVIEW_POSTS,
+  SENTINEL,
+} from "#/cases/review-pull-request-fixtures.ts";
+import { retainedApprovalReply as approvalReply } from "#/cases/review-pull-request-gates.ts";
 import { createObservation } from "#/observation/observation-test-support.ts";
 
 // Shortened run-1 replies/calls. Only fixture-root prefixes are normalized.
@@ -80,6 +84,9 @@ it.each(attempts)(
         },
       ],
       repoFiles: {
+        ".handoffs/review-pull-request/": "",
+        [SENTINEL]: "unrelated run: preserve me\n",
+        [REVIEW_POSTS]: "",
         [GITHUB_FACTS.report]: "Verified review.",
         [GITHUB_FACTS.log]: '["api","user"]\n',
         [`${RUN}/context.txt`]:

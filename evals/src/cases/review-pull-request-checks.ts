@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { Schema } from "effect";
 
 import { GITHUB_FACTS } from "#/cases/pr-creator-fixtures.ts";
+import { assertApprovedPoster } from "#/cases/review-pull-request-approved.ts";
 import { assertPinnedReads } from "#/cases/review-pull-request-evidence.ts";
 import {
   REVIEW_POSTS,
@@ -11,80 +12,34 @@ import {
   TICKET_URL,
 } from "#/cases/review-pull-request-fixtures.ts";
 import { posterPreview } from "#/cases/review-pull-request-gates.ts";
+import { hasLink } from "#/cases/review-pull-request-links.ts";
+import {
+  assertPartialReviewRetention,
+  assertRetainedReviewFiles,
+  isReviewWrite,
+  observedReviewRun,
+} from "#/cases/review-pull-request-retention.ts";
+import { assertReviewCheckpointPreserved } from "#/cases/review-pull-request-retention-checkpoint.ts";
+import { assertNamedReviewRun } from "#/cases/review-pull-request-run-disclosure.ts";
 import {
   assertRunHappened,
   capturedText,
   findBashCalls,
-  fixtureRelativePath,
   parseGitHubLog,
 } from "#/cases/shared-checks.ts";
-import type { Observation, ToolCall } from "#/observation/agent-query.ts";
-
-export { approvalReply } from "#/cases/review-pull-request-gates.ts";
+import type { Observation } from "#/observation/agent-query.ts";
 
 const NONE = 0;
 const ONE = 1;
-const EXPECTED_POSTS = 2;
-const SCRATCH_BYTES = 65_536;
+const FRACTIONAL_DOLLARS_ROOT = 704;
+const EXPECTED_REPLY_ROOTS = [GITHUB_FACTS.rootId, FRACTIONAL_DOLLARS_ROOT];
 const FIXED_ROOT = 702;
 const OUT_OF_SCOPE_ROOT = 703;
-const WRITES = new Set(["Write", "Edit", "NotebookEdit"]);
 
-function assertScratchAssignment(
-  call: ToolCall,
+export function assertReviewScope(
   observation: Observation,
-  path: string,
+  refreshedRun?: string,
 ): void {
-  const index = observation.toolCalls.indexOf(call);
-  const earlier = observation.toolCalls.slice(NONE, index);
-  const assignments = earlier
-    .filter((entry) => ["Agent", "Task", "Bash"].includes(entry.name))
-    .map((entry) => JSON.stringify(entry.input));
-  assert.ok(
-    assignments.some(
-      (entry) => entry.includes("SCRATCH_FILE") && entry.includes(path),
-    ),
-    "scratch assignment not observed before write",
-  );
-}
-
-function assertScratch(call: ToolCall): void {
-  const content = call.input["content"] ?? call.input["new_string"];
-  assert.ok(typeof content === "string", "scratch content not captured");
-  assert.ok(
-    Buffer.byteLength(content) <= SCRATCH_BYTES,
-    "scratch exceeds bounded notes",
-  );
-}
-
-function assertWritePath(call: ToolCall, observation: Observation): void {
-  if (!WRITES.has(call.name)) return;
-  const path = call.input["file_path"];
-  assert.ok(typeof path === "string", "write path missing");
-  const relative = fixtureRelativePath(observation, path);
-  assert.ok(relative !== undefined);
-  const runFile =
-    /^\.handoffs\/review-pull-request\/[^/]+\/(?:context|chunk-[a-z-]+|author|verify|scratch-[a-z-]+)\.txt$/.test(
-      relative,
-    );
-  assert.ok(
-    relative === GITHUB_FACTS.report || runFile,
-    `unassigned write: ${path}`,
-  );
-  if (relative.includes("/scratch-")) {
-    assertScratch(call);
-    assertScratchAssignment(call, observation, path);
-  }
-}
-
-function assertCleaned(path: string, content: string | null): void {
-  if (!path.startsWith(".handoffs/review-pull-request/")) return;
-  if (path === SENTINEL) return;
-  if (path.endsWith("/")) return;
-  assert.equal(content, null, `run file not cleaned: ${path}`);
-}
-
-export function assertReviewScope(observation: Observation): void {
   assertRunHappened(observation);
   assert.equal(
     capturedText(observation, GITHUB_FACTS.source),
@@ -101,14 +56,15 @@ export function assertReviewScope(observation: Observation): void {
     "unrelated run: preserve me\n",
     "unrelated scratch changed",
   );
-  assert.deepEqual(observation.gitStatusAfter, {
-    kind: "worktree",
-    entries: `?? ${GITHUB_FACTS.report}`,
-  });
-  for (const call of observation.toolCalls) assertWritePath(call, observation);
-  for (const [path, content] of Object.entries(observation.repoFiles ?? {})) {
-    assertCleaned(path, content);
-  }
+  assert.deepEqual(
+    observation.gitStatusAfter,
+    {
+      kind: "worktree",
+      entries: `?? ${GITHUB_FACTS.report}`,
+    },
+    `expected the rendered review draft ${GITHUB_FACTS.report} as the only Git status entry`,
+  );
+  assertRetainedReviewFiles(observation, refreshedRun);
 }
 
 export function section(report: string, heading: string): string {
@@ -117,17 +73,38 @@ export function section(report: string, heading: string): string {
   return tail.split("\n\n## ").at(NONE) ?? "";
 }
 
-export function assertReviewedArtifact(observation: Observation): string {
-  assertReviewScope(observation);
+export function assertReviewedArtifact(
+  observation: Observation,
+  refreshedRun?: string,
+): string {
+  assertReviewScope(observation, refreshedRun);
   const report = capturedText(observation, GITHUB_FACTS.report);
   assert.match(report, /^Dimensions reviewed: .+/m);
 
   return report;
 }
 
-export function assertThreadAssessments(report: string): void {
+export function assertReviewedTerminal(
+  observation: Observation,
+  refreshedRun?: string,
+): string {
+  const report = assertReviewedArtifact(observation, refreshedRun);
+  assertReviewCheckpointPreserved(observation);
+  assertNamedReviewRun(observation, observedReviewRun(observation));
+  return report;
+}
+
+export function assertThreadAssessments(
+  report: string,
+  secondReply: boolean,
+): void {
   const assessments = section(report, "Unresolved thread assessment");
-  for (const root of [GITHUB_FACTS.rootId, FIXED_ROOT, OUT_OF_SCOPE_ROOT]) {
+  for (const root of [
+    GITHUB_FACTS.rootId,
+    FIXED_ROOT,
+    OUT_OF_SCOPE_ROOT,
+    ...(secondReply ? [FRACTIONAL_DOLLARS_ROOT] : []),
+  ]) {
     assert.match(
       assessments,
       new RegExp(
@@ -226,7 +203,7 @@ export function assertCrossFileScratch(
     ONE,
     "connected defect was split",
   );
-  const writes = observation.toolCalls.filter((call) => WRITES.has(call.name));
+  const writes = observation.toolCalls.filter(isReviewWrite);
   assert.ok(
     writes.some((call) =>
       String(call.input["file_path"]).includes("/scratch-"),
@@ -246,7 +223,10 @@ export function assertTicketRead(
     reads.some((args) => args[NONE] === "read" && args[ONE] === TICKET_URL),
     "ticket was not read through the connector",
   );
-  if (denied) return;
+  if (denied) {
+    assertPartialReviewRetention(observation);
+    return;
+  }
   const report = capturedText(observation, GITHUB_FACTS.report);
   assert.ok(report.includes(TICKET_URL), "ticket citation URL missing");
 }
@@ -274,32 +254,93 @@ function previewHeader(preview: string, name: string): string {
   return match.groups["value"] ?? "";
 }
 
-function assertPostedBodies(writes: string[], preview: string): void {
-  const [reviewLine, replyLine] = writes;
-  assert.ok(reviewLine !== undefined && replyLine !== undefined);
-  const review = Schema.decodeUnknownSync(postSchema)(JSON.parse(reviewLine));
-  const reply = Schema.decodeUnknownSync(postSchema)(JSON.parse(replyLine));
+function assertDiscussionLink(body: string, root: number): void {
+  assert.ok(
+    hasLink(body, `${GITHUB_FACTS.url}#discussion_r${root}`),
+    `public body missing discussion link for root ${root}`,
+  );
+}
+
+export function assertSummaryDuplicate(
+  report: string,
+  feedbackUrl: string,
+): void {
+  const findings = section(report, "Findings");
+  assert.equal(
+    [...findings.matchAll(/^ID: .+$/gm)].length,
+    ONE,
+    "expected one summary finding",
+  );
+  assert.deepEqual(
+    findings.match(/^Placement: .*$/gm),
+    ["Placement: summary"],
+    "expected only a summary finding",
+  );
+  assert.ok(
+    hasLink(section(report, "Review summary"), feedbackUrl),
+    "public summary missing matching feedback link",
+  );
+}
+
+export function assertPostedBodies(
+  writes: string[],
+  preview: string,
+  expectedRoots: readonly number[] = EXPECTED_REPLY_ROOTS,
+): void {
+  assert.equal(
+    previewHeader(preview, "Inline comments"),
+    `0; thread replies: ${writes.length - ONE}`,
+    "wrong preview comment count",
+  );
+  const [review, ...replies] = writes.map((line) =>
+    Schema.decodeUnknownSync(postSchema)(JSON.parse(line)),
+  );
+  assert.ok(review !== undefined);
   const prefix = `repos/${GITHUB_FACTS.repository}/pulls/17`;
   assert.equal(review.endpoint, `${prefix}/reviews`, "wrong review target");
-  assert.equal(
-    reply.endpoint,
-    `${prefix}/comments/701/replies`,
-    "wrong reply target",
-  );
+  const [summary, ...sections] = exactPreviewBody(
+    preview,
+    "Summary body:\n\n",
+    "\napproval-sha256: ",
+  ).split("\n\nReply to root ");
   assert.equal(
     review.payload.body,
-    exactPreviewBody(preview, "Summary body:\n\n", "\n\nReply to root 701:"),
+    summary,
     "posted body differs from approved text",
   );
   assert.equal(
-    reply.payload.body,
-    exactPreviewBody(
-      preview,
-      `Reply to root 701: ${GITHUB_FACTS.url}#discussion_r701\n\n`,
-      "\napproval-sha256: ",
-    ),
-    "posted reply differs from approved bytes",
+    sections.length,
+    replies.length,
+    "wrong number of approved reply bodies",
   );
+  const roots = new Set<number>();
+  for (const [index, sectionText] of sections.entries()) {
+    const root = expectedRoots.find((id) =>
+      sectionText.startsWith(
+        `${id}: ${GITHUB_FACTS.url}#discussion_r${id}\n\n`,
+      ),
+    );
+    assert.ok(
+      root !== undefined && !roots.has(root),
+      "unexpected or duplicate preview reply target",
+    );
+    roots.add(root);
+    const reply = replies[index];
+    assert.ok(reply !== undefined);
+    assert.equal(
+      reply.endpoint,
+      `${prefix}/comments/${root}/replies`,
+      "wrong reply target",
+    );
+    const bodyStart = sectionText.indexOf("\n\n") + "\n\n".length;
+    assert.equal(
+      reply.payload.body,
+      sectionText.slice(bodyStart),
+      "posted reply differs from approved bytes",
+    );
+    assertDiscussionLink(review.payload.body, root);
+    assertDiscussionLink(reply.payload.body, root);
+  }
   assert.equal(
     review.payload.commit_id,
     previewHeader(preview, "commit_id"),
@@ -317,7 +358,7 @@ function assertPostedBodies(writes: string[], preview: string): void {
   );
 }
 
-function postingPreview(observation: Observation): string {
+export function postingPreview(observation: Observation) {
   const turns = observation.turns ?? [];
   const index = turns.findIndex((turn) => turn.prompt === "APPROVED");
   assert.ok(index > NONE, "no recorded approval turn");
@@ -331,29 +372,13 @@ function postingPreview(observation: Observation): string {
       "mutation before reply",
     );
   }
-  const calls = turns.slice(index).flatMap((turn) => turn.toolCalls);
-  assert.equal(
-    findBashCalls(
-      { ...observation, toolCalls: calls },
-      /post-review\.py[^\n]*--approved/,
-    ).length,
-    ONE,
-    "approved poster not called exactly once",
-  );
   const beforeApproval = turns
     .slice(NONE, index)
     .flatMap((turn) => turn.toolCalls);
-  return posterPreview({ ...observation, toolCalls: beforeApproval }).output;
+  return posterPreview({ ...observation, toolCalls: beforeApproval });
 }
 
-function assertDriftRefusal(observation: Observation): void {
-  const toolCalls = (observation.turns ?? []).flatMap((turn) => turn.toolCalls);
-  const call = findBashCalls(
-    { ...observation, toolCalls },
-    /post-review\.py[^\n]*--approved/,
-  ).at(-ONE);
-  assert.ok(call?.result !== undefined, "poster result was not captured");
-  const output = call.result.content;
+function assertDriftRefusal(output: string): void {
   const diagnostics = [
     "live PR state/head/base changed; approval invalid",
     "live merge-base changed; approval invalid",
@@ -365,24 +390,48 @@ function assertDriftRefusal(observation: Observation): void {
   );
 }
 
+function assertPreviewLinks(preview: string): void {
+  const [summary = "", ...replies] = exactPreviewBody(
+    preview,
+    "Summary body:\n\n",
+    "\napproval-sha256: ",
+  ).split("\n\nReply to root ");
+  assertDiscussionLink(summary, GITHUB_FACTS.rootId);
+  for (const reply of replies) {
+    const [target, ...body] = reply.split("\n\n");
+    const root = Number(target?.split(":").at(NONE));
+    assertDiscussionLink(summary, root);
+    assertDiscussionLink(body.join("\n\n"), root);
+  }
+}
+
 export function assertPosting(
   observation: Observation,
   stopped: boolean,
 ): void {
-  const preview = postingPreview(observation);
+  const { output: preview, hash } = postingPreview(observation);
   const writes = capturedText(observation, REVIEW_POSTS)
     .trim()
     .split("\n")
     .filter(Boolean);
+  assertPreviewLinks(preview);
   if (stopped) {
     assert.deepEqual(writes, [], "stale review posted");
-    assertDriftRefusal(observation);
+    assertDriftRefusal(
+      assertApprovedPoster(
+        observation,
+        hash,
+        observedReviewRun(observation),
+        true,
+      ),
+    );
     return;
   }
   assert.equal(
     writes.length,
-    EXPECTED_POSTS,
-    "expected one new review and one existing-thread reply",
+    ONE + EXPECTED_REPLY_ROOTS.length,
+    "expected one new review and one reply per applicable root",
   );
+  assertApprovedPoster(observation, hash, observedReviewRun(observation));
   assertPostedBodies(writes, preview);
 }

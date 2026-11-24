@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 r"""Usage: python3 -I render-review.py RUN_DIR OUTPUT_FILE [--replace <sha256>] | -h
-Paths: workspace-relative RUN_DIR/OUTPUT_FILE; run from the workspace root, no .. or symlinks.
+Paths: workspace-relative RUN_DIR and OUTPUT_FILE; run from the workspace root, no .. or symlinks.
+OUTPUT_FILE must end in .md and have no .git component.
 Environment: none. Python 3 stdlib only; use isolated mode (-I).
-Exit: 0 written/help; 1 refused/invalid input (WRITE_ERROR); 2 usage (REVIEW_ERROR).
+Exit: 0 written/help; 1 refused/invalid input; 2 usage.
 Side effects: creates output exclusively or stages digest-guarded replacement in RUN_DIR/render.tmp.
 Check (expect 1, nothing written): python3 -I render-review.py no-such-run out.md; echo $?
 """
@@ -30,8 +31,19 @@ def safe_path(path):
     return path
 
 
+def draft_path(path):
+    path = safe_path(path)
+    if any(part.casefold() == ".git" for part in path.parts):
+        raise ValueError(f"{path}: .git components refused")
+    if path.suffix != ".md":
+        raise ValueError(f"{path}: expected .md file")
+    return path
+
+
 def read_bytes(path):
     path = safe_path(path)
+    if not stat.S_ISREG(path.lstat().st_mode):
+        raise ValueError(f"{path}: expected regular file")
     with os.fdopen(os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK), "rb") as stream:
         if not stat.S_ISREG(os.fstat(stream.fileno()).st_mode):
             raise ValueError(f"{path}: expected regular file")
@@ -39,7 +51,10 @@ def read_bytes(path):
 
 
 def load(run, name, mode):
-    data = read_bytes(Path(run) / name)
+    return parse_payload(read_bytes(Path(run) / name), name, mode)
+
+
+def parse_payload(data, name, mode):
     checked = subprocess.run(
         [sys.executable, "-I", str(Path(__file__).with_name("validate-output.py")), mode],
         input=data, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -77,10 +92,41 @@ def write_file(run, path, data, expected=None):
     return digest(data)
 
 
-def render(run):
-    context = load(run, "context.txt", "context")
+def check_self_review(pr_author, viewer, decision):
+    if pr_author.casefold() != viewer.casefold():
+        return None
+    if decision != "COMMENT":
+        raise ValueError("self-review requires a COMMENT decision")
+    return viewer
+
+
+def check_package(context, author):
+    threads = {t["root_comment_id"]: t for t in context["threads"]}
+    for index, finding in enumerate(author["findings"]):
+        if finding["placement"] != "reply":
+            continue
+        target = threads.get(finding["root_comment_id"])
+        if target is None:
+            raise ValueError(f"{finding['id']}: reply target absent from context threads")
+        if finding.get("reopen") is True:
+            if not target["is_resolved"]:
+                raise ValueError(f"findings[{index}].reopen: target thread is not resolved")
+            if not target["viewer_can_unresolve"]:
+                raise ValueError(f"findings[{index}].reopen: viewer cannot reopen the target thread")
+    basis = context["posting_basis"]
+    if basis is not None:
+        return check_self_review(context["author"], basis["viewer"], author["decision"])
+    return None
+
+
+def render(run, context=None, author=None):
+    if context is None:
+        context = load(run, "context.txt", "context")
+    if author is None:
+        author = load(run, "author.txt", "author")
     chunks = [load(run, f"chunk-{d['name']}.txt", "chunk") for d in context["dimensions"]]
-    author, verify = load(run, "author.txt", "author"), load(run, "verify.txt", "verify")
+    verify = load(run, "verify.txt", "verify")
+    self_reviewer = check_package(context, author)
     for dimension, chunk in zip(context["dimensions"], chunks):
         if dimension["name"] != chunk["dimension"]:
             raise ValueError(f"chunk-{dimension['name']}.txt: dimension mismatch")
@@ -89,8 +135,10 @@ def render(run):
     if {a["root_comment_id"] for a in author["thread_assessments"]} != unresolved:
         raise ValueError("thread_assessments must cover exactly the collected unresolved roots")
     state = context["state"] + (" (historical assessment)" if context["state"] != "open" else "")
-    parts = [f"# PR review: {context['title']}", f"PR: {context['pr']}", f"PR state: {state}",
-             "Dimensions reviewed: " + ", ".join(d["name"] for d in context["dimensions"]),
+    parts = [f"# PR review: {context['title']}", f"PR: {context['pr']}", f"PR state: {state}"]
+    if self_reviewer:
+        parts.append(f"Review type: self-review by {self_reviewer}")
+    parts += ["Dimensions reviewed: " + ", ".join(d["name"] for d in context["dimensions"]),
              f"Reviewed base: {context['base_sha']}", f"Reviewed head: {context['head_sha']}", "## Findings"]
     for finding in author["findings"]:
         parts += [f"### {finding['title']}",
@@ -113,9 +161,9 @@ def render(run):
             parts += [label + ":", finding[key]]
         parts += ["Sources:", "\n".join(finding["sources"]) or "None."]
         if finding["placement"] == "reply":
-            if finding["root_comment_id"] not in threads:
-                raise ValueError(f"{finding['id']}: reply target absent from context")
             parts.append("Reply target: " + threads[finding["root_comment_id"]]["root_url"])
+            if finding.get("reopen") is True:
+                parts.append("Planned action: reopen this thread.")
         if "body" in finding:
             parts += ["Exact body:", finding["body"]]
     if not author["findings"]:
@@ -142,7 +190,14 @@ def render(run):
     if receipt.exists():
         receipts = json.loads(read_bytes(receipt))
         parts += ["Review: " + json.dumps(receipts["review"], ensure_ascii=False)]
+        for inline in receipts.get("inline") or []:
+            label = re.sub(r"([\\\[\]])", r"\\\1", " ".join(inline["finding"].splitlines()))
+            url = quote(inline["url"], safe=":/?#[]@!$&'()*+,;=%")
+            parts.append(f"Inline: [{label}](<{url}>)")
+        if receipts.get("inline_error"):
+            parts.append(f"Inline comment URLs unavailable: {receipts['inline_error']}; open the review URL")
         parts += ["Reply: " + json.dumps(reply, ensure_ascii=False) for reply in receipts["replies"]]
+        parts += ["Reopened: " + json.dumps(reopened, ensure_ascii=False) for reopened in receipts.get("reopened", [])]
         parts += ["Failed/uncertain: " + json.dumps(failure, ensure_ascii=False)
                   for failure in receipts["failed"]]
         if receipts.get("complete") is not True:
@@ -150,7 +205,7 @@ def render(run):
                          "on GitHub. Check the PR before any manual follow-up; never re-run the poster.")
     else:
         parts.append("Not posted.")
-    return ("\n\n".join(parts) + "\n").encode("utf-8")
+    return ("\n\n".join(parts) + f"\nSaved package: {Path(run)}\n").encode("utf-8")
 
 
 def main(args):
@@ -162,7 +217,8 @@ def main(args):
         print(__doc__.strip(), file=sys.stderr)
         return 2
     try:
-        sha = write_file(args[0], args[1], render(args[0]), args[3] if len(args) == 4 else None)
+        output = draft_path(args[1])
+        sha = write_file(args[0], output, render(args[0]), args[3] if len(args) == 4 else None)
         print("sha256: " + sha)
         return 0
     except (ValueError, OSError, KeyError, TypeError) as error:

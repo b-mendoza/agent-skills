@@ -6,20 +6,24 @@ import type { EvalCase } from "#/cases/case-contract.ts";
 import { GITHUB_FACTS } from "#/cases/pr-creator-fixtures.ts";
 import { cases } from "#/cases/review-pull-request.ts";
 import {
-  assertCrossFileScratch,
   assertPinnedCitations,
   assertReviewedArtifact,
   assertThreadAssessments,
   assertTicketRead,
-  assertTransport,
 } from "#/cases/review-pull-request-checks.ts";
 import {
+  FEEDBACK_URL,
   LATE_CI_READS,
   REVIEW_POSTS,
   SENTINEL,
   TICKET_LOG,
   TICKET_URL,
 } from "#/cases/review-pull-request-fixtures.ts";
+import {
+  approvalCheckpoint,
+  RETAINED_PAYLOADS,
+  REVIEW_RUN,
+} from "#/cases/review-pull-request-retention-test-support.ts";
 import {
   createObservation,
   createTurn,
@@ -58,6 +62,8 @@ https://github.com/eval-org/cart/pull/17#discussion_r702: fixed — pricing.py:2
 
 https://github.com/eval-org/cart/pull/17#discussion_r703: out-of-scope — ops/settings.py is not changed.
 
+https://github.com/eval-org/cart/pull/17#discussion_r704: still-valid — cents_to_dollars drops fractional dollars.
+
 ## Review decision
 
 REQUEST_CHANGES
@@ -79,15 +85,15 @@ const PREVIEW = `${[
   `commit_id: ${HEAD}`,
   "event: REQUEST_CHANGES",
   "Summary body:",
-  SUMMARY_BODY,
+  `${SUMMARY_BODY}See ${GITHUB_FACTS.url}#discussion_r701`,
   `Reply to root 701: ${GITHUB_FACTS.url}#discussion_r701`,
-  REPLY_BODY,
+  `${REPLY_BODY}See ${GITHUB_FACTS.url}#discussion_r701`,
 ].join(
   "\n\n",
 )}\napproval-sha256: ${"c".repeat(DIGEST_LENGTH)}\nAPPROVED, REVISE, ABORT`;
 function validObservation() {
   return createObservation({
-    finalText: "Saved verified draft. No tests executed.",
+    finalText: `Saved verified draft. Run: ${REVIEW_RUN}. No tests executed.`,
     gitStatusAfter: { kind: "worktree", entries: "?? pr-17-review.md" },
     toolCalls: [
       {
@@ -117,12 +123,23 @@ function validObservation() {
       ".git/logs/HEAD": "unchanged",
       [GITHUB_FACTS.baselineLog]: "unchanged",
       [SENTINEL]: "unrelated run: preserve me\n",
-      ".handoffs/review-pull-request/": "",
+      ...RETAINED_PAYLOADS,
+      ...approvalCheckpoint(RETAINED_PAYLOADS),
       [TICKET_LOG]: `["read","${TICKET_URL}"]\n`,
       [REVIEW_POSTS]: "",
       [LATE_CI_READS]: "",
     },
   });
+}
+
+function duplicateReport(channel: keyof typeof FEEDBACK_URL): string {
+  return REPORT.replace(
+    /Anchor: pricing\.py[\s\S]+?(?=## Dropped candidates)/,
+    `ID: correctness-1\nConfidence: high\nPlacement: summary\n\nEvidence: https://github.com/eval-org/cart/blob/${HEAD}/pricing.py#L3\n\n`,
+  ).replace(
+    SUMMARY_BODY,
+    `${SUMMARY_BODY.trimEnd()} See ${FEEDBACK_URL[channel]}.\n`,
+  );
 }
 
 function extensionCase(suffix: string): EvalCase {
@@ -148,6 +165,13 @@ describe("review observation checks reject wrong evidence", () => {
       ],
     };
     const testCase = extensionCase("existing-approval-abort");
+    const author = `${REVIEW_RUN}/author.txt`;
+    expect(() =>
+      testCase.check({
+        ...observation,
+        repoFiles: { ...observation.repoFiles, [author]: null },
+      }),
+    ).toThrow(author);
     expect(() => {
       testCase.check(observation);
     }).not.toThrow();
@@ -169,12 +193,57 @@ describe("review observation checks reject wrong evidence", () => {
       });
     }).not.toThrow();
   });
+  it.each(["thread", "head"] as const)(
+    "retains declared chunks after %s drift without requiring posting receipts",
+    (drift) => {
+      const good = validObservation();
+      const dry = {
+        name: "Bash",
+        input: {
+          command: `python3 -I .claude/skills/review-pull-request/scripts/post-review.py --dry-run ${REVIEW_RUN}`,
+        },
+        result: { content: PREVIEW, isError: false, truncated: false },
+      };
+      const refusal = {
+        name: "Bash",
+        input: {
+          command: `python3 -I .claude/skills/review-pull-request/scripts/post-review.py --approved ${"c".repeat(DIGEST_LENGTH)} ${REVIEW_RUN}`,
+        },
+        result: {
+          content:
+            drift === "head"
+              ? "live PR state/head/base changed; approval invalid"
+              : "live account/history changed; approval invalid",
+          isError: true,
+          truncated: false,
+        },
+      };
+      const observation = {
+        ...good,
+        toolCalls: [...good.toolCalls, dry, refusal],
+        turns: [
+          createTurn({ toolCalls: [...good.toolCalls, dry] }),
+          createTurn({ prompt: "APPROVED", toolCalls: [refusal] }),
+        ],
+      };
+      const testCase = extensionCase(`approved-${drift}`);
+      expect(() => testCase.check(observation)).not.toThrow();
+      const chunk = `${REVIEW_RUN}/chunk-tests.txt`;
+      expect(() =>
+        testCase.check({
+          ...observation,
+          repoFiles: { ...good.repoFiles, [chunk]: null },
+        }),
+      ).toThrow(chunk);
+    },
+  );
   it("requires the PR head rather than the divergent checkout head", () => {
     const good = validObservation();
     const observation = {
       ...good,
       repoFiles: {
         ...good.repoFiles,
+        [GITHUB_FACTS.report]: duplicateReport("review"),
         ".git/reviewed-pr-head": HEAD,
         ".git/checkout-head": BASE,
       },
@@ -190,26 +259,77 @@ describe("review observation checks reject wrong evidence", () => {
       });
     }).toThrow();
   });
+  it.each([
+    ["divergent-checkout", "review"],
+    ["historical-draft", "discussion"],
+  ] as const)(
+    "rejects missing or misrouted duplicate feedback in %s",
+    (suffix, channel) => {
+      const good = validObservation();
+      const checkReport = (report: string) =>
+        extensionCase(suffix).check({
+          ...good,
+          repoFiles: {
+            ...good.repoFiles,
+            [GITHUB_FACTS.report]: report,
+            ".git/reviewed-pr-head": HEAD,
+            ".git/checkout-head": BASE,
+          },
+        });
+      const report = `${duplicateReport(channel)}\nPR state: closed (historical assessment)`;
+      for (const placement of ["inline", "reply", "unknown"]) {
+        expect(() =>
+          checkReport(
+            report.replace("Placement: summary", `Placement: ${placement}`),
+          ),
+        ).toThrow(/summary finding/);
+      }
+      expect(() =>
+        checkReport(
+          report.replace(FEEDBACK_URL[channel], `${FEEDBACK_URL[channel]}0`),
+        ),
+      ).toThrow(/feedback link/);
+      expect(() =>
+        checkReport(
+          report.replace(
+            "Placement: summary",
+            "Placement: summary\n\nID: another\nPlacement: inline",
+          ),
+        ),
+      ).toThrow(/summary finding/);
+    },
+  );
   it("requires historical state and rejects a new-review gate for author replies", () => {
     const good = validObservation();
     const testCase = extensionCase("historical-draft");
-    expect(() => {
-      testCase.check({
-        ...good,
-        repoFiles: {
-          ...good.repoFiles,
-          [GITHUB_FACTS.report]: `${REPORT}\nPR state: closed (historical assessment)`,
-        },
-      });
-    }).not.toThrow();
+    const historical = {
+      ...good,
+      repoFiles: {
+        ...good.repoFiles,
+        [GITHUB_FACTS.report]: `${duplicateReport("discussion")}\nPR state: closed (historical assessment)`,
+      },
+    };
+    for (const finalText of [
+      "Draft saved.",
+      `Run: ${REVIEW_RUN}-other.`,
+      `Payload: ${REVIEW_RUN}/verify.txt`,
+      `Run: /some-other-repo/${REVIEW_RUN}`,
+    ]) {
+      expect(() => testCase.check({ ...historical, finalText })).toThrow(
+        /run directory/,
+      );
+    }
+    expect(() => testCase.check(historical)).not.toThrow();
     expect(() => {
       testCase.check(good);
     }).toThrow();
     const replyCase = extensionCase("clarify-author-reply-intent");
     const reply = createObservation({
       finalText:
-        "Please clarify: replies to feedback or a separate new review?",
+        "No run files were created. Please clarify: replies to feedback or a separate new review?",
       repoFiles: {
+        ".handoffs/review-pull-request/": "",
+        [SENTINEL]: "unrelated run: preserve me\n",
         [GITHUB_FACTS.report]: null,
         [REVIEW_POSTS]: "",
         [GITHUB_FACTS.log]: "",
@@ -224,7 +344,10 @@ describe("review observation checks reject wrong evidence", () => {
         toolCalls: [
           {
             name: "Bash",
-            input: { command: "python3 -I post-review.py --dry-run run" },
+            input: {
+              command:
+                "python3 -I .claude/skills/review-pull-request/scripts/post-review.py --dry-run run",
+            },
           },
         ],
       });
@@ -244,6 +367,9 @@ describe("review observation checks reject wrong evidence", () => {
     "pricing.py",
     "/outside/scratch.txt",
     ".handoffs/review-pull-request/unrelated/keep.txt",
+    ".handoffs/review-pull-request/unrelated/author.txt",
+    ".handoffs/review-pull-request/other-run/chunk-tests.txt",
+    `${REVIEW_RUN}/receipts.json`,
   ])("rejects an unassigned write to %s", (path) => {
     expect(() =>
       assertReviewedArtifact({
@@ -254,17 +380,8 @@ describe("review observation checks reject wrong evidence", () => {
       }),
     ).toThrow();
   });
-  it("rejects leftover scratch and changed sentinel", () => {
+  it("rejects a changed unrelated-run sentinel", () => {
     const good = validObservation();
-    expect(() =>
-      assertReviewedArtifact({
-        ...good,
-        repoFiles: {
-          ...good.repoFiles,
-          ".handoffs/review-pull-request/run/scratch-author.txt": "left",
-        },
-      }),
-    ).toThrow(/not cleaned/);
     expect(() =>
       assertReviewedArtifact({
         ...good,
@@ -272,62 +389,26 @@ describe("review observation checks reject wrong evidence", () => {
       }),
     ).toThrow(/scratch changed/);
   });
-  it("requires validated file handoffs and a recorded bounded scratch write", () => {
-    const scratch = ".handoffs/review-pull-request/run/scratch-author.txt";
-    const validators = ["context", "chunk", "author", "verify"].map((mode) => ({
-      name: "Bash",
-      input: { command: `python3 -I validate-output.py ${mode} < ${mode}.txt` },
-    }));
-    const toolCalls = [
-      ...validators,
-      {
-        name: "Bash",
-        input: { command: "python3 -I render-review.py run out.md" },
-      },
-      { name: "Agent", input: { prompt: `SCRATCH_FILE=${scratch}` } },
-      {
-        name: "Write",
-        input: { file_path: scratch, content: "Concise notes" },
-      },
-    ];
-    const observation = { ...validObservation(), toolCalls };
-    const report = `${REPORT}\nID: correctness-1\ncart.py connects checkout.py`;
+  it("requires a structured disposition for every unresolved root", () => {
     expect(() => {
-      assertCrossFileScratch(observation, report);
+      assertThreadAssessments(
+        REPORT.replace("discussion_r704", "discussion_r705"),
+        true,
+      );
+    }).toThrow(/704/);
+    expect(() => {
+      assertThreadAssessments(REPORT, true);
     }).not.toThrow();
     expect(() => {
-      assertTransport({ ...observation, toolCalls: [] });
-    }).toThrow(/validated/);
-    expect(() => {
-      assertCrossFileScratch({ ...observation, toolCalls: validators }, report);
-    }).toThrow(/scratch write/);
-    expect(() => {
-      assertCrossFileScratch(observation, `${report}\nID: correctness-2`);
-    }).toThrow(/split/);
-    const unassigned = toolCalls.filter((call) => call.name !== "Agent");
-    expect(() => {
-      assertReviewedArtifact({
-        ...observation,
-        toolCalls: unassigned,
-      });
-    }).toThrow(/assignment/);
-    expect(() => {
-      assertReviewedArtifact(observation);
-    }).not.toThrow();
-  });
-  it("requires all three supported unresolved dispositions", () => {
-    expect(() => {
-      assertThreadAssessments(REPORT);
+      assertThreadAssessments(REPORT.replace("fixed", "still-valid"), true);
     }).not.toThrow();
     expect(() => {
-      assertThreadAssessments(REPORT.replace("fixed", "still-valid"));
-    }).not.toThrow();
-    expect(() => {
-      assertThreadAssessments(REPORT.replace("fixed", "maybe"));
+      assertThreadAssessments(REPORT.replace("fixed", "maybe"), true);
     }).toThrow(/702/);
     expect(() => {
       assertThreadAssessments(
         REPORT.replace("discussion_r701", "discussion_r999"),
+        true,
       );
     }).toThrow(/701/);
   });

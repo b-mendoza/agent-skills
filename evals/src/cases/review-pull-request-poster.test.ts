@@ -1,35 +1,16 @@
-import assert from "node:assert/strict";
-import { execFileSync, spawnSync } from "node:child_process";
-import { readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
-import { fileURLToPath } from "node:url";
-
 import { describe, expect, it } from "vitest";
 
-import { GITHUB_FACTS } from "#/cases/pr-creator-fixtures.ts";
-import {
-  python,
-  REVIEW_FIXTURE,
-  REVIEW_POSTS,
-  type ReviewFixtureOptions,
-  seedReviewFixture,
-} from "#/cases/review-pull-request-fixtures.ts";
-import { approvalReply } from "#/cases/review-pull-request-gates.ts";
-import { makeFixture } from "#/fixtures/fixtures.ts";
-import { createObservation } from "#/observation/observation-test-support.ts";
+import { python } from "#/cases/review-pull-request-fixtures.ts";
 
 const SHA_LENGTH = 40;
-// Each shipped-script row seeds a git fixture and runs several Python
-// processes; under parallel suite load that exceeds vitest's 5 s default.
-const PREFLIGHT_TIMEOUT_MS = 30_000;
-const POSTER = fileURLToPath(
-  new URL(
-    "../../../skills/review-pull-request/scripts/post-review.py",
-    import.meta.url,
-  ),
-);
-// The posting basis only digests collected threads, so one minimal thread is enough.
-const LIVE_THREAD = { root_comment_id: "7", comments: [{ body: "Original" }] };
+// Same no-reopen run as the former 4cd1a9af… pin, now binding both replies' URLs and thread IDs.
+const REPLY_APPROVAL =
+  "c9177a559563da7e146f0805e9b343c5650fdcb4f7c6d02c74694b3ec73fd526";
+// Keep the history identical on both sides of the legacy hash comparison.
+const LEGACY_HISTORY =
+  "6f364d6293f025fc5517bc09b3993b057579aa7fab92fde7cc6a10bd16ca863f";
+const NO_REPLY_APPROVAL =
+  "f125b894586b7415349da4d3f9c7513987265fbde61a53cee088bb70576ed913";
 
 // One fake GitHub for every in-process row: it answers by endpoint from
 // `live`, records each POST with the receipts saved on disk at that moment,
@@ -45,21 +26,29 @@ author["findings"] = [finding, dict(finding, id="R1", placement="reply", root_co
                       dict(finding, id="R2", placement="reply", root_comment_id=8)]
 live = dict(state="open", head=context["head_sha"], base_ref=context["base"],
             merge_base=context["base_sha"], viewer="reviewer", reviews=[], discussion=[],
-            threads=[json.loads(${JSON.stringify(JSON.stringify(LIVE_THREAD))})], fail=None)
-calls, posts = [], []
-def github(args, data=None):
+            threads=[dict(t, root_comment_id=str(t["root_comment_id"]), comments=[dict(body="Original")])
+                     for t in context["threads"]], fail=None)
+inline_url = "https://github.com/cli/cli/pull/1#discussion_r101"
+comment = dict(path="file.py", side="RIGHT", line=2, start_line=1, id=101, html_url=inline_url)
+live["inline_pages"] = [[comment]]
+calls, posts, read_timeouts = [], [], []
+def github(args, data=None, *, timeout=None):
     endpoint = next(a for a in args if a in ("user", "graphql") or a.startswith("repos/"))
-    method = "POST" if "--method" in args else "GET"
+    method = args[args.index("--method") + 1] if "--method" in args else "GET"
     calls.append(key := method + " " + endpoint)
-    if method == "POST": posts.append((endpoint, json.loads(data), json.loads(receipts_bytes() or "null")))
+    if method == "POST": posts.append((endpoint, data, json.loads(receipts_bytes() or "null")))
+    if endpoint == "repos/cli/cli/pulls/1/reviews/1/comments": read_timeouts.append(timeout)
     if live["fail"] and live["fail"] in key: raise ValueError("simulated gh failure")
     if method == "POST": return dict(id=len(posts), html_url="https://github.com/receipt/" + str(len(posts)))
     if endpoint == "user": return dict(login=live["viewer"])
     if endpoint == "graphql": return live["threads"]
+    if endpoint == "repos/cli/cli/pulls/1/reviews/1/comments":
+        if live.get("inline_timeout"): raise subprocess.TimeoutExpired(args, timeout)
+        return live["inline_pages"]
     if endpoint.endswith("/reviews"): return [[review] for review in live["reviews"]]
-    if endpoint.endswith("/comments"): return [[comment] for comment in live["discussion"]]
+    if endpoint.endswith("/issues/1/comments"): return [[comment] for comment in live["discussion"]]
     if "/compare/" in endpoint: return dict(merge_base_commit=dict(sha=live["merge_base"]))
-    return dict(state=live["state"], head=dict(sha=live["head"]), base=dict(ref=live["base_ref"]))
+    return dict(user=dict(login="someone"), state=live["state"], head=dict(sha=live["head"]), base=dict(ref=live["base_ref"]))
 def invoke(args, runner=github):
     with (contextlib.redirect_stdout(io.StringIO()) as output,
           contextlib.redirect_stderr(io.StringIO()) as error):
@@ -144,11 +133,6 @@ const LIVE_CHANGES = [
     { discussion: [{ body: "New discussion" }] },
     HISTORY_CHANGED,
   ],
-  [
-    "a thread reply's text changed",
-    { threads: [{ ...LIVE_THREAD, comments: [{ body: "Changed claim" }] }] },
-    HISTORY_CHANGED,
-  ],
 ] as const;
 
 const GATE_REFUSALS = [
@@ -171,9 +155,29 @@ const GATE_REFUSALS = [
 ] as const;
 
 describe("post-review.py preview", () => {
+  it.each(["APPROVE", "REQUEST_CHANGES"])(
+    "refuses local self-review %s before any GitHub call in either poster mode",
+    (event) => {
+      expect(
+        verified(`
+author["decision"] = "${event}"
+save()
+sha = preview_sha()
+context["author"] = "REVIEWER"
+save()
+${refused('["--dry-run", "."]', "COMMENT")}
+${refused('["--approved", sha, "."]', "COMMENT")}
+assert calls == []
+`),
+      ).toBe("verified");
+    },
+  );
+
   it("prints a deterministic preview of the account, counts, event, pins, exact bodies and targets without calling GitHub", () => {
     expect(
       verified(String.raw`
+context["posting_basis"]["history_sha256"] = "${LEGACY_HISTORY}"
+save()
 code, output, _ = invoke(["--dry-run", "."])
 assert code == 0 and invoke(["--dry-run", "."])[1] == output and calls == []
 assert output == "\n\n".join([
@@ -183,7 +187,20 @@ assert output == "\n\n".join([
     'Inline: {"line":2,"path":"file.py","side":"RIGHT","start_line":1,"start_side":"RIGHT"}', body,
     "Reply to root 7: https://github.com/cli/cli/pull/1#discussion_r7", body,
     "Reply to root 8: https://github.com/cli/cli/pull/1#discussion_r8", body,
-]) + "\napproval-sha256: " + plan_for(run)[3] + "\n", output
+]) + "\napproval-sha256: ${REPLY_APPROVAL}\n", output
+`),
+    ).toBe("verified");
+  });
+
+  it("preserves the approval pin of a plan without replies", () => {
+    expect(
+      verified(String.raw`
+context["posting_basis"]["history_sha256"] = "${LEGACY_HISTORY}"
+author["findings"] = [finding]
+save()
+code, output, _ = invoke(["--dry-run", "."])
+assert code == 0 and output.endswith("approval-sha256: ${NO_REPLY_APPROVAL}\n")
+assert hashlib.sha256(output.encode()).hexdigest() == "eb59f531d321cf2fc15a13eeb799cc2514329acfb7ce0e22bfa4b473a4698132"
 `),
     ).toBe("verified");
   });
@@ -241,6 +258,15 @@ ${refused('["--approved", sha, "."]', family)}`),
     },
   );
 
+  it("refuses an approved run when a thread reply's text changed after preview", () => {
+    expect(
+      verified(String.raw`
+sha = preview_sha()
+live["threads"][0]["comments"][0]["body"] = "Changed claim"
+${refused('["--approved", sha, "."]', HISTORY_CHANGED)}`),
+    ).toBe("verified");
+  });
+
   it.each(GATE_REFUSALS)(
     "refuses an approved run %s",
     (_label, statement, family) => {
@@ -256,24 +282,31 @@ ${refused("args, runner", family)}`),
 
 const REVIEWS = "repos/cli/cli/pulls/1/reviews";
 const REPLY_7 = "repos/cli/cli/pulls/1/comments/7/replies";
+const REPLY_8 = "repos/cli/cli/pulls/1/comments/8/replies";
+const READ_INLINE = "GET repos/cli/cli/pulls/1/reviews/1/comments";
+const ALL_POSTS = `["POST ${REVIEWS}", "POST ${REPLY_7}", "POST ${REPLY_8}"]`;
 
 const POSTING_RUNS = [
   [
-    "posts the review then each reply with exact bytes, saving receipts before every POST",
+    "preserves exact POST bytes and order, then reads and saves inline receipts once",
     String.raw`
-code, _, error = invoke(["--approved", preview_sha(), "."])
+code, output, error = invoke(["--approved", preview_sha(), "."])
 assert code == 0 and "GET repos/cli/cli/compare/main..." + "b" * 40 in calls, error
-assert [post[0] for post in posts] == ["${REVIEWS}", "${REPLY_7}", "repos/cli/cli/pulls/1/comments/8/replies"]
-assert posts[0][1] == dict(commit_id="b" * 40, event="REQUEST_CHANGES", body=body,
-                           comments=[dict(finding["anchor"], body=body, start_side="RIGHT")])
-assert posts[1][1] == posts[2][1] == dict(body=body)
+assert calls[-4:] == ${ALL_POSTS} + ["${READ_INLINE}"] and calls.count("${READ_INLINE}") == 1, calls
+assert [post[0] for post in posts] == ["${REVIEWS}", "${REPLY_7}", "${REPLY_8}"]
+# Byte fingerprints captured from the pre-reopen review and reply POSTs.
+legacy_review = "ccfc09e0e214bf179bb789f64668170994fea6abcc739964bf9fc36f1fe68eca"
+legacy_reply = "5d36d69280a5068206fac345309dc0025f1aff55623798c517a3389cb5a2deae"
+assert [hashlib.sha256(data.encode()).hexdigest() for _, data, _ in posts] == [legacy_review, legacy_reply, legacy_reply]
 review = dict(id=1, url="https://github.com/receipt/1")
 first = dict(finding="R1", id=2, url="https://github.com/receipt/2")
 second = dict(finding="R2", id=3, url="https://github.com/receipt/3")
-saved = dict(review=None, replies=[], failed=[], complete=False)
+saved = dict(review=None, replies=[], reopened=[], failed=[], complete=False, inline=None, inline_error=None)
 assert [post[2] for post in posts] == [saved, dict(saved, review=review),
                                        dict(saved, review=review, replies=[first])]
-assert json.loads(receipts_bytes()) == dict(saved, review=review, replies=[first, second], complete=True)
+assert json.loads(output) == json.loads(receipts_bytes()) == dict(
+    saved, review=review, replies=[first, second], complete=True,
+    inline=[dict(finding="F1", id=101, url=inline_url)])
 `,
   ],
   [
@@ -283,19 +316,23 @@ sha = preview_sha()
 live["fail"] = "POST ${REVIEWS}"
 code, _, error = invoke(["--approved", sha, "."])
 assert code == 1 and [post[0] for post in posts] == ["${REVIEWS}"], (code, error)
-assert json.loads(receipts_bytes()) == dict(review=None, replies=[], complete=False, failed=[
-    dict(review="review", detail="simulated gh failure; stop, never retry")])
+assert "${READ_INLINE}" not in calls, calls
+assert json.loads(receipts_bytes()) == dict(review=None, replies=[], reopened=[], complete=False, inline=None, inline_error=None,
+    failed=[dict(review="review", detail="simulated gh failure; stop, never retry")])
 `,
   ],
   [
-    "records a failed reply, exits 1 and posts nothing after it",
+    "exits 1 after a failed reply, keeps the review and reads its inline URLs once",
     String.raw`
 sha = preview_sha()
 live["fail"] = "POST ${REPLY_7}"
 code, _, error = invoke(["--approved", sha, "."])
 assert code == 1 and [post[0] for post in posts] == ["${REVIEWS}", "${REPLY_7}"], error
+assert calls[-3:] == ["POST ${REVIEWS}", "POST ${REPLY_7}", "${READ_INLINE}"], calls
+assert calls.count("${READ_INLINE}") == 1, calls
 assert json.loads(receipts_bytes()) == dict(
-    review=dict(id=1, url="https://github.com/receipt/1"), replies=[], complete=False,
+    review=dict(id=1, url="https://github.com/receipt/1"), replies=[], reopened=[], complete=False,
+    inline=[dict(finding="F1", id=101, url=inline_url)], inline_error=None,
     failed=[dict(finding="R1", detail="simulated gh failure; stop, never retry")])
 `,
   ],
@@ -311,6 +348,7 @@ def replace_unless_complete(source, target):
 with patch.object(os, "replace", replace_unless_complete):
     code, _, error = invoke(["--approved", sha, "."])
 assert code == 1 and len(posts) == 3, (code, error)
+assert calls[-4:] == ${ALL_POSTS} + ["${READ_INLINE}"] and calls.count("${READ_INLINE}") == 1, calls
 assert "All GitHub actions posted; local completion receipt write failed" in error
 assert "never retry" in error and not (run / "render.tmp").exists()
 assert json.loads(receipts_bytes())["complete"] is False
@@ -318,9 +356,101 @@ assert json.loads(receipts_bytes())["complete"] is False
   ],
 ] as const;
 
+const INLINE_MISSES = [
+  [
+    "two planned findings share an anchor",
+    'author["findings"].append(dict(finding, id="F2"))\nsave()',
+    "2 of 2 not matched",
+  ],
+  [
+    "two returned comments share an anchor, even if one has an invalid receipt",
+    'live["inline_pages"].append([dict(comment, id=102, html_url=None)])',
+    "1 of 1 not matched",
+  ],
+  ["GitHub omits the URL", 'comment.pop("html_url")', "1 of 1 not matched"],
+  [
+    "GitHub returns a non-HTTPS URL",
+    'comment["html_url"] = "http://github.com/unusable"',
+    "1 of 1 not matched",
+  ],
+  [
+    "GitHub returns a URL that cannot be written as UTF-8",
+    String.raw`comment["html_url"] = "https://github.com/\ud800"`,
+    "1 of 1 not matched",
+  ],
+  [
+    "GitHub returns an invalid ID",
+    'comment["id"] = True',
+    "1 of 1 not matched",
+  ],
+  [
+    "GitHub returns comments differing by path, side or line",
+    'live["inline_pages"] = [[dict(comment, path="other.py"), dict(comment, side="LEFT"), dict(comment, line=3)]]',
+    "1 of 1 not matched",
+  ],
+] as const;
+
 describe("post-review.py posting", () => {
   it.each(POSTING_RUNS)("%s", (_label, source) => {
     expect(verified(source)).toBe("verified");
+  });
+
+  it.each(INLINE_MISSES)(
+    "leaves the inline unmapped when %s",
+    (_label, setup, reason) => {
+      expect(
+        verified(String.raw`
+${setup}
+code, _, error = invoke(["--approved", preview_sha(), "."])
+assert code == 0 and error == "", (code, error)
+assert calls[-4:] == ${ALL_POSTS} + ["${READ_INLINE}"] and len(posts) == 3, calls
+saved = json.loads(receipts_bytes())
+assert (saved.get("inline"), saved.get("inline_error"), saved["complete"], saved["failed"]) == (
+    [], ${JSON.stringify(reason)}, True, []), saved
+`),
+      ).toBe("verified");
+    },
+  );
+
+  it("keeps a valid inline receipt when another comment has no URL", () => {
+    expect(
+      verified(String.raw`
+author["findings"].append(dict(finding, id="F2", anchor=dict(finding["anchor"], line=3)))
+unusable = dict(comment, id=102, line=3)
+del unusable["html_url"]
+live["inline_pages"].append([unusable])
+save()
+code, _, error = invoke(["--approved", preview_sha(), "."])
+assert code == 0 and error == "", (code, error)
+assert calls[-4:] == ${ALL_POSTS} + ["${READ_INLINE}"] and len(posts) == 3, calls
+saved = json.loads(receipts_bytes())
+assert (saved.get("inline"), saved.get("inline_error"), saved["complete"]) == (
+    [dict(finding="F1", id=101, url=inline_url)], "1 of 2 not matched", True), saved
+`),
+    ).toBe("verified");
+  });
+
+  it.each([
+    ["the inline GET fails", `live["fail"] = "${READ_INLINE}"`],
+    ["the inline GET times out", 'live["inline_timeout"] = True'],
+    [
+      "the inline GET returns malformed pages",
+      'live["inline_pages"] = [comment]',
+    ],
+  ])("keeps posting successful when %s", (_label, setup) => {
+    expect(
+      verified(String.raw`
+${setup}
+code, output, error = invoke(["--approved", preview_sha(), "."])
+assert code == 0 and error == "", (code, error)
+assert calls[-4:] == ${ALL_POSTS} + ["${READ_INLINE}"] and calls.count("${READ_INLINE}") == 1, calls
+assert len(posts) == 3, posts
+assert len(read_timeouts) == 1 and read_timeouts[0] is not None and read_timeouts[0] > 0, read_timeouts
+saved = json.loads(receipts_bytes())
+assert json.loads(output) == saved and saved["complete"] and saved["failed"] == [], saved
+assert "inline" in saved and saved["inline"] is None and saved.get("inline_error"), saved
+`),
+    ).toBe("verified");
   });
 
   it("snapshots only this account's approvals at this head from paginated history", () => {
@@ -341,140 +471,4 @@ assert all("--paginate" in args and "--slurp" in args
 `),
     ).toBe("verified");
   });
-});
-
-const RUN_DIR = ".handoffs/review-pull-request/offline";
-// Writes passing run files for the seeded PR, recording the posting basis from
-// the shipped --snapshot, and renders the report the approval gate requires.
-const RUN_SETUP = String.raw`
-import json, pathlib, runpy, subprocess, sys
-${REVIEW_FIXTURE}
-script, run = pathlib.Path(sys.argv[1]), pathlib.Path("${RUN_DIR}")
-run.mkdir(parents=True)
-ctx, author, body = fixture(run)
-head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
-base = json.loads(pathlib.Path(".git/fake-gh-state.json").read_text())["base"]
-snapshot = json.loads(subprocess.check_output(["python3", "-I", str(script), "--snapshot", "eval-org/cart", "17", head], text=True))
-threads = [{**{key: thread[key] for key in ("thread_id", "is_resolved", "path", "line", "root_url")},
-            "root_comment_id": int(thread["root_comment_id"]), "summary": "Collected claim"}
-           for thread in snapshot["evidence"]["threads"]]
-ctx.update(pr="${GITHUB_FACTS.url}", head_sha=head, base_sha=base, posting_basis=snapshot["posting_basis"], threads=threads)
-author["findings"][0].update(placement="reply", root_comment_id=701)
-author["thread_assessments"] = [dict(root_comment_id=thread["root_comment_id"], status="still-valid",
-                                     evidence="Fixture evidence") for thread in ctx["threads"]]
-for mode, value in [("context", ctx), ("author", author)]:
-    (run / (mode + ".txt")).write_text(mode.upper() + ": PASS\n" + json.dumps(value))
-renderer = runpy.run_path(str(script.with_name("render-review.py")))
-pathlib.Path("${GITHUB_FACTS.report}").write_bytes(renderer["render"](run))
-`;
-const COMPLETE_COMMENTS =
-  '"comments":{"totalCount":1,"pageInfo":{"hasNextPage":false';
-
-function shippedFixture(seed: ReviewFixtureOptions, hasNextPage = false) {
-  const fixture = makeFixture("clean", [], (context) => {
-    seedReviewFixture(context, seed);
-  });
-  const statePath = join(fixture.cwd, ".git/fake-gh-state.json");
-  if (hasNextPage) {
-    const state = readFileSync(statePath, "utf8");
-    const truncated = COMPLETE_COMMENTS.replace("false", "true");
-    writeFileSync(statePath, state.replaceAll(COMPLETE_COMMENTS, truncated));
-  }
-  const PATH = `${fixture.binPath}:${process.env["PATH"] ?? ""}`;
-  const env = { ...process.env, PATH };
-  const options = { cwd: fixture.cwd, env, encoding: "utf8" } as const;
-  return { ...fixture, options };
-}
-
-const REAL_POSTER_RUNS = [
-  {
-    label: "nothing drifted",
-    drift: undefined,
-    status: 0,
-    posts: 2,
-    stderr: /^$/,
-  },
-  {
-    label: "a review thread was resolved after the preview",
-    drift: "thread",
-    status: 3,
-    posts: 0,
-    stderr: /live account\/history changed; approval invalid/,
-  },
-] as const;
-
-const COLLECTOR_HISTORIES = [
-  {
-    label: "an empty thread history",
-    threads: false,
-    hasNextPage: false,
-    status: 0,
-    stdout: /"threads":\[\]/,
-    stderr: /^$/,
-  },
-  {
-    label: "truncated thread comments",
-    threads: true,
-    hasNextPage: true,
-    status: 3,
-    stdout: /^$/,
-    stderr: /fresh thread read failed or truncated/,
-  },
-] as const;
-
-const SUCCEEDED = { isError: false, truncated: false };
-
-describe("shipped poster and collector through the fake gh", () => {
-  it.each(REAL_POSTER_RUNS)(
-    "posts through the real poster only when nothing drifted: $label",
-    ({ drift, status, posts, stderr }) => {
-      const fixture = shippedFixture({
-        threads: true,
-        ...(drift === undefined ? {} : { drift }),
-      });
-      const { options } = fixture;
-      try {
-        execFileSync("python3", ["-I", "-c", RUN_SETUP, POSTER], options);
-        const dryRun = ["-I", POSTER, "--dry-run", RUN_DIR];
-        const preview = execFileSync("python3", dryRun, options);
-        const command = `cd '${fixture.cwd}' && python3 ${dryRun.join(" ")}`;
-        const result = { content: preview, ...SUCCEEDED };
-        const toolCalls = [{ name: "Bash", input: { command }, result }];
-        expect(approvalReply(createObservation({ toolCalls }))).toEqual({
-          reply: "APPROVED",
-        });
-        const hash = /approval-sha256: (?<hash>[a-f0-9]{64})/.exec(preview)
-          ?.groups?.["hash"];
-        assert.ok(hash !== undefined, "preview printed no approval hash");
-        const approved = ["-I", POSTER, "--approved", hash, RUN_DIR];
-        const run = spawnSync("python3", approved, options);
-        expect(run.status).toBe(status);
-        expect(run.stderr).toMatch(stderr);
-        const postsLog = readFileSync(join(fixture.cwd, REVIEW_POSTS), "utf8");
-        expect(postsLog.split("\n").filter(Boolean)).toHaveLength(posts);
-      } finally {
-        fixture.cleanup();
-      }
-    },
-    PREFLIGHT_TIMEOUT_MS,
-  );
-
-  it.each(COLLECTOR_HISTORIES)(
-    "snapshots $label through the shipped collector",
-    ({ threads, hasNextPage, status, stdout, stderr }) => {
-      const fixture = shippedFixture({ threads }, hasNextPage);
-      const { options } = fixture;
-      try {
-        const head = execFileSync("git", ["rev-parse", "HEAD"], options).trim();
-        const snapshot = ["-I", POSTER, "--snapshot", "eval-org/cart", "17"];
-        const run = spawnSync("python3", [...snapshot, head], options);
-        expect(run.status).toBe(status);
-        expect(run.stdout).toMatch(stdout);
-        expect(run.stderr).toMatch(stderr);
-      } finally {
-        fixture.cleanup();
-      }
-    },
-    PREFLIGHT_TIMEOUT_MS,
-  );
 });

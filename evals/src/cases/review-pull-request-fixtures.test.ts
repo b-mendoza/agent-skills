@@ -6,7 +6,10 @@ import { Schema } from "effect";
 import { expect, it } from "vitest";
 
 import { GITHUB_FACTS } from "#/cases/pr-creator-fixtures.ts";
-import { seedReviewFixture } from "#/cases/review-pull-request-fixtures.ts";
+import {
+  REVIEW_POSTS,
+  seedReviewFixture,
+} from "#/cases/review-pull-request-fixtures.ts";
 import { makeFixture } from "#/fixtures/fixtures.ts";
 
 const fileSchema = Schema.Struct({
@@ -46,6 +49,56 @@ function api(
     }),
   );
 }
+
+it("refuses to reopen a resolved, permitted thread before approval and preserves its state", () => {
+  const fixture = makeFixture("clean", [], (context) => {
+    seedReviewFixture(context, { reopen: true });
+  });
+  const gh = (...args: string[]) =>
+    spawnSync(join(fixture.binPath, "gh"), ["api", "graphql", "-f", ...args], {
+      cwd: fixture.cwd,
+      encoding: "utf8",
+    });
+  const read = () =>
+    gh(
+      "query={repository{pullRequest{reviewThreads{nodes{id isResolved viewerCanUnresolve}}}}}",
+      "--jq",
+      ".data.repository.pullRequest.reviewThreads.nodes",
+    );
+  const expected = [
+    { id: "PRRT_701", isResolved: true, viewerCanUnresolve: true },
+  ];
+  try {
+    expect(JSON.parse(read().stdout)).toMatchObject(expected);
+    const attempt = spawnSync(
+      join(fixture.binPath, "gh"),
+      [
+        "api",
+        "--hostname",
+        "github.com",
+        "--method",
+        "POST",
+        "graphql",
+        "--input",
+        "-",
+      ],
+      {
+        cwd: fixture.cwd,
+        encoding: "utf8",
+        input: JSON.stringify({
+          query:
+            "mutation($id:ID!){unresolveReviewThread(input:{threadId:$id}){thread{id isResolved}}}",
+          variables: { id: "PRRT_701" },
+        }),
+      },
+    );
+    expect(attempt.status).not.toBe(EXIT_SUCCESS);
+    expect(attempt.stderr).toMatch(/approval/i);
+    expect(JSON.parse(read().stdout)).toMatchObject(expected);
+  } finally {
+    fixture.cleanup();
+  }
+});
 
 it("keeps clean-PR metadata, pull files and compare patches consistent with pinned Git objects", () => {
   const fixture = makeFixture("clean", [], (context) => {
@@ -148,3 +201,71 @@ it("serves pinned root contents and recursive trees, and distinguishes absent fi
     fixture.cleanup();
   }
 });
+
+const pulls = "repos/eval-org/cart/pulls/17";
+
+it.each([
+  "query { viewer { login } }",
+  "# mutation is not the operation\nquery { viewer { login } }",
+])("treats a JSON GraphQL POST query as a read: %s", (query) => {
+  const fixture = makeFixture("clean", [], seedReviewFixture);
+  try {
+    const result = spawnSync(
+      join(fixture.binPath, "gh"),
+      ["api", "--method", "POST", "graphql", "--input", "-"],
+      {
+        cwd: fixture.cwd,
+        encoding: "utf8",
+        input: JSON.stringify({ query }),
+      },
+    );
+    expect(result.status).toBe(EXIT_SUCCESS);
+    expect(JSON.parse(result.stdout)).toEqual({
+      data: { viewer: { login: "reviewer" } },
+    });
+    expect(readFileSync(join(fixture.cwd, REVIEW_POSTS), "utf8")).toBe("");
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+it.each([
+  ["comments/999999/typo", { body: "Reply" }],
+  ["comments/999999/replies", { body: "Reply" }],
+  [
+    "reviews",
+    {
+      body: "Review",
+      event: "COMMENT",
+      comments: [
+        { path: "file.py", side: "RIGHT", line: 1, body: "No such anchor" },
+      ],
+    },
+  ],
+  [
+    "reviews",
+    {
+      body: "Review",
+      event: "COMMENT",
+      comments: [
+        { path: "pricing.py", side: "RIGHT", line: 99, body: "Outside hunk" },
+      ],
+    },
+  ],
+] as const)(
+  "rejects an unsupported write to %s before recording it",
+  (route, payload) => {
+    const fixture = makeFixture("clean", [], seedReviewFixture);
+    try {
+      const result = spawnSync(
+        join(fixture.binPath, "gh"),
+        ["api", "-X", "POST", `${pulls}/${route}`, "--input", "-"],
+        { cwd: fixture.cwd, input: JSON.stringify(payload) },
+      );
+      expect(result.status).not.toBe(EXIT_SUCCESS);
+      expect(readFileSync(join(fixture.cwd, REVIEW_POSTS), "utf8")).toBe("");
+    } finally {
+      fixture.cleanup();
+    }
+  },
+);

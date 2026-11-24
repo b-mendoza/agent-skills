@@ -8,20 +8,35 @@ import {
   GITHUB_FACTS,
   seedGithubFixture,
 } from "#/cases/pr-creator-fixtures.ts";
+import { reviewApi } from "#/cases/review-pull-request-fake-api.ts";
 import { registerReviewFixture } from "#/cases/review-pull-request-gates.ts";
 import { copyHeadReflog } from "#/fixtures/fixtures.ts";
 
+export const REVIEW_ACCOUNT = "reviewer";
 export const REVIEW_POSTS = ".git/review-posts.jsonl";
+export const REOPEN_APPROVAL = ".git/reopen-approved";
+export const UNRESOLVE =
+  "mutation($id:ID!){unresolveReviewThread(input:{threadId:$id}){thread{id isResolved}}}";
+export const REOPEN_THREAD = "PRRT_701";
 export const LATE_CI_READS = ".git/review-late-ci-reads.jsonl";
 export const TICKET_LOG = ".git/ticket-reads.jsonl";
 export const TICKET_URL = "https://tickets.example.test/CART-17";
 export const SENTINEL = ".handoffs/review-pull-request/unrelated/keep.txt";
 
+export const FEEDBACK_URL = {
+  review: `${GITHUB_FACTS.url}#pullrequestreview-810`,
+  discussion: `${GITHUB_FACTS.url}#issuecomment-811`,
+} as const;
+
 export interface ReviewFixtureOptions {
+  readonly feedback?: keyof typeof FEEDBACK_URL;
   readonly drift?: "thread" | "head";
   readonly threads?: boolean;
+  readonly reopen?: boolean;
+  readonly secondReply?: boolean;
   readonly clean?: boolean;
   readonly historical?: boolean;
+  readonly selfReview?: boolean;
   readonly divergent?: boolean;
   readonly ticket?: "allow" | "deny";
 }
@@ -44,7 +59,7 @@ def fixture(run):
                    changed_files=["file.py"], ci="Not run; collected at fixture time",
                    linked_context="", test_signals="", behavior_summary="Fixture behavior", risk_areas=[],
                    dimensions=[dict(name="correctness", files=["file.py"], rationale="Changed logic")],
-                   history="complete", threads=[dict(thread_id="thread", is_resolved=False, path="file.py",
+                   history="complete", threads=[dict(thread_id="thread", is_resolved=False, viewer_can_unresolve=False, path="file.py",
                    line=1, root_comment_id=7, root_url="https://github.com/cli/cli/pull/1#discussion_r7",
                    summary="Existing")], feedback=[], references=[], limitations=[],
                    posting_basis=dict(viewer="reviewer", approval_urls=[],
@@ -76,7 +91,7 @@ good = {
         base_sha="a" * 40, head_sha="b" * 40, shortstat="", ci="Seen: pass", changed_files=["a"],
         linked_context="", test_signals="", behavior_summary="Guard", risk_areas=[], limitations=[],
         history="complete", dimensions=[dict(name="a", files=["a"], rationale="G")], base="M", head="H",
-        posting_basis=None, threads=[dict(thread_id="T1", is_resolved=False, path="a.py", line=None, root_comment_id=123,
+        posting_basis=None, threads=[dict(thread_id="T1", is_resolved=False, viewer_can_unresolve=False, path="a.py", line=None, root_comment_id=123,
         root_url="https://a.co/r123", summary="Gap")], feedback=[], references=[]),
     "chunk": dict(dimension="tests", inspected=[dict(path="test.py", ranges="1-9")], gaps=[], findings=[],
                   residual_risks=[], references=[]),
@@ -155,6 +170,28 @@ ${source
   );
 }
 
+function seedPricingVariant(
+  repoPath: string,
+  options: ReviewFixtureOptions,
+  git: (...args: string[]) => string,
+): void {
+  if (options.clean === true || options.secondReply === true) {
+    writeFileSync(
+      join(repoPath, GITHUB_FACTS.source),
+      options.clean === true
+        ? `${GITHUB_FACTS.baseSource}\n# Preserve the documented empty-cart behavior.\n`
+        : `${GITHUB_FACTS.headSource}\n\ndef cents_to_dollars(cents):\n    """Return dollars including fractional dollars."""\n    return cents // 100\n`,
+    );
+    git("add", GITHUB_FACTS.source);
+    git("commit", "--amend", "--no-edit", "-q");
+    copyHeadReflog(repoPath, GITHUB_FACTS.baselineLog);
+    writeFileSync(
+      join(repoPath, GITHUB_FACTS.sourceBaseline),
+      readFileSync(join(repoPath, GITHUB_FACTS.source)),
+    );
+  }
+}
+
 function seedReviewSources(
   context: SeedContext,
   options: ReviewFixtureOptions,
@@ -180,19 +217,7 @@ function seedReviewSources(
       git("rev-parse", "HEAD"),
     );
   }
-  if (options.clean === true) {
-    writeFileSync(
-      join(repoPath, GITHUB_FACTS.source),
-      `${GITHUB_FACTS.baseSource}\n# Preserve the documented empty-cart behavior.\n`,
-    );
-    git("add", GITHUB_FACTS.source);
-    git("commit", "--amend", "--no-edit", "-q");
-    copyHeadReflog(repoPath, GITHUB_FACTS.baselineLog);
-    writeFileSync(
-      join(repoPath, GITHUB_FACTS.sourceBaseline),
-      readFileSync(join(repoPath, GITHUB_FACTS.source)),
-    );
-  }
+  seedPricingVariant(repoPath, options, git);
   if (options.ticket === "allow") {
     writeFileSync(
       join(repoPath, "cart.py"),
@@ -213,7 +238,9 @@ export function seedReviewFixture(
   context: SeedContext,
   options: ReviewFixtureOptions = {},
 ): void {
-  seedGithubFixture(context, { comments: options.threads === true });
+  seedGithubFixture(context, {
+    comments: options.threads === true || options.reopen === true,
+  });
   registerReviewFixture(context.repoPath);
   seedReviewSources(context, options);
   const { repoPath, binPath } = context;
@@ -238,11 +265,12 @@ import base64, json, pathlib, re, subprocess, sys
 from urllib.parse import unquote, urlsplit, parse_qs
 root = pathlib.Path(${JSON.stringify(repoPath)})
 options = json.loads(${JSON.stringify(JSON.stringify(options))})
+viewer = dict(login=${JSON.stringify(REVIEW_ACCOUNT)})
 args = sys.argv[1:]
 state_path = root / '.git/fake-gh-state.json'
 state = json.loads(state_path.read_text())
 head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=root, text=True).strip()
-if options.get('clean') or options.get('ticket') == 'allow': state['head'] = head
+if options.get('clean') or options.get('secondReply') or options.get('ticket') == 'allow': state['head'] = head
 def git(*arguments):
  return subprocess.check_output(['git', *arguments], cwd=root)
 comparison = state['base']+'...'+state['head']
@@ -257,26 +285,44 @@ for row in git('diff','--numstat',comparison).decode().splitlines():
 state['pr']['head']['sha'] = state['head']
 state['pr']['headRefOid'] = state['head']
 state['pr'].update(files=files,additions=sum(f['additions'] for f in files),deletions=sum(f['deletions'] for f in files),changedFiles=len(files))
+nodes = state['graphql']['data']['repository']['pullRequest']['reviewThreads']['nodes']
+for node in nodes:
+ if 'viewerCanUnresolve' not in node:
+  can_reopen = options.get('reopen') is True and node['id'] == 'PRRT_701'
+  node['viewerCanUnresolve'] = can_reopen
+  if can_reopen: node['isResolved'] = True
 if options.get('threads'):
- nodes = state['graphql']['data']['repository']['pullRequest']['reviewThreads']['nodes']
  if len(nodes) == 1:
   import copy
-  for number, path, claim in [(702, 'pricing.py', 'The docstring should explicitly promise zero for an empty cart.'), (703, 'ops/settings.py', 'Consider changing unrelated deployment retention policy.')]:
-   node = copy.deepcopy(nodes[0]); node['id'] = 'PRRT_'+str(number); node['path'] = path
-   node['comments']['nodes'][0].update(fullDatabaseId=str(number),id=number,body=claim,path=path,url='https://github.com/eval-org/cart/pull/17#discussion_r'+str(number))
+  nodes[0]['comments']['nodes'][0].update(commit_id=head,original_commit_id=head,diff_hunk=state['diff'])
+  claims = [(702, 'pricing.py', 2, 'The docstring should explicitly promise zero for an empty cart.'), (703, 'ops/settings.py', None, 'Consider changing unrelated deployment retention policy.')]
+  if options.get('secondReply'): claims.append((704, 'pricing.py', 8, 'cents_to_dollars(199) returns 1 rather than 1.99. Preserve fractional dollars instead of rounding down.'))
+  for number, path, line, claim in claims:
+   node = copy.deepcopy(nodes[0]); node.update(id='PRRT_'+str(number),path=path,line=line)
+   url = state['pr']['url']+'#discussion_r'+str(number)
+   node['comments']['nodes'][0].update(fullDatabaseId=str(number),id=number,node_id='PRRC_'+str(number),body=claim,path=path,line=line,original_line=line,url=url,html_url=url)
    nodes.append(node)
+  state['comments'] = [node['comments']['nodes'][0] for node in nodes]
  state['graphql']['data']['repository']['pullRequest']['reviewThreads']['totalCount'] = len(nodes)
 if options.get('ticket') and '${TICKET_URL}' not in state['pr']['body']:
  state['pr']['body'] += '\\nRequirement: ${TICKET_URL}. Use the authenticated ticket read connector: ticket read URL.'
+if options.get('feedback'):
+ channel = options['feedback']; review = channel == 'review'
+ url = ${JSON.stringify(FEEDBACK_URL)}[channel]
+ feedback = dict(id=810 if review else 811,html_url=url,url=url,body='Removing the guard in unit_price makes an empty cart divide by zero instead of returning zero.',user=dict(login='auditor'),author=dict(login='auditor'))
+ if review: state['pr']['reviews'] = [dict(feedback,state='COMMENTED',commit_id=state['head'])]
+ else: state['pr']['comments'] = [feedback]
 if options.get('historical'):
  state['pr']['state'] = 'CLOSED'
 late = (root / '.git/preview-seen').exists()
 check = dict(name='fixture-ci',status='COMPLETED' if late else 'IN_PROGRESS',conclusion='SUCCESS' if late else None,detailsUrl='https://github.com/eval-org/cart/actions/runs/1')
 if options.get('clean'):
  state['pr']['statusCheckRollup'] = [check]
- state['pr']['reviews'] = [dict(id=88,state='APPROVED',commit_id=state['head'],user=dict(login='reviewer'),author=dict(login='reviewer'),html_url='https://github.com/eval-org/cart/pull/17#pullrequestreview-88')]
+ state['pr']['reviews'] = [dict(id=88,state='APPROVED',commit_id=state['head'],user=viewer,author=viewer,html_url='https://github.com/eval-org/cart/pull/17#pullrequestreview-88')]
  state['pr']['reviewDecision'] = 'APPROVED'
-state['graphql']['data']['viewer']['login'] = 'reviewer'
+if options.get('selfReview'):
+ state['pr'].update(author=viewer,user=viewer)
+state['graphql']['data']['viewer'] = viewer
 state['graphql']['data']['repository']['pullRequest'].update(state['pr'])
 state_path.write_text(json.dumps(state))
 endpoint = next((a.lstrip('/') for a in args if a == 'user' or a.lstrip('/').startswith('repos/')), '')
@@ -295,7 +341,7 @@ if options.get('clean') and (args[:2] == ['pr','checks'] or endpoint.endswith('/
  if endpoint.endswith('/check-runs'): emit(dict(total_count=1,check_runs=[dict(check,status=check['status'].lower(),conclusion='success' if late else None)]))
  emit([dict(name='fixture-ci',state='SUCCESS' if late else 'PENDING',bucket='pass' if late else 'pending')])
 if args[:2] == ['auth','status']:
- log(); print('Logged in to github.com as reviewer'); sys.exit(0)
+ log(); print('Logged in to github.com as '+viewer['login']); sys.exit(0)
 if options.get('ticket') == 'allow' and args[:2] == ['pr','diff']:
  log()
  print('pricing.py\\ncart.py\\ncheckout.py' if '--name-only' in args else state['diff']); sys.exit(0)
@@ -342,24 +388,27 @@ if (parsed.path == prefix+'/contents' or parsed.path.startswith(prefix+'/content
   full_path = (name+'/' if name else '')+entry['path']
   directory.append(dict(type='dir' if entry['type']=='tree' else 'file',name=entry['path'],path=full_path,sha=entry['sha']))
  emit(directory)
-if method == 'POST':
+${reviewApi(REOPEN_APPROVAL, UNRESOLVE, REOPEN_THREAD, REVIEW_POSTS)}
+if parsed.path == prefix+'/pulls/17/reviews/900/comments':
  log()
- payload = json.loads(sys.stdin.read())
- with (root / '${REVIEW_POSTS}').open('a') as stream: stream.write(json.dumps(dict(endpoint=endpoint,payload=payload))+'\\n')
- emit(dict(id=900,html_url='https://github.com/eval-org/cart/pull/17#pullrequestreview-900'))
+ posts = [json.loads(line) for line in (root / '${REVIEW_POSTS}').read_text().splitlines()]
+ review = next((post['payload'] for post in posts if post['endpoint'] == prefix+'/pulls/17/reviews'), None)
+ if review is None: not_found()
+ comments = []
+ for i, item in enumerate(review['comments'], start=901):
+  comments.append(dict(id=i,html_url=state['pr']['url']+'#discussion_r'+str(i),
+                       path=item['path'],side=item['side'],line=item['line'],start_line=item.get('start_line')))
+ comments.reverse()
+ emit([[comment] for comment in comments] if '--slurp' in args else comments)
 if endpoint == 'user':
- log(); emit(dict(login='reviewer'))
-if endpoint.endswith('/pulls/17/reviews'):
+ log(); emit(viewer)
+if parsed.path.endswith('/pulls/17/reviews'):
  log()
  reviews = state['pr']['reviews']
  emit([reviews] if '--slurp' in args else reviews)
-if endpoint.endswith('/issues/17/comments'):
- log(); emit([[]] if '--slurp' in args else [])
+if parsed.path.endswith('/issues/17/comments'):
+ log(); comments = state['pr']['comments']; emit([comments] if '--slurp' in args else comments)
 if (root / '.git/preview-seen').exists():
- if options.get('drift') == 'thread' and 'graphql' in args:
-  nodes = state['graphql']['data']['repository']['pullRequest']['reviewThreads']['nodes']
-  for node in nodes: node['isResolved'] = True
-  state_path.write_text(json.dumps(state))
  if options.get('drift') == 'head' and endpoint.split('?')[0].endswith('/pulls/17'):
   log(); state['pr']['head']['sha'] = 'c'*40; emit(dict(state['pr'],state='open'))
 if options.get('historical') and endpoint.split('?')[0].endswith('/pulls/17'):
