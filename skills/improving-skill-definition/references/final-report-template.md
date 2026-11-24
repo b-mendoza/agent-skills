@@ -6,6 +6,7 @@ Load this reference immediately before emitting an approval, changed, no-change,
 
 - These headings organize report content, not a routing envelope. Under `Decision`, write a sentence explaining the outcome and next action; never emit a bare enum or machine-readable status line. Describe per-slice outcomes in readable prose. Internal YAML reports retain their exact statuses.
 
+- Under `Preserved Run Directory` or `Preserved Evidence`, give the actual run directory. If no run files were created, say so instead.
 - Include `ignored_preapproval` and `follow_up_findings` when non-empty.
 - Externally-derived gaps are visibly marked with provenance.
 - Emission checklist: privately verify every required heading for the chosen decision and repair omissions before emitting. Under `Sections Present`, confirm coverage in one prose sentence; do not emit `Heading: present` or `Heading: absent` checklist lines.
@@ -62,8 +63,8 @@ Lane A checks, baseline diff summary, gate results, `VALIDATION: PASS` path.
 ## Follow-Up Findings
 Lane B findings not repaired in this run, or `none`.
 
-## Cleanup
-Workflow-created files removed or remaining empty directory note.
+## Preserved Run Directory
+Actual HANDOFF_DIR path.
 
 ## Sections Present
 ```
@@ -72,7 +73,7 @@ Workflow-created files removed or remaining empty directory note.
 
 For `EDIT: NO_CHANGE`, include the editor's per-item classification under `Reason`.
 
-Required headings: `Decision`, `Reason`, `Audit Evidence`, `Mandate Coverage`, `Ignored Preapproval`, `Cleanup`, `Sections Present`.
+Required headings: `Decision`, `Reason`, `Audit Evidence`, `Mandate Coverage`, `Ignored Preapproval`, `Preserved Run Directory`, `Sections Present`.
 
 ## Blocked
 
@@ -89,7 +90,7 @@ Named phase, status, and smallest recovery action or question.
 What was already audited, edited, or validated.
 
 ## Preserved Evidence
-If mutation_applied=true: baseline path, editor report, validator report, and:
+After mutation, name the baseline, editor and validator report paths, disclose any missing evidence, and give:
 `diff -r BASELINE_PATH SKILL_PATH`
 
 ## Commit Warning
@@ -101,11 +102,9 @@ Lane B findings when available.
 ## Sections Present
 ```
 
-If `mutation_applied=false`, state that workflow files were cleaned up.
-
 ## Error
 
-Required headings: `Decision`, `Failed Condition`, `Known Context`, `Recovery Action`, `Preserved Evidence`, `Cleanup`, `Sections Present`.
+Required headings: `Decision`, `Failed Condition`, `Known Context`, `Recovery Action`, `Preserved Evidence`, `Sections Present`. After mutation, include the same recovery paths, missing-evidence disclosure, diff command, and no-commit warning as for Blocked.
 
 ## Personality Alternatives
 
