@@ -26,6 +26,7 @@ export function analysisObservation(
     from: "chunk-analyst",
     chunk: "reuse",
     status: "PASS",
+    pushback: [],
     total_findings: 21,
     omitted_count: 20,
     omitted_high_priority: 0,

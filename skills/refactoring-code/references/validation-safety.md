@@ -24,7 +24,7 @@ The orchestrator may select validation only from:
 
 The implementer may run only the selected contract. If the selected command's safety class changes on re-check, stop `BLOCKED` and ask the orchestrator to re-gate.
 
-When the contract command is classed `safe`, the implementer runs it once before any edit as a baseline checkpoint. A baseline failure is pre-existing evidence for the pre-existing-failure rule below — record it and continue; do not treat it as a stop or attribute it to the refactor.
+When the contract command is classed `safe`, the implementer (the orchestrator for parallel units) runs it once before any edit as a baseline checkpoint. A baseline failure is pre-existing evidence for the pre-existing-failure rule below — record it and continue; do not treat it as a stop or attribute it to the refactor.
 
 ## Evidence Requirements
 
@@ -36,9 +36,9 @@ Validation evidence must include:
 - Tests-run count, matched suite names, matched file names, or equivalent output showing the target was exercised.
 - Result: `pass`, `fail`, `not run`, or `pre-existing failure`.
 
-Zero tests executed is `not run` even when exit code is 0. A refactor with any validation warning can complete only as `PASS_WITH_WARNINGS`, never bare `PASS`.
+Zero tests executed (for a selected documentation checker: zero target documents or links examined) is `not run` even when exit code is 0. A refactor with any validation warning can complete only as `PASS_WITH_WARNINGS`, never bare `PASS`.
 
-Pre-existing failures must be identified by evidence from before the refactor (the baseline checkpoint when one ran) or by a rerun that demonstrates the same failure is unrelated. If that evidence is missing, report the validation result as warning or fail, not pass.
+Report `pre-existing failure` only if baseline evidence identifies the same failure or, when the checkpoint was skipped, a rerun demonstrates it is unrelated. For any other post-edit failure, including one after a passing checkpoint, report `Result: fail`.
 
 ## Claim-to-Evidence Rule
 

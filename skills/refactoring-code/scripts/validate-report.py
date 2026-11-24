@@ -8,16 +8,19 @@ import sys
 
 MAX_BYTES = 12 * 1024
 MAX_FINDINGS = 12
+MAX_PUSHBACK = 3
 STATUSES = {
     "behavior-mapper": {"PASS", "NO_CHANGE_CANDIDATE", "NEEDS_CLARIFICATION", "ERROR"},
     "chunk-analyst": {"PASS", "NEEDS_CLARIFICATION", "ERROR"},
-    "refactor-implementer": {"PASS", "PASS_WITH_WARNINGS", "BLOCKED", "ERROR"},
+    "refactor-implementer": {"PASS", "PASS_WITH_WARNINGS", "FAIL", "BLOCKED", "ERROR"},
     "refactor-reviewer": {"PASS", "FAIL", "ERROR"},
+    "dispute-adjudicator": {"PASS", "ERROR"},
 }
 PREFIXES = {
     "behavior-mapper": "BEHAVIOR_MAP",
     "refactor-implementer": "IMPLEMENTATION",
     "refactor-reviewer": "REFACTOR_REVIEW",
+    "dispute-adjudicator": "ADJUDICATION",
 }
 
 
@@ -36,6 +39,11 @@ def analyst_status(text):
     require(report.get("version") == 1, "unsupported version")
     require(report.get("from") == "chunk-analyst", "wrong report producer")
     require(isinstance(report.get("chunk"), str) and report["chunk"], "missing chunk")
+    pushback = report.get("pushback")
+    require(isinstance(pushback, list) and len(pushback) <= MAX_PUSHBACK, "invalid analyst pushback list")
+    for entry in pushback:
+        require(isinstance(entry, dict) and entry.keys() == {"claim", "evidence"}
+                and all(isinstance(v, str) and v.strip() for v in entry.values()), "invalid analyst pushback entry")
     findings = report.get("findings")
     require(isinstance(findings, list) and len(findings) <= MAX_FINDINGS, "findings cap is 12")
     total, omitted = report.get("total_findings"), report.get("omitted_count")
@@ -51,6 +59,8 @@ def analyst_status(text):
         require(isinstance(item, dict), "finding must be an object")
         for key in ("location", "problem", "transformation", "reuse_evidence"):
             require(isinstance(item.get(key), str) and item[key].strip(), "missing " + key)
+        if "exception" in item:
+            require(item["exception"] in ("test-removal", "internal-export-removal"), "invalid finding exception")
         require(item.get("priority") in ("high", "normal"), "invalid priority")
         require(item.get("confidence") in ("high", "low"), "invalid confidence")
         require(item.get("reuse_rung") in (
@@ -60,28 +70,33 @@ def analyst_status(text):
     require(not high_omitted or (
         len(findings) == MAX_FINDINGS and all(item["priority"] == "high" for item in findings)
     ), "include high-priority findings before lower-priority findings")
-    return report.get("status")
+    status = report.get("status")
+    for stop, field in (("NEEDS_CLARIFICATION", "question"), ("ERROR", "error")):
+        if status == stop:
+            require(isinstance(report.get(field), str) and report[field].strip(), "missing " + field)
+    return status
 
 
 REQUIRED_FIELDS = {
     "behavior-mapper": (
         "Target", "Files inspected", "Worktree baseline", "Commit", "Porcelain summary",
         "Pre-existing dirty files", "Current behavior facts", "Validation candidates",
-        "User command", "Discovered candidates", "File sizes", "Proposed chunks", "Risk notes",
+        "User command", "Discovered candidates", "File sizes", "Proposed chunks", "Risk notes", "Pushback",
     ),
     "refactor-implementer": (
-        "Fix cycle", "Changes made", "Per-file disposition", "File sizes after change",
+        "Unit", "Fix cycle", "Changes made", "Per-file disposition", "File sizes after change",
         "Net lines", "Baseline checkpoint", "Validation evidence", "Command", "Safety class",
         "Exit code", "Coverage evidence", "Result", "Warnings", "Deviations", "Reviewer focus",
-        "Risk notes",
+        "Risk notes", "Pushback",
     ),
     "refactor-reviewer": (
         "Fix cycle reviewed", "Behavior verdict", "Simplification verdict", "Baseline scope check",
         "Implementer-reported files reviewed", "Files changed outside report", "Plan conformance",
         "Behavior and protected-boundary check", "Simplification outcome", "Net lines",
         "Duplication", "Reuse rungs", "Size policy check", "Validation evidence check",
-        "Findings", "Required fixes", "Minor notes for handoff", "Risk notes",
+        "Findings", "Required fixes", "Minor notes for handoff", "Risk notes", "Pushback",
     ),
+    "dispute-adjudicator": ("Dispute", "Verdict", "Reasons", "Unresolved", "Pushback"),
 }
 PARENT_FIELDS = {
     "behavior-mapper": {"Worktree baseline", "Validation candidates"},
@@ -97,10 +112,97 @@ def text_fields(text, names):
     fields = {}
     for index, match in enumerate(matches):
         name = match.group(1)
-        require(name not in fields, "duplicate field: " + name)
+        require(name not in fields, "duplicate field: " + name + " (write a path that equals a field name as ./" + name + ")")
         end = matches[index + 1].start() if index + 1 < len(matches) else len(text)
         fields[name] = (match.group(2) + text[match.end():end]).strip()
+        if name == "Pushback":
+            validate_pushback(fields[name], match.group(2).strip())
     return fields
+
+
+def validate_review(status, fields):
+    verdicts = [fields["Behavior verdict"], fields["Simplification verdict"]]
+    allowed = ("pass", "fail", "unavailable") if status == "ERROR" else ("pass", "fail")
+    require(all(value in allowed for value in verdicts), "invalid reviewer verdict")
+    if status == "ERROR":
+        return
+    fixes = fields["Required fixes"]
+    no_fixes = fixes.removeprefix("- ") == "none"
+    material_finding = re.search(r"^[ \t]*(?:-[ \t]+)?(?:Critical|Important)\b", fields["Findings"], re.MULTILINE)
+    if status == "PASS":
+        require(verdicts == ["pass", "pass"], "PASS contradicts reviewer verdicts")
+        require(no_fixes, "PASS has required fixes")
+        for check in ("Plan conformance", "Behavior and protected-boundary check", "Size policy check", "Validation evidence check"):
+            outcomes = "pass|warning" if check == "Validation evidence check" else "pass"
+            for item in re.split(r"\n[ \t]*-(?=[ \t]|$)", fields[check]):
+                require(re.match(rf"^(?:-[ \t]+)?(?:{outcomes})\b", item.strip()),
+                        f"PASS needs {outcomes} for every {check} item")
+        require(not material_finding, "PASS has Critical or Important findings")
+        require(fields["Files changed outside report"].removeprefix("- ") == "none", "PASS has unreported files")
+    else:
+        require(not no_fixes, "FAIL needs required fixes")
+        require("fail" in verdicts or material_finding, "FAIL needs a failed verdict or a Critical or Important finding")
+        for line in fixes.splitlines():
+            require(re.fullmatch(r"- (Critical|Important); (in-map|out-of-map|protected); [^;\s][^;]*; \S.*", line),
+                    "invalid required fix: " + line)
+
+
+def validate_pushback(value, inline):
+    if inline:
+        require(value == "none", "invalid pushback entry")
+        return
+    entries = value.splitlines()
+    require(1 <= len(entries) <= MAX_PUSHBACK, "pushback must have 1-3 entries")
+    for line in entries:
+        require(re.fullmatch(r"- P[1-9][0-9]*: \S.*; evidence: \S.*", line), "invalid pushback entry")
+
+
+def validate_adjudication(status, fields):
+    allowed = ("A", "B", "neither", "unavailable") if status == "ERROR" else ("A", "B", "neither")
+    require(fields["Verdict"] in allowed, "invalid adjudication verdict")
+    if status == "PASS":
+        require(re.search(r"[\w./-]+:[1-9][0-9]*\b", fields["Reasons"]), "Reasons must cite path:line")
+
+
+# Zero coverage: a zero count of tests, passes, executions or matched suites/files. A zero subtotal beside a
+# positive passed or executed count is not one; a skipped count without such a count is.
+MATCH_TARGET = r"(?:test\s+)?(?:suites?|files?)"
+COUNT_AUXILIARY = r"(?:were|was|are|is|have|has|had)"
+POSITIVE_COUNT = r"[1-9]\d*(?:,\d{3})*"
+SKIP_LABEL = r"(?:skipped|pending|todo)"
+ZERO_COVERAGE = re.compile(rf"""
+    ^(?:0|zero)(?:\s*(?:/|of)\s*\d+)?$
+    | \b (?:
+        (?P<leading_zero>0|zero|no) (?:\s*(?:/|of)\s*\d+)? \s+
+            (?:tests?|passed|passing|executed|ran|run|matched\s+{MATCH_TARGET})
+        | tests?\s+(?:run|ran|executed) (?:\s*[:=]\s*|\s+) 0
+        | tests? (?:\s*[:=]\s*|\s+) (?P<test_zero>0)
+        | pass(?:ed|ing)? (?:\s*[:=]\s*|\s+) (?P<pass_zero>0)(?!\.\d)
+    ) \b (?!\s+(?:(?:files?|suites?)\s+)?(?:failed|failures?|errors?|skipped)\b)
+    | \b (?:0|zero|no) (?:\s*(?:/|of)\s*\d+)? \s+ {MATCH_TARGET}\s+(?:{COUNT_AUXILIARY}\s+)?matched \b
+    | \b matched\s+(?:0|zero|no)\s+{MATCH_TARGET} \b
+    | \b (?:matched\s+{MATCH_TARGET} | {MATCH_TARGET}\s+matched)
+        (?:\s*[:=]\s*|\s+) (?:0|zero|none)(?![\w./-])
+""", re.I | re.X)
+EXECUTED_COUNT = re.compile(rf"""
+    (?<![\w/.]) (?<!\bof\s) {POSITIVE_COUNT} \s+ (?:
+        (?:tests?\s+)? (?:{COUNT_AUXILIARY}\s+)? (?:passed|passing|ran|executed)
+        | (?:tests?\s+(?:{COUNT_AUXILIARY}\s+)?|{COUNT_AUXILIARY}\s+) run
+        | run (?=[ \t]*(?:[^\w \t]|\d|\bin\b|$))
+        | (?:(?!{SKIP_LABEL}\b)[a-z][\w-]*\s+){{0,2}} (?:checked|examined)
+    ) \b
+    | \b (?:tests?\s+(?:run|ran|executed|passed) | pass(?:ed|ing)?)
+        (?:\s*[:=]\s*|\s+) {POSITIVE_COUNT} \b (?!\.\d)
+""", re.I | re.X)
+ZERO_SUBTOTAL = re.compile(rf"""
+    (?<![/.]) \b (?:0|zero|no) \s+ (?:tests?\s+)? (?:{COUNT_AUXILIARY}\s+)?
+    (?:failed|failing|failures?|errors?|{SKIP_LABEL}|ignored) \b
+""", re.I | re.X)
+SKIPPED_COUNT = re.compile(rf"""
+    (?<![\w/.]) {POSITIVE_COUNT} \s+ (?:(?:{MATCH_TARGET}|[a-z][\w-]*)\s+)?
+        (?:{COUNT_AUXILIARY}\s+)? {SKIP_LABEL} \b
+    | \b {SKIP_LABEL} (?:\s*[:=]\s*|\s+) {POSITIVE_COUNT} \b (?!\.\d)
+""", re.I | re.X)
 
 
 def text_status(role, text):
@@ -119,27 +221,59 @@ def text_status(role, text):
         start = re.search(r"^(?:- )?" + re.escape(name) + r":[ \t]*(.*)$", text, re.MULTILINE)
         remainder = text[start.end():].lstrip() if start else ""
         require(bool(fields[name]) or (
-            name in PARENT_FIELDS[role] and remainder.startswith("- ")
+            name in PARENT_FIELDS.get(role, ()) and remainder.startswith("- ")
         ), "empty field: " + name)
-    for name in CONDITIONAL_FIELDS.values():
+    for stop, name in CONDITIONAL_FIELDS.items():
         if name in fields:
             require(bool(fields[name]), "empty field: " + name)
+            require(status == stop, f"{name} is only for {stop}")
     if status in CONDITIONAL_FIELDS:
         name = CONDITIONAL_FIELDS[status]
         require(bool(fields.get(name)), "missing field: " + name)
+    if role == "dispute-adjudicator":
+        validate_adjudication(status, fields)
     if role == "refactor-reviewer":
-        verdicts = [fields["Behavior verdict"], fields["Simplification verdict"]]
-        require(all(value in ("pass", "fail") for value in verdicts), "invalid reviewer verdict")
-        require(status != "PASS" or verdicts == ["pass", "pass"], "PASS contradicts reviewer verdicts")
+        validate_review(status, fields)
     if role == "refactor-implementer":
         require(fields["Safety class"] in ("safe", "state-mutating", "destructive", "warning path"), "invalid safety class")
         require(fields["Result"] in ("pass", "fail", "not run", "pre-existing failure"), "invalid validation result")
         require(bool(re.fullmatch(r"-?\d+|not run", fields["Exit code"])), "invalid exit code")
-        if status == "PASS":
+        unit = fields["Unit"]
+        require(unit in ("all", "integration", "U1", "U2", "U3", "U4"), "invalid Unit")
+        require(re.match(r"^[ \t]*(?:-[ \t]+)?Unit:", lines[1]), "Unit must follow implementation status")
+        if unit not in ("all", "integration"):
+            require(status in ("PASS", "BLOCKED", "ERROR"), "invalid unit status")
+            for field in ("Command", "Exit code", "Coverage evidence", "Result"):
+                require(fields[field] == "not run", "unit requires not run: " + field)
+        elif status == "PASS":
             require(fields["Result"] == "pass", "PASS contradicts validation Result: " + fields["Result"])
-            require(fields["Exit code"] == "0", "PASS contradicts validation Exit code: " + fields["Exit code"])
-            require(fields["Safety class"] != "warning path", "PASS contradicts validation Safety class: warning path")
-            require(fields["Command"] != "not run" and fields["Coverage evidence"] != "not run", "PASS needs command and coverage")
+            require(fields["Warnings"].removeprefix("- ") == "none", "PASS has warnings")
+        elif status == "FAIL":
+            require(fields["Result"] == "fail", "FAIL needs Result: fail")
+            require(fields["Command"] != "not run", "FAIL needs an executed command")
+            require(fields["Exit code"] != "not run", "FAIL needs an exit code")
+        elif status == "PASS_WITH_WARNINGS":
+            require(fields["Result"] != "fail", "PASS_WITH_WARNINGS contradicts Result: fail")
+        if fields["Result"] == "pass":
+            claim = "PASS" if status == "PASS" else "Result: pass"
+            require(fields["Safety class"] != "warning path", claim + " contradicts validation Safety class: warning path")
+            require(fields["Command"] != "not run" and fields["Coverage evidence"] != "not run",
+                    claim + " needs command and coverage")
+            require(fields["Exit code"] == "0", claim + " contradicts validation Exit code: " + fields["Exit code"])
+            coverage = fields["Coverage evidence"]
+            executed = EXECUTED_COUNT.search(coverage)
+            require(executed or not SKIPPED_COUNT.search(coverage),
+                    "Result: pass reports skipped tests without a passed or executed count")
+            # Ignore only the matching zero token, not the text around it or a matched-suite/file count.
+            zero_total = any(
+                not (executed and match.lastgroup and ZERO_SUBTOTAL.match(coverage, match.start(match.lastgroup)))
+                for match in ZERO_COVERAGE.finditer(coverage)
+            )
+            require(not zero_total, "Result: pass reports zero tests")
+        if fields["Result"] == "pre-existing failure":
+            require(fields["Command"] != "not run", "pre-existing failure needs an executed command")
+            require(fields["Exit code"] != "not run", "pre-existing failure needs an exit code")
+            require(not fields["Baseline checkpoint"].startswith("pass"), "pre-existing failure contradicts passing baseline")
     if role == "behavior-mapper" and status == "PASS":
         chunks = re.findall(r"^- .+", fields["Proposed chunks"], re.MULTILINE)
         require(2 <= len(chunks) <= 5, "PASS requires 2-5 analysis chunks")
