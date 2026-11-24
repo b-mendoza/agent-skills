@@ -2,9 +2,11 @@
 
 Finite-state execution model for this skill. This table is the only normative list of states, transitions, guards, and terminals. `ResolveMode` sets `EXECUTION_MODE` to `dispatch` or `inline`.
 
-Six specialists stay separate: each owns a distinct status prefix and failure mode (topology, preflight/push, scope, draft, metadata, submit). That split is earned complexity, not decoration.
-
 When attached, an omitted head or the checked-out branch itself selects that branch with `Head source: checkout`. Any other named branch, including any named head while detached, selects `Head source: remote`; a local copy not checked out is only a reported fact. Report the selected name as `Head branch`. Detached HEAD without a named head is `BLOCKED`. Never switch branches.
+
+Guard terms:
+
+- **Issue step needed:** `CLOSES_ISSUES` or `RELATED_ISSUES` names at least one issue.
 
 ## Transitions
 
@@ -48,7 +50,8 @@ When attached, an omitted head or the checked-out branch itself selects that bra
 | `GatePush`                 | `TerminalHeadUnpushed`     | push declined                                                                      |
 | `GatePushRejected`         | `RunPreflight`             | user confirms manual resolution                                                    |
 | `GatePushRejected`         | `TerminalHeadUnpushed`     | stop                                                                               |
-| `AnalyzeDiff`              | `DraftPr`                  | `DIFF_ANALYSIS: PASS`: pins match, and either no rule fired or `verify scope` passed with fresh observations |
+| `AnalyzeDiff` | `ResolveIssues` | `DIFF_ANALYSIS: PASS` and issue step needed |
+| `AnalyzeDiff` | `DraftPr` | `DIFF_ANALYSIS: PASS` otherwise |
 | `AnalyzeDiff`              | `GateScope`                | `LARGE_PR_CONFIRMATION_REQUIRED`: rule fired with missing or stale approval; scope cycles &lt; 3                           |
 | `AnalyzeDiff`              | `TerminalEmptyDiff`        | `EMPTY_DIFF`                                                                       |
 | `AnalyzeDiff`              | `RunPreflight`             | `STALE_PINS`; discard scope and preview approval                                   |
@@ -57,6 +60,13 @@ When attached, an omitted head or the checked-out branch itself selects that bra
 | `GateScope`                | `AnalyzeDiff`              | current scope approved; redispatch with the verbatim `Scope values` and record to verify fresh pins, paths and counts     |
 | `GateScope`                | `TerminalAwaitingUser`     | question pending; the proposal has no editable part, so a change request is answered with the available choices and asked again                                                                   |
 | `GateScope`                | `TerminalCancelled`        | scope declined                                                                     |
+| `ResolveIssues` | `DraftPr` | `ISSUE_REFS: PASS` |
+| `ResolveIssues` | `GateIssueRefs` | `NEEDS_DECISION` or `INVALID_ISSUES`, issue-refs cycles < 3 |
+| `ResolveIssues` | `FinalDecision` | `NEEDS_DECISION` or `INVALID_ISSUES`, issue-refs cycles ≥ 3 |
+| `ResolveIssues` | `TerminalAuth` | `AUTH` |
+| `ResolveIssues` | `TerminalBlocked` | `ERROR` |
+| `GateIssueRefs` | `TerminalAwaitingUser` | question pending |
+| `GateIssueRefs` | `ResolveIssues` | invalid references fixed or dropped, or keyword decision made; redispatch |
 | `DraftPr` | `DraftPr` | `PR_DRAFT: PASS`, `title` check exits non-zero, type/scope cycles < 3; redispatch with findings |
 | `DraftPr` | `SuggestMetadata` | `PR_DRAFT: PASS` and title check passes |
 | `DraftPr`                  | `GateTypeScope`            | `NEEDS_CHOICE` and type/scope cycles &lt; 3                                        |
@@ -77,12 +87,14 @@ When attached, an omitted head or the checked-out branch itself selects that bra
 | `GateLabels` | `SuggestMetadata` | labels resolved; redispatch |
 | `GateAssignees` | `TerminalAwaitingUser` | question pending |
 | `GateAssignees` | `SuggestMetadata` | assignable users or none supplied; redispatch |
+| `ShowPreview` | `FinalDecision` | preview digest fails because the exact body conflicts with the issue lists; show no proposal |
 | `ShowPreview`              | `GatePreview`              | preview shown; `pending.json` written                                                                      |
 | `GatePreview`              | `TerminalAwaitingUser`     | question pending                                                                   |
 | `GatePreview`              | `FreezeApproval`           | exact preview approved                                                             |
 | `GatePreview`              | `TerminalCancelled`        | declined without edits                                                             |
 | `GatePreview`              | `InspectRepo`              | edits; earliest phase is repo/platform; preview-edit cycles &lt; 3                 |
-| `GatePreview`              | `AnalyzeDiff`              | edits; earliest phase is diff/scope; cycles &lt; 3                                 |
+| `GatePreview` | `ResolveIssues` | edits; earliest phase is issue references; preview-edit cycles < 3 |
+| `GatePreview` | `AnalyzeDiff` | edits; earliest phase is diff/scope; cycles < 3 |
 | `GatePreview`              | `DraftPr`                  | edits; earliest phase is title/body; cycles &lt; 3                                 |
 | `GatePreview`              | `SuggestMetadata`          | edits; earliest phase is reviewers/labels/assignees; cycles &lt; 3                 |
 | `GatePreview`              | `FinalDecision`            | preview-edit cycles ≥ 3                                                            |
@@ -98,6 +110,7 @@ When attached, an omitted head or the checked-out branch itself selects that bra
 | `VerifySubmit` | `TerminalCreatedWithDrift` | the worse of the two outcomes is `drift`, or `compare` cannot run |
 | `FinalDecision`            | `InspectRepo`              | exact recovery targets repo/branch                                                 |
 | `FinalDecision`            | `RunPreflight`             | exact recovery targets preflight                                                   |
+| `FinalDecision` | `ResolveIssues` | exact recovery targets issue references |
 | `FinalDecision`            | `AnalyzeDiff`              | exact recovery targets diff                                                        |
 | `FinalDecision`            | `DraftPr`                  | exact recovery targets draft                                                       |
 | `FinalDecision`            | `SuggestMetadata`          | exact recovery targets metadata                                                    |
@@ -127,7 +140,7 @@ Approval gates: `GatePush`, `GateScope`, `GatePreview`. All others are choice ga
 
 ## Cycle ledgers
 
-Independent counters (max 3 non-`PASS` redispatches per gate, then `FinalDecision`): `push`, `scope`, `type/scope`, `reviewer`, `label`, `assignee`, `preview-edit`. Submission uses only the bounded create retry inside `pr-submitter`.
+Independent counters (max 3 non-`PASS` redispatches per gate, then `FinalDecision`): `push`, `scope`, `type/scope`, `reviewer`, `label`, `assignee`, `issue-refs`, `preview-edit`. Submission uses only the bounded create retry inside `pr-submitter`.
 
 - `validation`: 1; `TerminalBlocked`. Applies to every registered specialist.
 - `approval-reask[gate]`: 1; `TerminalAwaitingUser`.

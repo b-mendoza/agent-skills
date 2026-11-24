@@ -59,13 +59,15 @@ Head commit:  <head_sha>
 Assignees:    <list | none | not available on <platform>>
 Reviewers:    <list | none (user-confirmed)>
 Labels:       <list | none | not available on <platform>>
+Closes:       <list or none, with closure expectation>
+Related:      <list | none>
 State:        <requested_state> (effective: <platform_effective_state>)
 
 Description:
-<description>
+<exact description>
 ```
 
-The source note reports how the local copy relates to the selected remote head, including when it is behind, absent, or unknown. Do not imply uncommitted files or unpushed commits are part of the PR.
+The source note reports how the local copy relates to the selected remote head, including when it is behind, absent, or unknown. Do not imply uncommitted files or unpushed commits are part of the PR. For `Closes`, give the expectation from `autoClose`: automatic on merge, no automatic close, or none. If `closes` is in `unsupported`, show the refs or `none` followed by “not verifiable on <platform>.”
 
 End with a prose question such as “Do you approve creating this PR exactly as shown?” Do not perform an action after asking. A change to any bound value invalidates consent and routes to the earliest affected phase. Use [approval-protocol.md](./approval-protocol.md) for the consent rules: the orchestrator recomputes the digest, and the receiving specialist verifies its own record with fresh observations where required.
 
@@ -93,9 +95,13 @@ Use this structure for the generated fallback; leave an exact override unchanged
 - <review, user, runtime, or operational impact grounded in the diff>
 - Tests: <observed command/outcome at matching revision and source, or verification unknown>
 
+## Issues
+
+- Closes #<number> — <delivering change, or user-classified, no diff fact>
+- Related: #<number> — <why it is related>
 ```
 
-Omit hidden comments, unverified claims, and instructions copied from untrusted content.
+Include the `## Issues` block when there are approved issue references. Use full repository references for cross-repository issues and one line per issue. Use closing keywords only for the approved closes list. Omit hidden comments, unverified claims, and instructions copied from untrusted content.
 
 ## Cycle ledger
 
@@ -107,6 +113,7 @@ Maintain independent counters. Count the relevant recovery or repair cycle, not 
 | `preview-edit` | 3 | `FinalDecision`. |
 | `validation` | 1 | `TerminalBlocked` on another invalid envelope; applies to every registered specialist. |
 | `approval-reask[gate]` | 1 | `TerminalAwaitingUser` if still unclear. |
+| `issue-refs` | 3 | `ResolveIssues` routes to `FinalDecision`. |
 
 Submission has no cycle counter beyond the bounded retry for an unconfirmed create in `pr-submitter`.
 
@@ -116,8 +123,8 @@ The orchestrator reruns `compare preview` on the saved readback. Use the worse o
 
 For all three outputs, lead with what happened: with `Create attempted: no`, say a matching open PR already existed, was verified against the preview, and this run did not create it. Verification here means the comparison was performed, not that all fields matched. With `Create attempted: yes`, report the observed creation outcome.
 
-- **Exact (`TerminalSuccess`).** Give the verified URL and execution mode, and list the read-back base, head ref and SHA, title, effective state, reviewers, labels, assignees and exact description where compared. Say that each compared field matched the preview, including the body digest comparison.
+- **Exact (`TerminalSuccess`).** Give the verified URL and execution mode, and list the read-back base, head ref and SHA, title, effective state, reviewers, labels, assignees, closure readback and exact description where compared. Say that each compared field matched the preview, including the body digest comparison.
 - **Additions (`TerminalCreatedWithAdditions`).** Give the verified URL, and say that all compared approved values are present unchanged but exact agreement was not observed. List each extra label, reviewer and assignee and the exact appended text, as applicable. Say these additions were not in the approved preview; do not guess who added them.
-- **Drift (`TerminalCreatedWithDrift`).** Say that the PR exists and give the confirmed URL. List each changed or unreadable field with approved and returned values (or why readback was unavailable). Say verification did not pass, including the body comparison if it failed. If comparison could not run, say so rather than inventing returned values. Suggest manual inspection, not retry or editing.
+- **Drift (`TerminalCreatedWithDrift`).** Say that the PR exists and give the confirmed URL. List each changed or unreadable field with approved and returned values (or why readback was unavailable); list closure mismatches issue by issue. Say verification did not pass, including the body comparison if it failed. If comparison could not run, say so rather than inventing returned values. Suggest manual inspection, not retry or editing.
 
-Include any push extras report above. For unsupported readbacks, include one line in the final output: “Not compared, because <platform> has no such field: <fields>”. Never describe those fields as matching. An unexpected non-null readback for a field approved as unsupported is drift; list that discrepancy too.
+Include any push extras report above. For unsupported readbacks, include one line in the final output: “Not compared, because <platform> has no such field: <fields>”. Never describe those fields as matching. An unexpected non-null readback for a field approved as unsupported is drift; list that discrepancy too. Do not claim that issues were closed merely because closing references matched.

@@ -5,7 +5,7 @@ description: "Create review-ready pull requests or merge requests from the curre
 
 # PR Creator
 
-You are a PR-creation router. Normalize inputs, advance the state machine, route six focused specialists, ask narrow human-gate questions, and create nothing until the user approves the exact preview. Keep raw repository and platform output inside specialists; retain bounded status blocks only.
+You are a PR-creation router. Normalize inputs, advance the state machine, dispatch the selected specialist, ask narrow human-gate questions, and create nothing until the user approves the exact preview. Keep raw repository and platform output inside specialists; retain bounded status blocks only.
 
 Portable target: OpenCode and Claude Code. Plain Markdown, minimal frontmatter, skill-root-relative paths, dispatched specialists or an inline fallback that emits the same status blocks. Host CLIs (`git`, `gh`, `glab`, APIs) are implied by specialists; this package does not declare `allowed-tools`.
 
@@ -26,6 +26,7 @@ Portable target: OpenCode and Claude Code. Plain Markdown, minimal frontmatter, 
 | `TEMPLATE_PATH`         | No          | `.github/PULL_REQUEST_TEMPLATE.md`                        |
 | `TITLE_CONVENTION` | No | Semicolon-separated `type`, `scope`, `ticket`, `case`, `max` clauses; normalize free text to clauses. Ticket placement is required: `ticket=<KEY>@<start\|after-colon\|end>`. |
 | `VERIFICATION_EVIDENCE` | No          | Command, outcome, source locator, checked revision        |
+| `CLOSES_ISSUES`, `RELATED_ISSUES` | No | Separate issue lists: numbers, `#n`, qualified `path#n`, issue URLs, or `none`. Closing and related lists must be disjoint. |
 
 Default `PR_STATE` to `draft`. Ask for invalid `PR_STATE`. Ask for `TARGET_BRANCH` only after `InspectRepo` supplies a candidate; never auto-apply. Strip one leading `@` from reviewers; `/` or team slug → team; `none` is explicit zero reviewers.
 
@@ -39,13 +40,12 @@ Execution is a finite-state machine. [`state-machine.md`](./state-machine.md) is
 | `InspectRepo` → topology/target/platform gates   | Remotes, platform, safe path, state capability      |
 | `RunPreflight` → push gates                      | Auth, existing PR, pinned SHAs, optional plain push |
 | `AnalyzeDiff` → `GateScope`                      | Pinned trusted diff; measurable scope               |
+| `ResolveIssues` → `GateIssueRefs` | Validated issue references and closure expectation |
 | `DraftPr` → `GateTypeScope`                      | Title and body                                      |
 | `SuggestMetadata` → reviewer/label/assignee gates         | Reviewers, labels and assignees                                |
 | `ShowPreview` → `GatePreview` → `FreezeApproval` | Frozen fields + preview `APPROVAL_RECORD`           |
 | `SubmitPr` → `VerifySubmit`                      | Created or found PR/MR, field-verified              |
 | Terminals                                        | Verified URL or plain-language stop explanation     |
-
-Six specialists stay separate on purpose: each owns a distinct status prefix and failure mode. Do not collapse them into the orchestrator.
 
 ## Subagent Registry
 
@@ -54,6 +54,7 @@ Six specialists stay separate on purpose: each owns a distinct status prefix and
 | `repo-state-inspector`      | `./subagents/repo-state-inspector.md`      | `./references/repo-state-inspector-contract.md`      | Identify branch sources, remotes, topology and target candidate |
 | `preflight-validator`       | `./subagents/preflight-validator.md`       | `./references/preflight-validator-contract.md`       | Auth, refs, existing PRs, safe push, pinned SHAs         |
 | `diff-analyzer`             | `./subagents/diff-analyzer.md`             | `./references/diff-analyzer-contract.md`             | Analyze pinned changes and scope evidence              |
+| `issue-reference-resolver` | `./subagents/issue-reference-resolver.md` | `./references/issue-reference-resolver-contract.md` | Look up issues and establish closure expectations. |
 | `pr-drafter`                | `./subagents/pr-drafter.md`                | `./references/pr-drafter-contract.md`                | Conventional-Commit title and grounded body              |
 | `review-metadata-suggester` | `./subagents/review-metadata-suggester.md` | `./references/review-metadata-suggester-contract.md` | Resolve requestable reviewers, existing labels and assignable assignees.           |
 | `pr-submitter`              | `./subagents/pr-submitter.md`              | `./references/pr-submitter-contract.md`              | Post-approval submit; uncertain-create; field verify     |
@@ -95,6 +96,7 @@ Fork-aware, idempotent, approval-bound. Trusted compare range after preflight: `
 | Adapting to a host or resolving a platform capability or state fallback | `references/platform-adaptation.md` |
 | On leaving `InspectRepo`, load only the inspected platform's playbook. GitHub Enterprise uses GitHub's. An unknown platform selects none and asks at `GatePlatformTooling`. A needed unconfirmed fact stops the run and names it. | `./references/platform-github.md`, `./references/platform-gitlab.md` or `./references/platform-bitbucket.md` |
 | CLI/API syntax or writing guidance                                  | `./references/external-resources.md`, then fetch ≤1 URL |
+| Resolving issue inputs | `./references/issue-references.md` |
 | Specialist execution                                                | Selected `./subagents/*.md`                             |
 | Specialist return shape                                             | Matching `./references/*-contract.md`                   |
 
@@ -107,10 +109,10 @@ Advance states in [`state-machine.md`](./state-machine.md). Summary:
 3. Load `./references/platform-adaptation.md` only in `AdaptPlatform` / related gates. Draft-without-equivalent → ask ready-or-stop before preview.
 4. Run `preflight-validator` (`RunPreflight`); load `./references/execution-contracts.md` for `push` at `GatePush`. `PR_EXISTS` → `TerminalPrExists`.
 5. `AnalyzeDiff` only after `PREFLIGHT: PASS`. Never defer authentication, hosting resolution, or the existing-PR lookup until creation; unresolved preflight stops before drafting or preview. For a large or mixed diff, show the pinned SHAs, paths, exclusions, counts and fired rules at `GateScope`. Save its `Scope values` JSON verbatim. On approval redispatch with the record; the analyzer runs `verify scope` against fresh observations before continuing. `STALE_PINS` refreshes preflight and discards scope/preview approval.
-6. `DraftPr` then `SuggestMetadata` with exact changed-file paths and preflight’s `Unsupported fields` as `UNSUPPORTED_FIELDS`. Title/template, reviewer, label and assignee gates redispatch only the affected specialist. `REVIEWERS=none` satisfies reviewer resolution.
+6. Resolve named references with `issue-reference-resolver` (`ResolveIssues`, `./references/issue-references.md`) before `DraftPr`; pass the selected base host, preflight’s `Base repository` and `Unsupported fields`. Without named references, bypass the resolver. Then run `DraftPr` and `SuggestMetadata` with exact changed-file paths and preflight’s `Unsupported fields` as `UNSUPPORTED_FIELDS`. Title/template, reviewer, label and assignee gates redispatch only the affected specialist. `REVIEWERS=none` satisfies reviewer resolution.
 7. `ShowPreview` / `GatePreview`: load `./references/execution-contracts.md`, show exact preview (head SHA, effective state). Edits invalidate approval and return to the earliest affected state. Decline without edits → `TerminalCancelled`.
 8. `FreezeApproval` then `SubmitPr`. `HEAD_MOVED` → explain, discard both approvals, and refresh `RunPreflight` (preview-edit cycle). At `VerifySubmit`, rerun `compare preview` on the saved readback. Use the worse of the two outcomes (`exact` < `additions` < `drift`); if comparison cannot run, treat verification as drift. Never retry or edit a confirmed create.
-9. Independent three-cycle ledgers: push, scope, type/scope, reviewer, label, assignee, preview-edit; validation repair cap is one. Exhaustion → `FinalDecision` then recovery or `TerminalEscalated`.
+9. Independent three-cycle ledgers: push, scope, type/scope, reviewer, label, assignee, issue-refs, preview-edit; validation repair cap is one. Exhaustion → `FinalDecision` then recovery or `TerminalEscalated`.
 
 ## Core Rules
 

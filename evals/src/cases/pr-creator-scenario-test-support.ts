@@ -12,6 +12,9 @@ import {
   createTurn,
 } from "#/observation/observation-test-support.ts";
 
+export const FIRST_RELATED = 43;
+export const CLOSING = 42;
+export const NEXT = 1;
 const SHA_LENGTH = 40;
 export const base = "a".repeat(SHA_LENGTH);
 export const head = "b".repeat(SHA_LENGTH);
@@ -73,6 +76,10 @@ export const change = (
   ...obs,
   repoFiles: { ...obs.repoFiles, ...files },
 });
+export const finished = {
+  turn: createTurn({ prompt: "approved", toolCalls: [shell("done")] }),
+  files: {},
+};
 export const extraWrite = (obs: Observation) =>
   change(obs, {
     [facts.log]: `${obs.repoFiles?.[facts.log] ?? ""}\n["issue","close","42"]`,

@@ -142,6 +142,7 @@ export function createdObservation(
         headRefOid: HEAD_SHA,
         isDraft: true,
         assignees: [{ login: "maintainer" }],
+        closingIssuesReferences: [],
         labels: outcome === "additions" ? [{ name: "automation" }] : [],
         reviewRequests: [],
       }),

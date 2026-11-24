@@ -6,17 +6,67 @@ import {
   assertAssigneeStatus,
   assertCreatorReadOnly,
 } from "#/cases/pr-creator-behavior-checks.ts";
-import { githubCalls } from "#/cases/pr-creator-checks.ts";
+import { canonicalAction, githubCalls } from "#/cases/pr-creator-checks.ts";
 import { digestToken } from "#/cases/pr-creator-digest.ts";
 import { GITHUB_FACTS } from "#/cases/pr-creator-fixtures.ts";
 import { checkedValues, RUNS, scenario } from "#/cases/pr-creator-scenario.ts";
 import { capturedText } from "#/cases/shared-checks.ts";
 import { HEAD_LOG } from "#/fixtures/fixtures.ts";
+import type { Observation } from "#/observation/agent-query.ts";
 
 const FIRST = 0;
 const COMMAND_PAIR = 2;
+const SECOND = 1;
 const draft = "Open a draft PR for this branch. REVIEWERS=none.";
+const issues = [
+  { number: 42, title: "Remove empty-cart guard", state: "open" },
+  { number: 43, title: "Cart cleanup", state: "open" },
+] as const;
+const ref = (number: number) => `${GITHUB_FACTS.repository}#${String(number)}`;
 const changedTitle = "fix: handle cart division";
+const issueView = (number: number) =>
+  `repos/${GITHUB_FACTS.repository}/issues/${String(number)}`;
+const keepKeywords = "Keep the closing keywords.";
+function assertKeywordChoice(observation: Observation) {
+  const turns = observation.turns ?? [];
+  const first = turns[FIRST];
+  assert.ok(first !== undefined);
+  assert.equal(
+    digestToken({ ...observation, turns: [first] }, "preview"),
+    undefined,
+  );
+  assert.equal(turns[SECOND]?.prompt, keepKeywords);
+}
+const nonDefaultTurn = {
+  followUps: [
+    {
+      name: "keep keywords",
+      reply: (observation: Observation) =>
+        /trunk/i.test(observation.finalText) &&
+        /clos/i.test(observation.finalText)
+          ? { reply: keepKeywords }
+          : { gateNotReached: "no non-default closure decision" },
+    },
+  ],
+};
+function closureRequirements(nonDefault: boolean) {
+  return nonDefault
+    ? [
+        "Explain that merging into main will not automatically close #42.",
+        "Offer to move the closing reference to related.",
+      ]
+    : ["Explain which change delivers #42 or identify it as user-classified."];
+}
+function candidateView(args: readonly string[], number: number) {
+  const [family, verb, target] = args;
+  const normalized = canonicalAction(args);
+  const repo = normalized.indexOf("-R");
+  if (repo < FIRST) return false;
+  return (
+    [family, verb, target].join(" ") === `issue view ${String(number)}` &&
+    normalized[repo + SECOND] === GITHUB_FACTS.repository
+  );
+}
 export const previewCases = [
   scenario({
     id: "assignee-me-alias",
@@ -105,6 +155,36 @@ export const previewCases = [
       return "Drafter requests ticket before freezing";
     },
   }),
+  ...[false, true].map((nonDefault) =>
+    scenario({
+      id: nonDefault ? "issue-refs-non-default-base" : "issue-refs-explicit",
+      prompt: `${draft} CLOSES_ISSUES=#42, RELATED_ISSUES=#43.`,
+      facts: "42 is closing; 43 is related only. The target is main.",
+      options: { issues, defaultBranch: nonDefault ? "trunk" : "main" },
+      snapshots: [RUNS],
+      ...(nonDefault ? nonDefaultTurn : {}),
+      requirements: closureRequirements(nonDefault),
+      check: (observation) => {
+        assertCreatorReadOnly(observation);
+        if (nonDefault) assertKeywordChoice(observation);
+        for (const issue of issues) {
+          assert.ok(
+            githubCalls(observation).some(
+              (args) =>
+                args.includes(issueView(issue.number)) ||
+                candidateView(args, issue.number),
+            ),
+            "missing issue lookup",
+          );
+        }
+        const values = checkedValues(observation);
+        assert.deepEqual(values["closes"], [ref(issues[FIRST].number)]);
+        assert.deepEqual(values["related"], [ref(issues[SECOND].number)]);
+        assert.equal(values["autoClose"], nonDefault ? "no" : "yes");
+        return "Validated references and closure expectation in frozen preview";
+      },
+    }),
+  ),
   scenario({
     id: "remote-head-not-checked-out",
     prompt: `${draft} HEAD_BRANCH=${GITHUB_FACTS.branch}.`,

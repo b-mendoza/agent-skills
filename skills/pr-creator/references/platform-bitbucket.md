@@ -2,7 +2,7 @@
 
 Current-state reference. Update when platform capabilities or command mappings change. Not for Bitbucket Data Center.
 
-**Create path unconfirmed.** Resolve PR labels and their readback mapping before using the create path. The commands below show only documented operations; they do not establish that missing capability.
+**Create path unconfirmed.** Resolve PR labels and closure readback, including their readback mappings, before using the create path. The commands below show only documented operations; they do not establish those missing capabilities.
 
 ## Tooling and auth
 

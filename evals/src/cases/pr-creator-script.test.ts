@@ -29,6 +29,9 @@ const result = {
   body,
   ...metadata,
   state: "draft",
+  closes: [],
+  related: [],
+  autoClose: "none",
   unsupported: [],
 };
 const preview = {
@@ -58,6 +61,7 @@ const returned = {
   body,
   state: "draft",
   ...metadata,
+  closes: [],
 };
 function hash(text: string) {
   return createHash("sha256").update(text).digest("hex");
@@ -243,18 +247,26 @@ describe("pr-creator shipped approval validator", () => {
       expect(status("push", { ...push, extras: bad })).toBe(INVALID);
     }
   });
-  it("binds metadata to platform capability", () => {
-    digest("preview", {
+  it("binds closing references and platform capability", () => {
+    const values = {
       ...preview,
-      assignees: [],
-      unsupported: ["assignees"],
+      body: "Closes #12",
+      closes: ["o/r#12"],
+      autoClose: "yes",
+    };
+    digest("preview", values);
+    digest("preview", {
+      ...values,
+      body: "Implementing: #12, o/r#13 and https://gitlab.test/group/lib/-/issues/14. See #15",
+      closes: ["o/r#12", "o/r#13", "group/lib#14"],
+      related: ["o/r#15"],
     });
     for (const change of [
+      { closes: [], autoClose: "none", related: values.closes },
       { unsupported: ["assignees"] },
-      { unsupported: ["reviewers"] },
-      { repository: "invalid" },
+      { autoClose: "unverifiable" },
     ]) {
-      expect(status("preview", { ...preview, ...change })).toBe(INVALID);
+      expect(status("preview", { ...values, ...change })).toBe(INVALID);
     }
   });
   it.each([
@@ -281,6 +293,9 @@ describe("pr-creator shipped approval validator", () => {
     ["drift", {}, { labels: null }, { fields: { labels: "unreadable" } }],
     ["exact", { labels: [], unsupported: ["labels"] }, { labels: null }, { fields: { labels: "unsupported" }, notCompared: ["labels"] }],
     ["drift", { labels: [], unsupported: ["labels"] }, { labels: [] }, { fields: { labels: "changed" } }],
+    ["exact", { body: "Fixes #12", closes: ["o/r#12"], autoClose: "yes" }, { body: "Fixes #12", closes: ["o/r#12"] }, { fields: { closes: "exact" } }],
+    ["exact", { body: "Fixes #12", closes: ["o/r#12"], autoClose: "no" }, { body: "Fixes #12" }, { fields: { closes: "exact" } }],
+    ["exact", { body: "Fixes #12", closes: ["o/r#12"], autoClose: "unverifiable", unsupported: ["closes"] }, { body: "Fixes #12", closes: null }, { fields: { closes: "unsupported" } }],
   ] as const)(
     "classifies readback as %s",
     (outcome, changes, readback, details) => {
@@ -302,6 +317,11 @@ describe("pr-creator shipped approval validator", () => {
     expect(verify("scope", scope, approval("scope", scope)).status).toBe(
       INVALID,
     );
+  });
+  it("recognizes a closing keyword followed by the GitLab issue noun", () => {
+    expect(
+      status("preview", { ...preview, body: "Fixing issues #3 and #4" }),
+    ).toBe(INVALID);
   });
   it.each([
     [

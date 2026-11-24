@@ -24,9 +24,10 @@ ENVELOPES = {
     "repo-state-inspector": ("REPO_STATE", "PASS BLOCKED ERROR", "Execution mode support|Current branch|Head branch|Head source|Target branch|Target branch candidate|PR state|Remotes|Head remote|Base remote|Topology|Topology candidates|Platform|Platform adapter needed|Uncommitted work|Reason|Decision needed"),
     "preflight-validator": ("PREFLIGHT", "PASS PUSH_REQUIRED PUSH_REJECTED PR_EXISTS AUTH BASE_BRANCH_MISSING HEAD_BRANCH_UNPUSHED BLOCKED ERROR", "Platform|Unsupported fields|Head remote|Base remote|Base repository|Base branch|Head branch|Head remote state|Head source|Local head state|Base SHA|Head SHA|Existing PR|Push attempted|Push command|Push extras|Push rejection reason|Approval record|Reason|Decision needed"),
     "diff-analyzer": ("DIFF_ANALYSIS", "PASS LARGE_PR_CONFIRMATION_REQUIRED STALE_PINS EMPTY_DIFF ERROR", "Range|Compared Base SHA|Compared Head SHA|Pinned SHA match|Shortstat|Adjusted changed lines|Changed files|Excluded generated/vendored/lock totals|Scope gate rule fired|Scope approval|Scope values|Changed paths|Grouped areas|Diff summary|Behavior before|Behavior after|Retained behavior|Type candidates|Scope candidates|Tests|Risk notes|Reason|Decision needed"),
+    "issue-reference-resolver": ("ISSUE_REFS", "PASS NEEDS_DECISION INVALID_ISSUES AUTH ERROR", "Repository|Default branch|Target branch|Auto-close|Closes|Related|Invalid|Warnings|Reason|Decision needed"),
     "pr-drafter": ("PR_DRAFT", "PASS NEEDS_CHOICE ERROR", "Title|Title source|Body source|Template path|Type choice|Scope choice|Traceability notes|Body|Reason|Decision needed"),
     "review-metadata-suggester": ("REVIEW_METADATA", "PASS NEEDS_REVIEWER INVALID_LABELS INVALID_ASSIGNEES AUTH ERROR", "Reviewers|Reviewer source|Normalized reviewers|Solo repository condition|CODEOWNERS source|CODEOWNERS matches|Labels|Label source|Invalid labels|Suggested valid labels|Assignees|Invalid assignees|Reason|Decision needed"),
-    "pr-submitter": ("PR_SUBMIT", "PASS CREATED_WITH_ADDITIONS CREATED_WITH_DRIFT HEAD_MOVED CREATE_UNCERTAIN BLOCKED CREATE_ERROR AUTH ERROR", "Approval record|Frozen head SHA|Remote head SHA before create|Existing PR race check|Create attempted|Create retry used|URL|Base returned|Head ref returned|Head SHA returned|Title returned|State returned|Reviewers returned|Labels returned|Assignees returned|Body first line returned|Body line count returned|Approved body digest|Returned body digest|Outcome|Mismatched fields|Added fields|Returned values file|Uncertain check commands|Reason|Decision needed"),
+    "pr-submitter": ("PR_SUBMIT", "PASS CREATED_WITH_ADDITIONS CREATED_WITH_DRIFT HEAD_MOVED CREATE_UNCERTAIN BLOCKED CREATE_ERROR AUTH ERROR", "Approval record|Frozen head SHA|Remote head SHA before create|Existing PR race check|Create attempted|Create retry used|URL|Base returned|Head ref returned|Head SHA returned|Title returned|State returned|Reviewers returned|Labels returned|Assignees returned|Body first line returned|Body line count returned|Approved body digest|Returned body digest|Outcome|Mismatched fields|Added fields|Closing issues returned|Returned values file|Uncertain check commands|Reason|Decision needed"),
 }
 
 
@@ -40,15 +41,19 @@ def sha(text):
 
 
 SCOPE_OBSERVED = "baseSha headSha changedPaths excludedPaths adjustedChangedLines excludedLines"
-RESULT = "title body state reviewers labels assignees unsupported"
+RESULT = "title body state reviewers labels assignees closes related autoClose unsupported"
 SCHEMAS = {
     "push": "headRemote headBranch headSha extras action",
     "scope": SCOPE_OBSERVED + " rules",
     "preview": "repository baseRemote targetBranch headRemote headBranch baseSha headSha effectiveState " + RESULT,
 }
 OBSERVED = {"scope": SCOPE_OBSERVED}
-LISTS = {"excludedPaths", "rules", "changedPaths", "reviewers", "labels", "assignees", "unsupported"}
+LISTS = {"excludedPaths", "rules", "changedPaths", "reviewers", "labels", "assignees", "closes", "related", "unsupported"}
 REPO = r"[\w.-]+(?:/[\w.-]+)+"
+NUMBER = r"[1-9][0-9]*"
+REF = rf"(?:https?://[^/\s]+/{REPO}/(?:-/)?issues/{NUMBER}|(?:{REPO})?#{NUMBER})(?![\w-])"
+KEYWORD = r"\b(?:clos(?:e[sd]?|ing)|fix(?:es|ed|ing)?|resolv(?:e[sd]?|ing)|implement(?:s|ed|ing)?)\b"
+REF_LIST = re.compile(rf"{KEYWORD}(?:\s*:)?\s+(?:issues?\s+)?(?P<refs>{REF}(?:(?:\s*,\s*(?:and\s+)?|\s+and\s+){REF})*)", re.I)
 
 
 def exact_keys(obj, fields, name):
@@ -103,11 +108,33 @@ def validate_scope(values):
         require((rule in rules) == fired, "inconsistent rule " + rule)
 
 
+def references(text, repository):
+    refs = set()
+    for match in re.finditer(REF, text, re.I):
+        ref = match.group()
+        if "://" in ref:
+            path = ref.split("://", 1)[1].split("/", 1)[1]
+            ref = re.sub(r"/(?:-/)?issues/([0-9]+)$", r"#\1", path, flags=re.I)
+        refs.add(repository + ref if ref.startswith("#") else ref)
+    return refs
+
+
 def validate_result(v):
+    closes, related = set(v["closes"]), set(v["related"])
+    require(all(re.fullmatch(REPO + "#" + NUMBER, ref) for ref in closes | related), "noncanonical issue reference")
+    require(not closes & related, "closes and related overlap")
     unsupported = set(v["unsupported"])
-    require(unsupported <= {"assignees", "labels"}, "invalid unsupported field")
-    for field in unsupported:
+    require(unsupported <= {"closes", "assignees", "labels"}, "invalid unsupported field")
+    for field in unsupported - {"closes"}:
         require(not v[field], field + " is unsupported")
+    mode = v["autoClose"]
+    require(mode in (("yes", "no", "unverifiable") if closes else ("none",)), "autoClose inconsistent with closes")
+    require(not closes or (mode == "unverifiable") == ("closes" in unsupported), "autoClose inconsistent with unsupported")
+    attached = set()
+    for match in REF_LIST.finditer(v["body"]):
+        attached.update(references(match["refs"], v["repository"]))
+    require(attached == closes, "body closing references differ from closes")
+    require(related <= references(v["body"], v["repository"]), "body missing related reference")
 
 
 def canonical(kind, values):
@@ -210,9 +237,11 @@ def compare(kind, payload):
     exact_keys(payload, "values returned", "compare")
     v = canonical(kind, payload["values"])
     returned = payload["returned"]
-    exact_keys(returned, "baseRef headRef headSha title body state reviewers labels assignees", "returned")
+    exact_keys(returned, "baseRef headRef headSha title body state reviewers labels assignees closes", "returned")
     expected = dict(v)
     expected.update(baseRef=v["targetBranch"], headRef=v["headBranch"], state=v["effectiveState"])
+    if v["autoClose"] != "yes":
+        expected["closes"] = []
     fields, extras = {}, {}
     for key, actual in returned.items():
         if key in v["unsupported"]:
@@ -224,7 +253,7 @@ def compare(kind, payload):
             approved = set(expected[key])
             if members == approved:
                 fields[key] = "exact"
-            elif members > approved:
+            elif key != "closes" and members > approved:
                 fields[key] = "added"
                 extras[key] = sorted(members - approved)
             else:
@@ -275,7 +304,7 @@ def preflight_envelope(status, v):
         approved(v)
     repository = v["Base repository"]
     require(re.fullmatch(REPO, repository) or (repository == "unavailable" and status not in ("PASS", "PR_EXISTS")), "invalid Base repository")
-    require(set(comma_list(v["Unsupported fields"])) <= {"assignees", "labels"}, "invalid Unsupported fields")
+    require(set(comma_list(v["Unsupported fields"])) <= {"assignees", "labels", "closes"}, "invalid Unsupported fields")
     if status == "PASS":
         for field in ("Base SHA", "Head SHA"):
             full_sha(field, v)
@@ -346,6 +375,13 @@ def submit_envelope(status, v):
             require(v["Added fields"] not in ("none", "n/a"), "additions require added fields")
 
 
+def resolver_envelope(status, v):
+    if status == "PASS":
+        require(v["Invalid"] == "none", "PASS requires Invalid: none")
+    elif status == "INVALID_ISSUES":
+        require(v["Invalid"] != "none", "INVALID_ISSUES requires invalid references")
+
+
 def envelope(specialist, text):
     prefix, statuses, field_text = ENVELOPES[specialist]
     lines = text.splitlines()
@@ -384,6 +420,7 @@ def envelope(specialist, text):
         "Title source": ("override", "generated"),
         "Body source": ("override", "template", "generated"),
         "Head source": ("checkout", "remote"),
+        "Auto-close": ("yes", "no", "unverifiable", "none"),
         "Outcome": ("exact", "additions", "drift", "n/a"),
         "Reviewer source": ("user", "CODEOWNERS", "none-confirmed", "none"),
         "Solo repository condition": ("yes", "no", "unknown"),
@@ -400,7 +437,7 @@ def envelope(specialist, text):
             validate_extra(item)
     if specialist == "repo-state-inspector":
         require(values["PR state"] in ("draft", "ready") or values["PR state"].startswith("invalid: "), "invalid PR state")
-    checks = {"preflight-validator": preflight_envelope, "diff-analyzer": analyzer_envelope,
+    checks = {"issue-reference-resolver": resolver_envelope, "preflight-validator": preflight_envelope, "diff-analyzer": analyzer_envelope,
               "review-metadata-suggester": metadata_envelope, "pr-submitter": submit_envelope}
     if specialist in checks:
         checks[specialist](status, values)

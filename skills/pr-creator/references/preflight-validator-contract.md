@@ -5,7 +5,7 @@ Return exactly one status block. Do not include secrets, tokens, or full command
 ```text
 PREFLIGHT: <PASS | PUSH_REQUIRED | PUSH_REJECTED | PR_EXISTS | AUTH | BASE_BRANCH_MISSING | HEAD_BRANCH_UNPUSHED | BLOCKED | ERROR>
 Platform: <github | github-enterprise | gitlab | bitbucket | unknown>
-Unsupported fields: <none | comma list of labels, assignees>
+Unsupported fields: <none | comma list of labels, assignees, closes>
 Head remote: <name>
 Base remote: <name>
 Base repository: <repo path | unavailable>

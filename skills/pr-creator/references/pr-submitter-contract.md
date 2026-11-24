@@ -26,6 +26,7 @@ Returned body digest: <digest | unavailable>
 Outcome: <exact | additions | drift | n/a>
 Mismatched fields: <comma list | none>
 Added fields: <comma list | none>
+Closing issues returned: <canonical refs | none | unavailable>
 Returned values file: <path | n/a>
 Uncertain check commands: <commands | n/a>
 Reason: <one line>

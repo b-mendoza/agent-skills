@@ -197,7 +197,10 @@ describe("pr-creator machine create and readback checks", () => {
     }
     const repoFiles = {
       ...original.repoFiles,
-      [READBACK_CAPTURE]: readback.replace('"labels":[]', '"labels":null'),
+      [READBACK_CAPTURE]: readback.replace(
+        '"closingIssuesReferences":[]',
+        '"closingIssuesReferences":null',
+      ),
     };
     expect(() =>
       checkCreated({ ...original, repoFiles }, "drift"),

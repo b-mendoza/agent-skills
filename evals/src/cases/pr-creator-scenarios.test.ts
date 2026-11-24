@@ -5,8 +5,12 @@ import { GITHUB_FACTS as facts } from "#/cases/pr-creator-fixtures.ts";
 import {
   acceptsOnly,
   change,
+  CLOSING,
   extraWrite,
+  finished,
+  FIRST_RELATED,
   gate,
+  NEXT,
   observation,
   preview,
   shell,
@@ -53,6 +57,32 @@ describe("preview gates", () => {
       ),
     ).not.toThrow();
   });
+  it.each([false, true])(
+    "requires both issue lookups and the correct closure expectation (non-default: %s)",
+    (nonDefault) => {
+      const values = {
+        ...preview,
+        closes: [`${facts.repository}#42`],
+        related: [`${facts.repository}#43`],
+        body: "## Issues\n- Closes #42 — guard\n- Related: #43 — cleanup",
+        autoClose: nonDefault ? "no" : "yes",
+      };
+      const args = [CLOSING, FIRST_RELATED].map((number) => [
+        "api",
+        `repos/${facts.repository}/issues/${String(number)}`,
+      ]);
+      const gates = nonDefault
+        ? [finished, gate("preview", values, "Keep the closing keywords.")]
+        : [gate("preview", values)];
+      expect(
+        acceptsOnly(
+          nonDefault ? "issue-refs-non-default-base" : "issue-refs-explicit",
+          observation(gates, {}, args),
+          observation(gates, {}, args.slice(NEXT)),
+        ),
+      ).not.toThrow();
+    },
+  );
   it("requires the requested tip without switching HEAD", () => {
     const good = observation([gate("preview", preview)], {
       ".git/HEAD": "ref: refs/heads/main",

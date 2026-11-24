@@ -23,7 +23,7 @@ Exit 1 means invalid input (for `title`, findings are on stderr); exit 2 means i
 | --- | --- | --- |
 | `GatePush` | `push` | `headRemote headBranch headSha extras action` |
 | `GateScope` | `scope` | `baseSha headSha changedPaths excludedPaths adjustedChangedLines excludedLines rules` |
-| `GatePreview` | `preview` | `repository baseRemote targetBranch headRemote headBranch baseSha headSha effectiveState title body state reviewers labels assignees unsupported` |
+| `GatePreview` | `preview` | `repository baseRemote targetBranch headRemote headBranch baseSha headSha effectiveState title body state reviewers labels assignees closes related autoClose unsupported` |
 
 - `push`: `action` is exactly `git push <headRemote> <headBranch>`.
 
@@ -32,7 +32,8 @@ Exit 1 means invalid input (for `title`, findings are on stderr); exit 2 means i
 - `scope`: the analyzer emits `Scope values`; store that JSON line verbatim. `changedPaths` lists all changed paths, including `excludedPaths`, which must be a subset. Nonempty `rules` can contain only `adjusted-lines>1000`, `changed-files>40`, `unrelated-areas>=3`. The first two appear if and only if the corresponding threshold is exceeded (`changed-files` counts `changedPaths`). Display-only grouping and judgments are not added to the values.
 
 - `preview`: `repository` is the canonical repository path. Metadata fields are string lists, empty for none. `state` and `effectiveState` are `draft` or `ready`.
-- `unsupported` may list only `labels` and `assignees`. A listed metadata field must have an empty approved list.
+- `preview`: `closes` and `related` are disjoint canonical `<repo path>#<number>` sets. For a preview, the checker scans the body as text: references attached to a closing keyword must equal `closes`, and every `related` reference must appear. It recognizes `close`, `closes`, `closed`, `closing`; `fix`, `fixes`, `fixed`, `fixing`; `resolve`, `resolves`, `resolved`, `resolving`; and `implement`, `implements`, `implemented`, `implementing`, case-insensitively. An optional colon and optional “issue” or “issues” can precede `#<number>`, a full repository reference, or an HTTP(S) issue URL. Commas and “and” can join references. This check is not a platform lookup; use the resolver for host and issue validation and the platform rules for keywords.
+- `unsupported` may list only `labels`, `assignees`, `closes`. A listed metadata field must have an empty approved list. `autoClose` is `none` when `closes` is empty, `unverifiable` when `closes` is nonempty and listed in `unsupported`, and `yes` or `no` otherwise. A nonempty `closes` list with `unverifiable` represents approved text, not verified automatic closure.
 
 The canonical serialization is Python `json.dumps(values, sort_keys=True, ensure_ascii=False, separators=(",", ":"), allow_nan=False)` encoded as UTF-8, no BOM and no appended newline. Object keys sort lexicographically; all list fields except `extras` are sets, deduplicated by the producer and sorted by Unicode code point by the helper. Duplicate set entries, unknown/missing fields, noninteger counts and nonlowercase/full Git SHAs are rejected. Strings are otherwise byte-preserved: no trimming, Unicode normalization, newline conversion or final-newline insertion. Body digest is SHA-256 of the body's UTF-8 bytes, not its JSON representation. Digests are 64 lowercase hexadecimal characters. Never independently reimplement this serialization in a specialist.
 
@@ -52,9 +53,9 @@ Let the JSON appear unchanged in tool output: do not capture it in a variable, r
 
 ## Readback comparison
 
-`returned` has exactly `baseRef headRef headSha title body state reviewers labels assignees`. For `preview`, compare base and head refs to `targetBranch` and `headBranch`, and state to `effectiveState`. Use `null` for an unreadable field: it is `unreadable` unless the approved values mark the field unsupported, in which case `null` is `unsupported` and a non-null value is `changed`. A platform without drafts reads back `ready`, not `null`.
+`returned` has exactly `baseRef headRef headSha title body state reviewers labels assignees closes`. For `preview`, compare base and head refs to `targetBranch` and `headBranch`, and state to `effectiveState`. Use `null` for an unreadable field: it is `unreadable` unless the approved values mark the field unsupported, in which case `null` is `unsupported` and a non-null value is `changed`. A platform without drafts reads back `ready`, not `null`.
 
-Scalars are `exact` or `changed`; reviewers, labels and assignees can also be `added` for a strict superset. A body with the exact approved body as a strict byte prefix is `appended`, not `exact`. Any `changed` or `unreadable` field is `drift`; otherwise additions or appended text give `additions`, and the rest is `exact`.
+Scalars are `exact` or `changed`; reviewers, labels and assignees can also be `added` for a strict superset. A body with the exact approved body as a strict byte prefix is `appended`, not `exact`. Closures compare against approved `closes` for `autoClose: yes` and the empty set for `no` or `none`, unless the field is unsupported; there is no additive closure outcome. Any `changed` or `unreadable` field is `drift`; otherwise additions or appended text give `additions`, and the rest is `exact`.
 
 Output keys are `outcome`, `fields` (per-field results), `extras` (extra members or appended text), `notCompared` (the approved `unsupported` list), `approvedBodyDigest`, and `returnedBodyDigest` (`null` if the body was unreadable). A listed field with a non-null readback still causes drift even though it appears in `notCompared`.
 

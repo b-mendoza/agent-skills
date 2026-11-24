@@ -128,6 +128,9 @@ const readbackSchema = Schema.Struct({
   reviewRequests: Schema.NullOr(
     Schema.Array(Schema.Struct({ login: Schema.String })),
   ),
+  closingIssuesReferences: Schema.NullOr(
+    Schema.Array(Schema.Struct({ number: Schema.Number })),
+  ),
 });
 
 function members<T>(items: readonly T[] | null, name: (item: T) => string) {
@@ -148,6 +151,10 @@ function comparisonFields(returned: typeof readbackSchema.Type) {
     labels: members(returned.labels, ({ name }) => name),
     assignees: members(returned.assignees, ({ login }) => login),
     reviewers: members(returned.reviewRequests, ({ login }) => login),
+    closes: members(
+      returned.closingIssuesReferences,
+      ({ number }) => `${GITHUB_FACTS.repository}#${number}`,
+    ),
   };
 }
 
@@ -283,6 +290,9 @@ export function previewValues(baseSha: string, headSha: string) {
     labels: [],
     state: "draft",
     effectiveState: "draft",
+    closes: [],
+    related: [],
+    autoClose: "none",
     unsupported: [],
   };
 }

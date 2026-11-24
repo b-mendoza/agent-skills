@@ -22,14 +22,15 @@ On leaving `InspectRepo`, the orchestrator selects one playbook from the inspect
 - `bitbucket`: [`./references/platform-bitbucket.md`](./platform-bitbucket.md)
 - `unknown`: select none and go to `GatePlatformTooling`.
 
-Pass the selected path as `PLATFORM_PLAYBOOK` to preflight, the metadata specialist and the submitter. Each reads that file and no other playbook.
+Pass the selected path as `PLATFORM_PLAYBOOK` to preflight, the issue resolver, the metadata specialist, and the submitter. Each reads that file and no other playbook.
 
 ## Unsupported fields
 
-Preflight copies the playbook's derived `Unsupported fields:` line. Its values are `assignees`, `labels`, or `none`. A field appears on the line only on a sourced `no`. Pass the list as `UNSUPPORTED_FIELDS` to the metadata suggester. A failed read of a supported field is not evidence of absence.
+Preflight copies the playbook's derived `Unsupported fields:` line. Its values are `assignees`, `labels`, or `closes` (closure readback), or `none`. A field appears on the line only on a sourced `no`. Pass the list as `UNSUPPORTED_FIELDS` to the metadata suggester and issue resolver. A failed read of a supported field is not evidence of absence.
 
 - For unsupported assignees or labels, approve an empty list. Nonempty requests go to `GateAssignees` on `INVALID_ASSIGNEES` or `GateLabels` on `INVALID_LABELS` rather than being silently dropped; infer no labels if the field is absent.
-- Carry the confirmed list into `preview` values as `unsupported`. The digest validates its consistency before a preview. A platform without drafts uses `ready`, not `null`; reviewers are not an `unsupported` field.
+- If closure readback is unsupported, `GateIssueRefs` lets the user retain closing keywords with `autoClose: unverifiable` or move the issues to `related`. With no closing refs, `autoClose` is `none`.
+- Carry the confirmed list into `preview` values as `unsupported`. The digest validates its consistency before a preview. Keep the same readback keys on all platforms, use `null` for an unsupported field, and do not let a platform response amend the approved list. A platform without drafts uses `ready`, not `null`; reviewers are not an `unsupported` field.
 
 ## State Capability Gate
 
