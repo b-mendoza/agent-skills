@@ -226,6 +226,9 @@ def preflight_envelope(status, v):
 
 
 def analyzer_envelope(status, v):
+    for field in ("Behavior before", "Behavior after"):
+        for item in v[field].splitlines():
+            require(re.fullmatch(r"(?:- )?(?:B[1-9][0-9]*: \S.*|unknown|n/a)", item), field + " fact needs a Bn: id")
     lines, files = count("Adjusted changed lines", v), count("Changed files", v)
     rules = comma_list(v["Scope gate rule fired"])
     approval = v["Scope approval"]

@@ -70,6 +70,7 @@ function sample(
     .join("\n");
 }
 function sampleLine(line: string, field: string, values: Fields): string {
+  if (line.startsWith("- Bn:")) return "- B1: observed fact";
   if (!line.includes(":")) return "- n/a";
   return `${field}: ${values[field] ?? "n/a"}`;
 }
@@ -206,4 +207,11 @@ describe("pr-creator consumer envelope validation", () => {
       }
     },
   );
+  it("requires numbered behavior facts", () => {
+    const invalid = sample(analyzer).replace(
+      "B1: observed fact",
+      "unidentified fact",
+    );
+    expect(validate(analyzer, invalid).status).toBe(INVALID);
+  });
 });

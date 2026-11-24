@@ -51,4 +51,6 @@ The analyzer's `Tests` field describes test files changed or found in the diff, 
 
 ## Before and after facts
 
-The analyzer supplies `Behavior before`, `Behavior after`, and `Retained behavior`, each with pinned revision/path/line locators or explicit unknown. Inspect enough old and new source to distinguish a rewrite from a new capability. The drafter uses the difference for change claims; retained rules may be context but must not be described as newly added. Omit unknown behavior rather than guessing. Exact user overrides keep their precedence and their traceability is “user override,” not fabricated diff evidence.
+The analyzer supplies paired `Bn` facts in `Behavior before` and `Behavior after`, with pinned revision/path/line locators or explicit unknowns. Cover every `Bn` in the body or list it as omitted with a reason in `Traceability notes`. Inspect enough old and new source to distinguish a rewrite from a new capability. Retained behavior may be context but must not be described as a change. Omit unknown behavior rather than guessing. Keep exact user overrides verbatim and record omissions rather than silently editing them.
+
+For each title or body claim, `Traceability notes` names an allowed source: a diff fact with its `Bn` id and pinned locator, an exact user override, a user choice, the selected template, or a verification record. The template supplies structure, not factual evidence. Label override text as user-provided rather than inventing diff evidence.
