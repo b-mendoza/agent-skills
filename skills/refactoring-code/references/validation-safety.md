@@ -36,7 +36,7 @@ Validation evidence must include:
 - Tests-run count, matched suite names, matched file names, or equivalent output showing the target was exercised.
 - Result: `pass`, `fail`, `not run`, or `pre-existing failure`.
 
-Zero tests executed is `not run` even when exit code is 0. A refactor with any validation warning can complete only as `PASS_WITH_WARNINGS`, never bare `PASS`.
+Zero tests executed (for a selected documentation checker: zero target documents or links examined) is `not run` even when exit code is 0. A refactor with any validation warning can complete only as `PASS_WITH_WARNINGS`, never bare `PASS`.
 
 Report `pre-existing failure` only if baseline evidence identifies the same failure or, when the checkpoint was skipped, a rerun demonstrates it is unrelated. For any other post-edit failure, including one after a passing checkpoint, report `Result: fail`.
 

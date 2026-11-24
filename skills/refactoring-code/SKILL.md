@@ -65,7 +65,7 @@ Mapper baseline includes commit (or `no-vcs`), porcelain summary, pre-existing d
 
 Before claiming no reusable helper exists, search the repository by behavior, expression and likely names, inspect candidates, and cite paths or exact no-match search evidence. A target-only search is insufficient. Merge overlapping findings; discard unsupported proposals and resolve route-deciding conflicts; explicitly defer omitted findings rather than treating a capped report as exhaustive.
 
-Validation commands come only from `TEST_COMMAND`, mapper candidates, or an explicit warning path. Classify via [`references/validation-safety.md`](./references/validation-safety.md). Unknown commands are `state-mutating`, requiring exact-command approval. Zero executed tests is `not run` even at exit 0. Claims require fresh command, exit code and coverage evidence. No command permission is inferred from approving code cuts.
+Validation commands come only from `TEST_COMMAND`, mapper candidates, or an explicit warning path. Classify via [`references/validation-safety.md`](./references/validation-safety.md). Unknown commands are `state-mutating`, requiring exact-command approval. Zero executed tests (for a selected documentation checker: zero target documents or links examined) is `not run` even at exit 0. Claims require fresh command, exit code and coverage evidence. No command permission is inferred from approving code cuts.
 
 ## Outcomes
 
