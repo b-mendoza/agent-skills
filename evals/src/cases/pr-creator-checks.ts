@@ -55,6 +55,26 @@ export function assertNoGithubWrites(observation: Observation): void {
   }
 }
 
+// Older Git porcelain strips SSH userinfo from its `To` line. Only accept that
+// spelling when the observation also identifies origin's exact push URL.
+export function assertPushDestination(
+  observation: Observation,
+  actual: string,
+) {
+  const url = `git@github.com:${GITHUB_FACTS.repository}.git`;
+  if (actual === url) return;
+  assert.equal(actual, url.replace(/^git@/, ""));
+  const push = `origin ${url} (push)`;
+  assert.ok(
+    observation.toolCalls.some(
+      (call) =>
+        call.result?.content
+          .split("\n")
+          .some((line) => line.trim().replace(/\s+/g, " ") === push) === true,
+    ),
+    "missing origin push URL evidence",
+  );
+}
 const LAST_REFLOG_ENTRY = -1;
 
 export function plantedPins(observation: Observation): {

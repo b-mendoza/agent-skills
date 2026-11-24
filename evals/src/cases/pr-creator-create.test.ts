@@ -9,7 +9,10 @@ import {
   GITHUB_FACTS,
   seedGithubFixture,
 } from "#/cases/pr-creator-fixtures.ts";
-import { commands } from "#/cases/pr-creator-rewrite-fixture-tests.ts";
+import {
+  commands,
+  testRewriteFixtures,
+} from "#/cases/pr-creator-rewrite-fixture-tests.ts";
 import { makeFixture } from "#/fixtures/fixtures.ts";
 
 const SUCCESS = 0;
@@ -238,6 +241,122 @@ it(
   },
   FIXTURE_TIMEOUT_MS,
 );
+it(
+  "enforces a pinned lease on a rewritten remote branch, then accepts a plain push",
+  ({ onTestFinished }) => {
+    const fixture = commands({
+      allowPush: true,
+      baseAhead: true,
+      headNotCheckedOut: true,
+    });
+    onTestFinished(fixture.cleanup);
+    const ref = `refs/heads/${GITHUB_FACTS.branch}`;
+    const old = fixture.git("rev-parse", `origin/${GITHUB_FACTS.branch}`);
+    const base = fixture.git("rev-parse", "origin/main");
+    expect(fixture.git("branch", "--show-current")).not.toBe(
+      GITHUB_FACTS.branch,
+    );
+    fixture.git("switch", "--detach", old);
+    fixture.git("rebase", base);
+    const tip = fixture.git("rev-parse", "HEAD");
+    expect(tip).not.toBe(old);
+    const push = (lease: string) =>
+      fixture.git(
+        "push",
+        `--force-with-lease=${ref}:${lease}`,
+        "origin",
+        `${tip}:${ref}`,
+      );
+    expect(() => push(base)).toThrow();
+    expect(fixture.git("ls-remote", "origin", ref)).toBe(`${old}\t${ref}`);
+    expect(fixture.capture("push-1")).toMatchObject({
+      old,
+      new: tip,
+      ref,
+      fastForward: false,
+      accepted: false,
+    });
+    push(old);
+    expect(fixture.capture("push-2")).toMatchObject({
+      old,
+      new: tip,
+      ref,
+      fastForward: false,
+      accepted: true,
+      args: [
+        "push",
+        `--force-with-lease=${ref}:${old}`,
+        "origin",
+        `${tip}:${ref}`,
+      ],
+    });
+    fixture.git("commit", "--allow-empty", "-qm", "next");
+    fixture.git("push", "origin", `HEAD:${ref}`);
+    expect(fixture.capture("push-3")).toMatchObject({
+      old: tip,
+      new: fixture.git("rev-parse", "HEAD"),
+      ref,
+      fastForward: true,
+      accepted: true,
+    });
+  },
+  FIXTURE_TIMEOUT_MS,
+);
+
+it(
+  "keeps a non-default PR target and produces a real rebase conflict",
+  ({ onTestFinished }) => {
+    const fixture = commands({
+      defaultBranch: "trunk",
+      baseConflict: true,
+      existing: true,
+      allowEdit: true,
+      issues: ISSUES,
+    });
+    onTestFinished(fixture.cleanup);
+    expect(
+      fixture.gh(
+        "api",
+        "--include",
+        "--method",
+        "GET",
+        `repos/${GITHUB_FACTS.repository}`,
+      ),
+    ).toContain('"default_branch": "trunk"');
+    expect(() => fixture.git("rebase", "origin/main")).toThrow();
+    expect(fixture.git("diff", "--name-only", "--diff-filter=U")).toBe(
+      GITHUB_FACTS.source,
+    );
+    const bodyPath = join(fixture.cwd, ".git/body");
+    writeFileSync(bodyPath, "Closes #12");
+    fixture.gh(
+      "pr",
+      "edit",
+      ...TARGET,
+      "--body-file",
+      bodyPath,
+      "--title",
+      "New",
+      "--add-label",
+      "review",
+      "--add-assignee",
+      "owner",
+    );
+    fixture.gh("pr", "ready", ...TARGET);
+    expect(JSON.parse(fixture.gh("pr", "view", ...TARGET))).toMatchObject({
+      title: "New",
+      labels: [{ name: "review" }],
+      assignees: [{ login: "owner" }],
+      isDraft: false,
+      closingIssuesReferences: [],
+    });
+    fixture.gh("pr", "ready", ...TARGET, "--undo");
+    expect(fixture.capture("pr-ready-2")).toMatchObject({ isDraft: true });
+  },
+  FIXTURE_TIMEOUT_MS,
+);
+
+testRewriteFixtures();
 
 it.for(["comment", "close"] as const)(
   "refuses only the configured %s on issue 13",

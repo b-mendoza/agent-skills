@@ -1,9 +1,15 @@
 import { execFileSync } from "node:child_process";
-import { appendFileSync, mkdirSync, writeFileSync } from "node:fs";
+import {
+  appendFileSync,
+  mkdirSync,
+  readFileSync,
+  writeFileSync,
+} from "node:fs";
 import { join } from "node:path";
 
 import type { SeedContext } from "#/cases/case-contract.ts";
 import { FAKE_GH } from "#/cases/pr-creator-fake-gh.ts";
+import { configurePush } from "#/cases/pr-creator-push-fixture.ts";
 import { FIXTURE_ROOT_PATH, seedFixtureRoot } from "#/cases/shared-checks.ts";
 import { copyHeadReflog, GH_LOG, HEAD_LOG } from "#/fixtures/fixtures.ts";
 
@@ -45,8 +51,19 @@ function git(repoPath: string, ...arguments_: string[]): string {
 }
 
 interface GithubFixtureOptions {
+  headHistory?: {
+    branch: string;
+    commitMessages: readonly [string, ...string[]];
+  };
   collaborators?: readonly string[];
+  allowPush?: boolean;
+  localRewrite?: "on-base" | "base-moved" | "remote-only-commit";
+  uncommittedChange?: "unrelated";
+  followedTag?: boolean;
   issueWriteFailsOn?: { action: "comment" | "close"; number: number };
+  baseAhead?: boolean;
+  baseConflict?: boolean;
+  headNotCheckedOut?: boolean;
   defaultBranch?: string;
   issues?: ReadonlyArray<{
     number: number;
@@ -71,6 +88,18 @@ interface GithubFixtureOptions {
   templates?: Readonly<Record<string, string>>;
 }
 
+function headBranch(options: GithubFixtureOptions) {
+  return options.headHistory?.branch ?? GITHUB_FACTS.branch;
+}
+function commitHead(repoPath: string, options: GithubFixtureOptions) {
+  const [first, ...more] = options.headHistory?.commitMessages ?? [
+    GITHUB_FACTS.title,
+  ];
+  git(repoPath, "commit", "-qm", first);
+  for (const message of more) {
+    git(repoPath, "commit", "--allow-empty", "-qm", message);
+  }
+}
 function fixtureSources(options: GithubFixtureOptions) {
   return {
     baseSource: options.baseSource ?? GITHUB_FACTS.baseSource,
@@ -99,6 +128,29 @@ function seedExistingReport(
   }
 }
 
+function needsNewBase(options: GithubFixtureOptions) {
+  return (
+    options.baseAhead === true ||
+    options.baseConflict === true ||
+    options.localRewrite !== undefined
+  );
+}
+function advanceBase(repoPath: string, options: GithubFixtureOptions): void {
+  if (needsNewBase(options)) {
+    git(repoPath, "switch", "main");
+    const path =
+      options.baseConflict === true ? GITHUB_FACTS.source : "base-note.txt";
+    writeFileSync(join(repoPath, path), "Changed on the base branch.\n");
+    git(repoPath, "add", path);
+    git(repoPath, "commit", "-qm", "Update base");
+    if (options.localRewrite === "base-moved") {
+      appendFileSync(join(repoPath, path), "Later base change.\n");
+      git(repoPath, "commit", "-qam", "Advance base after local rebase");
+    }
+    git(repoPath, "switch", headBranch(options));
+  }
+}
+
 function seedDefaultBranch(repoPath: string, options: GithubFixtureOptions) {
   const defaultBranch = options.defaultBranch ?? "main";
   if (defaultBranch !== "main") git(repoPath, "branch", defaultBranch, "main");
@@ -110,7 +162,7 @@ function seedRemote(
   options: GithubFixtureOptions,
   defaultBranch: string,
 ): void {
-  const { repoPath } = context;
+  const { repoPath, binPath } = context;
   const remote = join(repoPath, ".git", "fixture-origin.git");
   git(repoPath, "clone", "--bare", "--quiet", repoPath, remote);
   if (options.defaultBranch !== undefined) {
@@ -123,6 +175,7 @@ function seedRemote(
     "core.sshCommand",
     `sh -c 'exec git-upload-pack "$1"' fixture-ssh ${JSON.stringify(remote)}`,
   );
+  if (options.allowPush === true) configurePush(repoPath, binPath, remote);
   git(repoPath, "config", "ssh.variant", "ssh");
   git(
     repoPath,
@@ -138,7 +191,49 @@ function seedRemote(
     "refs/remotes/origin/HEAD",
     `refs/remotes/origin/${defaultBranch}`,
   );
-  git(repoPath, "branch", "--set-upstream-to", `origin/${GITHUB_FACTS.branch}`);
+  git(repoPath, "branch", "--set-upstream-to", `origin/${headBranch(options)}`);
+}
+
+function publishedHead(repoPath: string, options: GithubFixtureOptions) {
+  if (options.localRewrite === "remote-only-commit") {
+    appendFileSync(
+      join(repoPath, GITHUB_FACTS.source),
+      "\n# Published pricing note.\n",
+    );
+    git(repoPath, "commit", "-qam", "Document published pricing");
+  }
+  return git(repoPath, "rev-parse", "HEAD");
+}
+
+function rewriteLocalHead(
+  repoPath: string,
+  options: GithubFixtureOptions,
+  sharedHead: string,
+) {
+  if (options.localRewrite !== undefined) {
+    git(repoPath, "reset", "--hard", sharedHead);
+    git(
+      repoPath,
+      "rebase",
+      options.localRewrite === "base-moved" ? "main^" : "main",
+    );
+    writeFileSync(
+      join(repoPath, "local-note.txt"),
+      "Local pricing follow-up.\n",
+    );
+    git(repoPath, "add", "local-note.txt");
+    git(repoPath, "commit", "-qm", "Add local pricing follow-up");
+  }
+}
+function finishWorktree(repoPath: string, options: GithubFixtureOptions) {
+  if (options.followedTag === true) {
+    git(repoPath, "config", "push.followTags", "true");
+    git(repoPath, "tag", "-a", "pricing-preview", "-m", "Pricing preview");
+  }
+  if (options.headNotCheckedOut === true) git(repoPath, "switch", "main");
+  if (options.uncommittedChange === "unrelated") {
+    appendFileSync(join(repoPath, "a.txt"), "Unstaged user note.\r\n");
+  }
 }
 
 function actionOptions(options: GithubFixtureOptions) {
@@ -151,6 +246,7 @@ function actionOptions(options: GithubFixtureOptions) {
     issue_write_fails_on: options.issueWriteFailsOn,
     allow_issue_writes: options.allowIssueWrites === true,
     me: options.me ?? "maintainer",
+    allow_push: options.allowPush === true,
   };
 }
 
@@ -166,21 +262,29 @@ export function seedGithubFixture(
   writeFileSync(join(repoPath, GITHUB_FACTS.source), baseSource);
   git(repoPath, "add", GITHUB_FACTS.source);
   git(repoPath, "commit", "-qm", "feat: define empty-cart unit price");
-  const base = git(repoPath, "rev-parse", "HEAD");
-  git(repoPath, "switch", "-qc", GITHUB_FACTS.branch);
+
+  git(repoPath, "switch", "-qc", headBranch(options));
   writeFileSync(join(repoPath, GITHUB_FACTS.source), headSource);
   git(repoPath, "add", GITHUB_FACTS.source);
-  git(repoPath, "commit", "-qm", GITHUB_FACTS.title);
-  const head = git(repoPath, "rev-parse", "HEAD");
+  commitHead(repoPath, options);
+  const sharedHead = git(repoPath, "rev-parse", "HEAD");
+  const head = publishedHead(repoPath, options);
+  advanceBase(repoPath, options);
+  const base = git(repoPath, "rev-parse", "main");
+  const defaultBranch = seedDefaultBranch(repoPath, options);
   const diff = execFileSync("git", ["diff", `${base}...${head}`], {
     cwd: repoPath,
     encoding: "utf8",
   });
-  const defaultBranch = seedDefaultBranch(repoPath, options);
   seedRemote(context, options, defaultBranch);
+  rewriteLocalHead(repoPath, options, sharedHead);
+  finishWorktree(repoPath, options);
   appendFileSync(join(repoPath, ".git/info/exclude"), "\n.handoffs/\n");
   copyHeadReflog(repoPath, GITHUB_FACTS.baselineLog);
-  writeFileSync(join(repoPath, GITHUB_FACTS.sourceBaseline), headSource);
+  writeFileSync(
+    join(repoPath, GITHUB_FACTS.sourceBaseline),
+    readFileSync(join(repoPath, GITHUB_FACTS.source)),
+  );
   writeFileSync(join(repoPath, GITHUB_FACTS.log), "");
   seedExistingReport(repoPath, options);
   const comment = {
@@ -249,11 +353,11 @@ export function seedGithubFixture(
     author: { login: "maintainer" },
     user: { login: "maintainer" },
     baseRefName: "main",
-    headRefName: GITHUB_FACTS.branch,
+    headRefName: headBranch(options),
     baseRefOid: base,
     headRefOid: head,
     base: { ref: "main", sha: base, repo },
-    head: { ref: GITHUB_FACTS.branch, sha: head, repo },
+    head: { ref: headBranch(options), sha: head, repo },
     labels: [],
     assignees: [],
     reviewRequests: [],
@@ -307,7 +411,11 @@ export function seedGithubFixture(
       head,
       existing: options.existing === true,
       base_source: baseSource,
-      head_source: headSource,
+      head_source: execFileSync(
+        "git",
+        ["show", `${head}:${GITHUB_FACTS.source}`],
+        { cwd: repoPath, encoding: "utf8" },
+      ),
       ...actions,
       allow_create: options.allowCreate === true,
       readback_drift: options.readbackDrift === true,
