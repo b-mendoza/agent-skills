@@ -51,6 +51,7 @@ When the harness does not offer `claude-haiku-5-5`, use `gpt-6.2-sol` at `low` e
 - For `gpt-6.2-astra` and `gpt-6.2-sol`, do not set the `model` parameter. The `model` parameter does not accept these models.
 - For `gpt-6.2-astra`, set `subagent_type` to `gpt-6.2-astra`. The `gpt-6.2-astra` agent definition sets the model. A `model` value replaces the model of the definition.
 - For `gpt-6.2-sol`, use a `subagent_type` whose definition sets no `model`, such as `general-purpose`. The `CLAUDE_CODE_SUBAGENT_MODEL` environment variable makes `gpt-6.2-sol` the default subagent model. A `model` in the agent definition replaces the default. Do not use `fork`, because a fork always runs on the model of the orchestrator's thread.
+- For the built-in `Explore` and `Plan` agent types, set the `model` parameter to `haiku` or `fable`. These types do not use the default subagent model. They cannot run `gpt-6.2-sol` or `gpt-6.2-astra`.
 - Use the Codex and Grok harnesses only for web reads and adjudication.
 
 ### Effort
