@@ -164,17 +164,44 @@ def validate_adjudication(status, fields):
         require(re.search(r"[\w./-]+:[1-9][0-9]*\b", fields["Reasons"]), "Reasons must cite path:line")
 
 
-# Count executed tests or matched suites/files, not failed or skipped items.
+# Zero coverage: a zero count of tests, passes, executions or matched suites/files. A zero subtotal beside a
+# positive passed or executed count is not one; a skipped count without such a count is.
 MATCH_TARGET = r"(?:test\s+)?(?:suites?|files?)"
+COUNT_AUXILIARY = r"(?:were|was|are|is|have|has|had)"
+POSITIVE_COUNT = r"[1-9]\d*(?:,\d{3})*"
+SKIP_LABEL = r"(?:skipped|pending|todo)"
 ZERO_COVERAGE = re.compile(rf"""
     ^(?:0|zero)(?:\s*(?:/|of)\s*\d+)?$
     | \b (?:
-        (?:0|zero|no) (?:\s*(?:/|of)\s*\d+)? \s+ (?:tests?|executed|ran|run|{MATCH_TARGET}\s+matched|matched\s+{MATCH_TARGET})
-        | tests?(?:\s+(?:run|ran|executed))? (?:\s*[:=]\s*|\s+) 0
+        (?P<leading_zero>0|zero|no) (?:\s*(?:/|of)\s*\d+)? \s+
+            (?:tests?|passed|passing|executed|ran|run|matched\s+{MATCH_TARGET})
+        | tests?\s+(?:run|ran|executed) (?:\s*[:=]\s*|\s+) 0
+        | tests? (?:\s*[:=]\s*|\s+) (?P<test_zero>0)
+        | pass(?:ed|ing)? (?:\s*[:=]\s*|\s+) (?P<pass_zero>0)(?!\.\d)
     ) \b (?!\s+(?:(?:files?|suites?)\s+)?(?:failed|failures?|errors?|skipped)\b)
+    | \b (?:0|zero|no) (?:\s*(?:/|of)\s*\d+)? \s+ {MATCH_TARGET}\s+(?:{COUNT_AUXILIARY}\s+)?matched \b
     | \b matched\s+(?:0|zero|no)\s+{MATCH_TARGET} \b
     | \b (?:matched\s+{MATCH_TARGET} | {MATCH_TARGET}\s+matched)
         (?:\s*[:=]\s*|\s+) (?:0|zero|none)(?![\w./-])
+""", re.I | re.X)
+EXECUTED_COUNT = re.compile(rf"""
+    (?<![\w/.]) (?<!\bof\s) {POSITIVE_COUNT} \s+ (?:
+        (?:tests?\s+)? (?:{COUNT_AUXILIARY}\s+)? (?:passed|passing|ran|executed)
+        | (?:tests?\s+(?:{COUNT_AUXILIARY}\s+)?|{COUNT_AUXILIARY}\s+) run
+        | run (?=[ \t]*(?:[^\w \t]|\d|\bin\b|$))
+        | (?:(?!{SKIP_LABEL}\b)[a-z][\w-]*\s+){{0,2}} (?:checked|examined)
+    ) \b
+    | \b (?:tests?\s+(?:run|ran|executed|passed) | pass(?:ed|ing)?)
+        (?:\s*[:=]\s*|\s+) {POSITIVE_COUNT} \b (?!\.\d)
+""", re.I | re.X)
+ZERO_SUBTOTAL = re.compile(rf"""
+    (?<![/.]) \b (?:0|zero|no) \s+ (?:tests?\s+)? (?:{COUNT_AUXILIARY}\s+)?
+    (?:failed|failing|failures?|errors?|{SKIP_LABEL}|ignored) \b
+""", re.I | re.X)
+SKIPPED_COUNT = re.compile(rf"""
+    (?<![\w/.]) {POSITIVE_COUNT} \s+ (?:(?:{MATCH_TARGET}|[a-z][\w-]*)\s+)?
+        (?:{COUNT_AUXILIARY}\s+)? {SKIP_LABEL} \b
+    | \b {SKIP_LABEL} (?:\s*[:=]\s*|\s+) {POSITIVE_COUNT} \b (?!\.\d)
 """, re.I | re.X)
 
 
@@ -233,7 +260,16 @@ def text_status(role, text):
             require(fields["Command"] != "not run" and fields["Coverage evidence"] != "not run",
                     claim + " needs command and coverage")
             require(fields["Exit code"] == "0", claim + " contradicts validation Exit code: " + fields["Exit code"])
-            require(not ZERO_COVERAGE.search(fields["Coverage evidence"]), "Result: pass reports zero tests")
+            coverage = fields["Coverage evidence"]
+            executed = EXECUTED_COUNT.search(coverage)
+            require(executed or not SKIPPED_COUNT.search(coverage),
+                    "Result: pass reports skipped tests without a passed or executed count")
+            # Ignore only the matching zero token, not the text around it or a matched-suite/file count.
+            zero_total = any(
+                not (executed and match.lastgroup and ZERO_SUBTOTAL.match(coverage, match.start(match.lastgroup)))
+                for match in ZERO_COVERAGE.finditer(coverage)
+            )
+            require(not zero_total, "Result: pass reports zero tests")
         if fields["Result"] == "pre-existing failure":
             require(fields["Command"] != "not run", "pre-existing failure needs an executed command")
             require(fields["Exit code"] != "not run", "pre-existing failure needs an exit code")
