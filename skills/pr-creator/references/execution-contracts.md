@@ -6,6 +6,8 @@ Load this file only when formatting a user-facing preview, final output, stop re
 
 Explain the outcome in plain prose, without `PR_CREATE` status lines or a machine-routing envelope. Include what stopped progress, the observed evidence, what was or was not changed, and one safe next action. For an existing PR, return its URL and say no PR was created or edited. For a pending approval, show the exact preview below only for creation approval; at earlier gates, show the exact proposed action, such as the push command/ref or scope decision. Ask for approval or edits in prose, state that nothing was created, and end the turn.
 
+In every terminal reply, including success, name the resolved handoff run directory in prose outside the PR body and frozen preview. If the run wrote no files, say so; if it used only external scratch, say there are no handoff files to report. Create nothing just to report a path.
+
 `AWAITING_USER` remains an internal suspension state when the environment cannot keep waiting for an answer. `BLOCKED` means a real precondition or execution path is unavailable. Neither is printed as a user-facing status field.
 
 ## Preview Template
@@ -33,7 +35,7 @@ Show `Approval token: <valuesDigest>` after the exact body, then ask for `APPROV
 
 ## Approval Record
 
-Sensitive redispatches use records instead of bare booleans. Load [approval-protocol.md](./approval-protocol.md) for the exact JSON field sets, byte serialization, helper invocations, scope-record lifetime and human answer vocabulary. Both the orchestrator and receiving specialist run the shipped helper against the values they will actually consume. Never invent a digest or hash the rendered preview independently.
+Sensitive redispatches use records instead of bare booleans. Load [approval-protocol.md](./approval-protocol.md) for the exact JSON field sets, byte serialization, helper invocations, scope-record lifetime and human answer vocabulary. Both the orchestrator and receiving specialist run the shipped helper against the values they will actually consume. Never invent a digest or hash the rendered preview independently. A record retained on disk does not authorize a push, a create, or a retry.
 
 ## Body Template
 
