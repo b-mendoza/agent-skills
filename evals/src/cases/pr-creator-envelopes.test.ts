@@ -19,6 +19,7 @@ const specialists = {
   resolver: "issue-reference-resolver",
   rebaser: "branch-rebaser",
   update: "pr-updater",
+  issue: "issue-updater",
 } as const;
 
 function contractBlock(specialist: string): string {
@@ -55,6 +56,7 @@ function sample(
     "Auto-close": "none",
     URL: "unavailable",
     Action: "read",
+    "Write attempted": "no",
     "Worktree removed": "yes",
     "Checkout unchanged": "yes",
     Topology: "ambiguous",
@@ -168,6 +170,12 @@ describe("pr-creator consumer envelope validation", () => {
     "Approved body digest": digest,
     "Returned body digest": digest,
   };
+  const comment = {
+    Index: "1",
+    Action: "comment",
+    "Comment URL": url,
+    ...hashes,
+  };
   const exact = {
     URL: url,
     Outcome: "exact",
@@ -191,8 +199,16 @@ describe("pr-creator consumer envelope validation", () => {
     "Scope approval": "digest-mismatch",
     "Pinned SHA match": "no",
   };
-  const { preflight, resolver, analyzer, metadata, update, submit, rebaser } =
-    specialists;
+  const {
+    preflight,
+    resolver,
+    analyzer,
+    metadata,
+    update,
+    issue,
+    submit,
+    rebaser,
+  } = specialists;
   const badLabel = { "Invalid labels": "missing" };
   const badAssignee = { "Invalid assignees": "bob" };
   const shortSha = { "Head SHA": "short" };
@@ -282,6 +298,9 @@ describe("pr-creator consumer envelope validation", () => {
     [rebaser, "DISCARDED", { ...settle, Action: "discard", "Local branch": "unchanged" },
       [...badSettle, branchRef, { Action: "keep" }, { "Checkout unchanged": "no" },
       { "Local branch": "moved" }]],
+    [issue, "ERROR", { Action: "close", Index: "1" }, [{ Index: "0" }, { Index: "n/a" }]],
+    [issue, "ERROR", { Action: "comment", Index: "2" }, [{ Index: "-1" }, { Index: "n/a" }]],
+    [issue, "ERROR", { Action: "read" }, [{ Index: "1" }]],
     ["repo-state-inspector", "ERROR", {}, [{ Topology: "telepathic" }]],
     [submit, "CREATE_UNCERTAIN", checks, []],
     [preflight, "ERROR", unavailableRepo, []],
@@ -334,6 +353,11 @@ describe("pr-creator consumer envelope validation", () => {
     [update, "BASELINE", {}, [{ Action: "apply" }, { "PR state": "closed" }]],
     [update, "PR_CHANGED", { Action: "apply", "Applied fields": "none" },
       [missing, { "Applied fields": "body" }]],
+    [issue, "PASS", { Index: "2", Action: "close", "State after": "closed", "State reason after": "not planned", "Write attempted": "yes" },
+      [{ "State after": "open" }, { "State reason after": "completed" }, { "Write attempted": "no" }]],
+    [issue, "PASS", { ...comment, "Write attempted": "yes" }, [missing, { "Comment URL": "n/a" },
+      { "Returned body digest": "bad" }]],
+    [issue, "PASS", { Action: "read" }, [{ "Write attempted": "yes" }]],
   ];
   it.each(["edited", "unchanged", "generated", "template", "override"])(
     "checks empty %s body",
@@ -369,6 +393,9 @@ describe("pr-creator consumer envelope validation", () => {
   ])("rejects %s with a confirmed URL", (status) => {
     expect(check(submit, status, {}).status).toBe(VALID);
     expect(check(submit, status, { URL: url }).status).toBe(INVALID);
+  });
+  it("accepts an already-posted identical comment without another write", () => {
+    expect(check(issue, "PASS", comment).status).toBe(VALID);
   });
   it("requires numbered behavior facts", () => {
     const invalid = sample(analyzer).replace(

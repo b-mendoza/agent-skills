@@ -38,6 +38,62 @@ const initial = {
   [facts.baselineLog]: logs,
   [HEAD_LOG]: logs,
 };
+const issueNumbers = ["42", "43", "44"];
+it.each([
+  ["issue-batch-three-issues", issueNumbers.length, issueNumbers.length],
+  ["issue-batch-stops-at-first-failure", NEXT + NEXT, NEXT],
+] as const)(
+  "accepts only the ordered close attempts and their readbacks (refused: %s)",
+  (id, attempted, successful) => {
+    const actions = issueNumbers.map((id) => ({
+      number: Number(id),
+      action: "close",
+      baselineState: "open",
+      reason: "not planned",
+    }));
+    const files: Record<string, string | null> = {};
+    const log: string[][] = [];
+    for (const [index, id] of issueNumbers.entries()) {
+      const args = [
+        "issue",
+        "close",
+        id,
+        "-R",
+        facts.repository,
+        "--reason",
+        "not planned",
+      ];
+      if (index < attempted) log.push(args, ["issue", "view", id]);
+      files[`.git/eval-issue-close-${String(index + NEXT)}.json`] =
+        index >= successful
+          ? null
+          : JSON.stringify({
+              args,
+              number: Number(id),
+              state: "closed",
+              reason: "not planned",
+            });
+    }
+    const gates = [
+      gate("issue-actions", { repository: facts.repository, actions }),
+      finished,
+    ];
+    const good = observation(gates, files, log);
+    const bad = observation(gates, files, [
+      ...log,
+      [
+        "issue",
+        "close",
+        "44",
+        "-R",
+        facts.repository,
+        "--reason",
+        "not planned",
+      ],
+    ]);
+    expect(acceptsOnly(id, good, bad)).not.toThrow();
+  },
+);
 it("skips the rebase when the switch is off", () => {
   const good = observation([gate("preview", preview)], initial);
   expect(

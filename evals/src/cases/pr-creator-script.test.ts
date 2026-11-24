@@ -1,12 +1,15 @@
-import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { fileURLToPath } from "node:url";
 
-import { Schema } from "effect";
 import { describe, expect, it } from "vitest";
 
-const path = "../../../skills/pr-creator/scripts/validate-output.py";
-const script = fileURLToPath(new URL(path, import.meta.url));
+import {
+  approval,
+  digest,
+  run,
+  status,
+  verify,
+} from "#/cases/pr-creator-test-support.ts";
+
 const SHA_LENGTH = 40;
 const MAX_TITLE_LENGTH = 255;
 const VALID = 0;
@@ -77,39 +80,6 @@ const updateObserved = {
 const update = { ...updateObserved, ...result };
 function hash(text: string) {
   return createHash("sha256").update(text).digest("hex");
-}
-function run(mode: string, kind: string, input: unknown) {
-  const args = ["-I", script, mode, ...(kind === "" ? [] : [kind])];
-  return spawnSync("python3", args, {
-    input: JSON.stringify(input),
-    encoding: "utf8",
-  });
-}
-function verify(
-  kind: string,
-  values: unknown,
-  approval: unknown,
-  observed?: unknown,
-) {
-  return run("verify", kind, { values, approval, observed });
-}
-function digest(kind: string, values: unknown) {
-  const result = run("digest", kind, values);
-  expect(result.status).toBe(VALID);
-  return Schema.decodeUnknownSync(
-    Schema.Struct({
-      kind: Schema.String,
-      valuesDigest: Schema.String,
-      bodyDigest: Schema.String,
-    }),
-  )(JSON.parse(result.stdout));
-}
-function status(kind: string, values: unknown) {
-  return run("digest", kind, values).status;
-}
-function approval(kind: string, values: unknown) {
-  const proof = digest(kind, values);
-  return { ...proof, wording: "approved", action: `approve ${kind}` };
 }
 
 describe("pr-creator shipped approval validator", () => {
@@ -237,13 +207,8 @@ describe("pr-creator shipped approval validator", () => {
     const receipt = digest("push", plainPush);
     expect(receipt.kind).toBe("push");
     expect(receipt.bodyDigest).toBe("n/a");
-    expect(
-      verify("push", plainPush, {
-        ...receipt,
-        action: pushCommand,
-        wording: "yes",
-      }).status,
-    ).toBe(VALID);
+    const record = { ...receipt, action: pushCommand, wording: "yes" };
+    expect(verify("push", plainPush, record).status).toBe(VALID);
   });
   const force = {
     ...branch,
@@ -293,6 +258,64 @@ describe("pr-creator shipped approval validator", () => {
     digest("force-push", { ...force, source: "local-branch" });
     for (const change of [{ source: "other" }, { source: undefined }]) {
       expect(status("force-push", { ...force, ...change })).toBe(INVALID);
+    }
+  });
+  const open = { number: 2, baselineState: "open" };
+  const comment = { ...open, action: "comment", body: "雪\r\n" };
+  const close = { ...open, action: "close", reason: "not planned" };
+  const batch = {
+    repository: "o/r",
+    actions: [{ ...comment, number: 3, baselineState: "closed" }, close],
+  };
+  it("binds the ordered batch, not an observed snapshot or a list of digests in the record", () => {
+    const proof = approval("issue-actions", batch);
+    expect(JSON.parse(run("digest", "issue-actions", batch).stdout)).toEqual({
+      kind: "issue-actions",
+      valuesDigest: proof.valuesDigest,
+      bodyDigest: "n/a",
+      bodyDigests: [hash(comment.body), "n/a"],
+    });
+    const payload = { approval: proof, values: batch };
+    expect(run("verify", "issue-actions", payload).status).toBe(VALID);
+    for (const change of [
+      { observed: {} },
+      { values: { ...batch, actions: [...batch.actions].reverse() } },
+      { approval: { ...proof, bodyDigests: [] } },
+    ]) {
+      expect(
+        run("verify", "issue-actions", { ...payload, ...change }).status,
+      ).toBe(INVALID);
+    }
+  });
+  it("accepts one through ten ordered actions with exact issue baselines and bodies", () => {
+    const ten = Array.from({ length: 10 }, (_, i) => ({
+      ...comment,
+      body: String(i),
+    }));
+    for (const actions of [
+      [comment],
+      ten,
+      [{ ...comment, baselineState: "open", number: close.number }, close],
+    ]) {
+      digest("issue-actions", { ...batch, actions });
+    }
+    for (const actions of [
+      [],
+      [...ten, comment],
+      [comment, comment],
+      [close, close],
+      [close, { ...comment, number: close.number }],
+      [{ ...comment, body: "  " }],
+      [{ ...comment, baselineState: "draft" }],
+      [{ ...comment, body: undefined }],
+      [{ ...comment, number: true }],
+      [{ ...close, number: 0 }],
+      [{ ...close, baselineState: "closed" }],
+      [{ ...close, reason: "completed" }],
+      [{ ...close, body: "extra" }],
+      [{ ...close, action: "label" }],
+    ]) {
+      expect(status("issue-actions", { ...batch, actions })).toBe(INVALID);
     }
   });
   it("requires an add-only update against an unchanged baseline", () => {
@@ -417,8 +440,13 @@ describe("pr-creator shipped approval validator", () => {
     const help = run("-h", "", {});
     expect(help.status).toBe(VALID);
     expect(help.stdout).toContain(
-      "Kinds: push, scope, rebase, force-push, preview, update.",
+      "Kinds: push, scope, rebase, force-push, preview, update, issue-actions.",
     );
+    for (const kind of ["issue-comment", "issue-close"]) {
+      for (const mode of ["digest", "verify"]) {
+        expect(run(mode, kind, {}).status).toBe(USAGE_ERROR);
+      }
+    }
     expect(run("unknown", "preview", preview).status).toBe(USAGE_ERROR);
   });
 });

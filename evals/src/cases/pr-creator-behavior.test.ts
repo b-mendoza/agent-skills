@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
+import * as approvalHelpers from "#/cases/pr-creator-behavior-checks.ts";
 import {
   approveForcePush,
+  approveIssueActions,
   approvePreview,
   approvePush,
   approveRebase,
@@ -28,6 +30,7 @@ const TITLE_PREVIEW = `Title: feat: TASK-42 Use Uppercase Checkpoint Answers`;
 
 describe("pr-creator machine approval boundaries", () => {
   it.each([
+    ["update", "issue-actions", "gh pr edit 17", approveIssueActions],
     ["push", "preview", "git push origin HEAD", approvePreview],
     ["rebase", "force-push", "git rebase origin/main", approveForcePush],
   ] as const)(
@@ -69,6 +72,7 @@ describe("pr-creator machine approval boundaries", () => {
     ["rebase", approveRebase],
     ["force-push", approveForcePush],
     ["update", approveUpdate],
+    ["issue-actions", approveIssueActions],
   ] as const)(
     "answers the prepared %s gate with only a plain affirmative",
     (kind, approve) => {
@@ -83,17 +87,42 @@ describe("pr-creator machine approval boundaries", () => {
       approvePush({ ...preparedObservation(), toolCalls: [call] }),
     ).toHaveProperty("gateNotReached");
   });
-  it("does not approve a digest from an earlier turn", () => {
-    const prepared = preparedObservation("Proceed?", "preview");
+  it.each([
+    ["preview", "Proceed?", approvePreview],
+    ["issue-actions", "Approve the batch?", approveIssueActions],
+  ] as const)(
+    "does not approve an earlier %s digest",
+    (kind, question, approve) => {
+      const prepared = preparedObservation(question, kind);
+      expect(
+        approve({
+          ...prepared,
+          turns: [
+            createTurn({ toolCalls: prepared.toolCalls }),
+            createTurn({ toolCalls: [] }),
+          ],
+        }),
+      ).toHaveProperty("gateNotReached");
+    },
+  );
+  it("requires per-action body evidence on a batch receipt", () => {
+    const call = digestCall("issue-actions");
+    if (call.result === undefined) throw new Error("missing result");
+    call.result = {
+      ...call.result,
+      content: JSON.stringify(JSON.parse(call.result.content), [
+        "kind",
+        "valuesDigest",
+        "bodyDigest",
+      ]),
+    };
     expect(
-      approvePreview({
-        ...prepared,
-        turns: [
-          createTurn({ toolCalls: prepared.toolCalls }),
-          createTurn({ toolCalls: [] }),
-        ],
-      }),
+      approveIssueActions({ ...preparedObservation(), toolCalls: [call] }),
     ).toHaveProperty("gateNotReached");
+  });
+  it("does not expose single-issue approvals", () => {
+    expect(approvalHelpers).not.toHaveProperty("approveIssueComment");
+    expect(approvalHelpers).not.toHaveProperty("approveIssueClose");
   });
   const choiceQuestion =
     "Should I `preserve` the rebase result or `discard` it?";

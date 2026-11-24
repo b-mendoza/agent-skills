@@ -13,6 +13,7 @@ export const approvalKinds = [
   "update",
   "rebase",
   "force-push",
+  "issue-actions",
 ] as const;
 export type ApprovalKind = (typeof approvalKinds)[number];
 
@@ -42,6 +43,7 @@ const receiptSchema = Schema.Struct({
   kind: Schema.optional(Schema.String),
   valuesDigest: Schema.String,
   bodyDigest: Schema.String,
+  bodyDigests: Schema.optional(Schema.Array(Schema.String)),
 });
 const isReceipt = Schema.is(receiptSchema);
 const HEX_DIGEST = /^[a-f\d]{64}$/;
@@ -79,6 +81,14 @@ function latestTurn(observation: Observation) {
   return observation.turns?.at(LAST) ?? observation;
 }
 
+function hasBatchBodyDigests(receipt: typeof receiptSchema.Type): boolean {
+  const digests = receipt.bodyDigests ?? [];
+  return (
+    digests.length > FIRST &&
+    digests.every((digest) => digest === "n/a" || HEX_DIGEST.test(digest))
+  );
+}
+
 function digestReceipts(observation: Observation, gate: ApprovalKind) {
   const { toolCalls: calls, finalText: reply } = latestTurn(observation);
   const expectedBody = ["preview", "update"].includes(gate)
@@ -91,10 +101,13 @@ function digestReceipts(observation: Observation, gate: ApprovalKind) {
           .map(parseReceipt)
           .filter((receipt) => receipt !== undefined)
           .filter(
+            (receipt) => receipt.kind === undefined || receipt.kind === gate,
+          )
+          .filter(
             (receipt) =>
-              (receipt.kind === undefined || receipt.kind === gate) &&
               HEX_DIGEST.test(receipt.valuesDigest) &&
-              expectedBody.test(receipt.bodyDigest),
+              expectedBody.test(receipt.bodyDigest) &&
+              (gate !== "issue-actions" || hasBatchBodyDigests(receipt)),
           )
           .map((receipt) => ({ index, digest: receipt.valuesDigest }))
       : [],

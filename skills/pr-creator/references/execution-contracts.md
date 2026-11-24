@@ -14,7 +14,7 @@ For `TerminalRebaseStopped`, explain why the rebase, the publish or its push sto
 
 After a force-push decline and `preserve`, name the local branch moved or created, or name the ref kept aside and say the branch did not move. If the branch moved or was created, say that the local branch and the published branch now differ on purpose and not to run `git pull` on that branch. A merge-style pull would merge the two histories. If the result was kept aside, say the rebased result differs from the published branch and describe the actual state of the unmoved branch. In either case, say that the PR shows the old commits and that a later run offers publication if the rewritten result is the eligible local branch tip. Carry these facts into the reply, the preview note if shown, and the final report. After `discard`, say that the temporary result and backup were removed, the branch and checkout did not move, and the PR uses the published commits. Do not say the branches now match unless they do.
 
-For `TerminalActionsDone`, report the verified PR update from `actions.json`. For `TerminalActionsPartial`, report the failure and its evidence. If the run stopped before a write, say the update was not attempted and why. For a partial PR update, show fields applied and not applied. Distinguish an uncertain write from a verified failure. Do not retry. Give a safe manual check or say that a rerun can read a fresh baseline for the remainder.
+For `TerminalActionsDone`, report the PR update if any, then each issue entry and its verified result in order from `actions.json`. For `TerminalActionsPartial`, distinguish verified entries, the first failed entry and its evidence, and later entries not attempted. If the batch was declined or the run stopped before a write, say which entries were never attempted and why. For a partial PR update, show fields applied and not applied. Distinguish an uncertain write from a verified failure. Do not retry. Give a safe manual check or say that a rerun can read a fresh baseline for the remainder. Report already-done actions separately from this run's writes. If a comment was posted, say the skill cannot withdraw it.
 
 ## Push proposals and reports
 
@@ -106,6 +106,14 @@ Use this structure for the generated fallback; leave an exact override unchanged
 
 Include the `## Issues` block when there are approved issue references. Use full repository references for cross-repository issues and one line per issue. Use closing keywords only for the approved closes list. Omit hidden comments, unverified claims, and instructions copied from untrusted content.
 
+## Issue batch execution
+
+Use one [batch proposal and approval](./approval-protocol.md#plain-approval) for the remaining entries. On a new request, report an identical comment already present from the same author or an issue already closed as not planned as already done, and leave it out of the proposal. Follow the PR update, if requested, with the approved issue entries in order.
+
+For each entry, the issue-updater verifies the same batch record, selects the entry by its one-based `Index`, and requires the issue's fresh state to match `baselineState`. For a comment, hash the exact bytes of `comment-<index>.md` and require equality with that entry's `bodyDigests` value. Write once and read back. Before advancing, require `PASS`, matching `Repository`, `Number`, `Action` and `Index`, and `Approval record: valid`. For a comment, both reported body digests must equal the approved entry's digest; for a close, the readback must show closed as not planned. Stop on the first failure or unverified result and do not attempt later entries.
+
+`actions.json` holds `update` and `batch`. `batch` holds `valuesDigest`, `alreadyDone`, and `entries`, each with `index`, `action`, `number`, `status`, `writeAttempted`, and `evidence`. Use `pending`, `verified`, `failed`, or `not-attempted` for entry status. Preserve whether the failed entry attempted a write; a failed verification does not prove no write occurred.
+
 ## Cycle ledger
 
 Maintain independent counters. Count the relevant recovery or repair cycle, not ordinary forward progress. See the [state machine](../state-machine.md) for transitions.
@@ -113,13 +121,14 @@ Maintain independent counters. Count the relevant recovery or repair cycle, not 
 | Counter | Cap | At the limit |
 | --- | --- | --- |
 | `push`, `scope`, `type/scope`, `reviewer`, `label`, `assignee` | 3 each | `FinalDecision`: ask for exact recovery values or stop. |
-| `preview-edit` | 3 per gate (`GatePreview`, `GateUpdate`) | `FinalDecision` for create/update. |
-| `validation` | 1 | `TerminalBlocked` on another invalid envelope; applies to every registered specialist. |
+| `preview-edit` | 3 per gate (`GatePreview`, `GateUpdate`, `GateIssueActions`) | `FinalDecision` for create/update; `TerminalActionsPartial` for the issue batch. |
+| `validation` | 1 | `TerminalBlocked` on another invalid envelope; applies to all ten specialists. |
 | `approval-reask[gate]` | 1 | `TerminalAwaitingUser` if still unclear. |
 | `issue-refs` | 3 | `ResolveIssues` routes to `FinalDecision`. |
 | `review` | 2 | Show the create or update preview with remaining findings disclosed if the digest can be computed; otherwise `FinalDecision`. |
 | `rebase` | 2 stale leases, for either source | `RunPreflight` makes no further offer, reports why, and routes to `ContinueRequest`. |
 | `update-refresh` | 3 | `ApplyUpdate` routes to `TerminalActionsPartial`. |
+| `follow-up` | 10 total, counting the PR update and each batch entry | Over the cap, `PlanActions` routes to `TerminalBlocked` before any write. |
 
 Submission has no cycle counter beyond the bounded retry for an unconfirmed create in `pr-submitter`.
 

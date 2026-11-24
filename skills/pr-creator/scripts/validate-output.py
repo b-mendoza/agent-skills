@@ -8,7 +8,7 @@ Usage: python3 -I validate-output.py <digest|verify> <kind>       (JSON on stdin
        python3 -I validate-output.py body                         (exact bytes on stdin)
        python3 -I validate-output.py -h
 Input always arrives on stdin, from a pipe or a quoted heredoc. Never stage a file to feed it.
-Kinds: push, scope, rebase, force-push, preview, update.
+Kinds: push, scope, rebase, force-push, preview, update, issue-actions.
 Environment variables: none. Side effects: none; stdin in, stdout/stderr out, no files.
 Exit 0: valid/result; 1: invalid input (repair or new approval); 2: usage error.
 Smoke: printf '{}' | python3 -I validate-output.py digest preview # exit 1
@@ -24,6 +24,7 @@ ENVELOPES = {
     "branch-rebaser": ("REBASE", "REBASED PUSHED CONFLICT LEASE_REJECTED PUSH_REJECTED KEPT DISCARDED BLOCKED ERROR", "Action|Approval record|Head remote|Head branch|Base SHA|Old head SHA|New head SHA|Commits before|Commits after|Patches changed|Conflict paths|Backup ref|Push command|Push extras|Remote head after|Worktree removed|Checkout unchanged|Local branch|Kept ref|Uncommitted changes preserved|Reason|Decision needed"),
     "diff-analyzer": ("DIFF_ANALYSIS", "PASS LARGE_PR_CONFIRMATION_REQUIRED STALE_PINS EMPTY_DIFF ERROR", "Range|Compared Base SHA|Compared Head SHA|Pinned SHA match|Shortstat|Adjusted changed lines|Changed files|Excluded generated/vendored/lock totals|Scope gate rule fired|Scope approval|Scope values|Changed paths|Issue mentions|Issue mentions omitted|Grouped areas|Diff summary|Behavior before|Behavior after|Retained behavior|Type candidates|Scope candidates|Tests|Risk notes|Reason|Decision needed"),
     "issue-reference-resolver": ("ISSUE_REFS", "PASS NEEDS_DECISION INVALID_ISSUES AUTH ERROR", "Repository|Default branch|Target branch|Auto-close|Closes|Related|Candidates|Dropped candidates|Invalid|Warnings|Reason|Decision needed"),
+    "issue-updater": ("ISSUE_ACTION", "PASS VERIFY_FAILED ISSUE_CHANGED UNSUPPORTED BLOCKED AUTH ERROR", "Action|Index|Approval record|Repository|Number|Issue URL|Issue title|State before|State after|State reason after|Comment URL|Approved body digest|Returned body digest|Write attempted|Reason|Decision needed"),
     "pr-drafter": ("PR_DRAFT", "PASS NEEDS_CHOICE ERROR", "Title|Title source|Body source|Template path|Type choice|Scope choice|Traceability notes|Body|Reason|Decision needed"),
     "pr-submitter": ("PR_SUBMIT", "PASS CREATED_WITH_ADDITIONS CREATED_WITH_DRIFT HEAD_MOVED CREATE_UNCERTAIN BLOCKED CREATE_ERROR AUTH ERROR", "Approval record|Frozen head SHA|Remote head SHA before create|Existing PR race check|Create attempted|Create retry used|URL|Base returned|Head ref returned|Head SHA returned|Title returned|State returned|Reviewers returned|Labels returned|Assignees returned|Body first line returned|Body line count returned|Approved body digest|Returned body digest|Outcome|Mismatched fields|Added fields|Closing issues returned|Returned values file|Uncertain check commands|Reason|Decision needed"),
     "pr-updater": ("PR_UPDATE", "BASELINE UPDATED UPDATED_WITH_ADDITIONS PARTIAL PR_CHANGED BLOCKED AUTH ERROR", "Action|Approval record|Repository|Number|URL|PR state|Base ref|Head ref|Head SHA|Title|State|Reviewers|Labels|Assignees|Body digest|Body file|Closing issues|Outcome|Applied fields|Not applied fields|Mismatched fields|Added fields|Returned values file|Reason|Decision needed"),
@@ -53,6 +54,7 @@ SCHEMAS = {
     "force-push": "headRemote headBranch baseSha oldHeadSha newHeadSha source extras action",
     "preview": "repository baseRemote targetBranch headRemote headBranch baseSha headSha effectiveState " + RESULT,
     "update": UPDATE_OBSERVED + " " + RESULT,
+    "issue-actions": "repository actions",
 }
 OBSERVED = {"scope": SCOPE_OBSERVED, "update": UPDATE_OBSERVED}
 METADATA = ("reviewers", "labels", "assignees")
@@ -83,6 +85,25 @@ def validate_extra(item):
     require(re.fullmatch(r"[A-Za-z0-9-]+\.(?:[^=\r\n]+\.)?[A-Za-z][A-Za-z0-9-]*=[^\r\n]*", item), "expected one git setting as key=value")
 
 
+def validate_actions(actions):
+    require(isinstance(actions, list) and 1 <= len(actions) <= 10, "expected 1 to 10 issue actions")
+    closed = set()
+    for index, entry in enumerate(actions):
+        require(isinstance(entry, dict) and entry.get("action") in ("comment", "close"), "invalid issue action")
+        comment = entry["action"] == "comment"
+        exact_keys(entry, "action number baselineState " + ("body" if comment else "reason"), "issue action")
+        number = entry["number"]
+        require(type(number) is int and number > 0, "invalid issue number")
+        require(number not in closed, "issue action after close")
+        require(entry not in actions[:index], "duplicate issue action")
+        if comment:
+            require(entry["baselineState"] in ("open", "closed"), "invalid comment baseline")
+            require(isinstance(entry["body"], str) and entry["body"].strip(), "empty comment body")
+        else:
+            require(entry["baselineState"] == "open" and entry["reason"] == "not planned", "invalid close state or reason")
+            closed.add(number)
+
+
 def normalized_fields(kind, values, schema):
     exact_keys(values, schema, "values")
     result = dict(values)
@@ -92,6 +113,8 @@ def normalized_fields(kind, values, schema):
             for item in value:
                 validate_extra(item)
             result[key] = sorted(value)
+        elif key == "actions":
+            validate_actions(value)
         elif key in LISTS:
             result[key] = string_list(key, value)
         elif key in ("number", "adjustedChangedLines", "excludedLines"):
@@ -176,7 +199,10 @@ def canonical(kind, values):
 def digests(kind, values):
     values = canonical(kind, values)
     serialized = json.dumps(values, sort_keys=True, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
-    return {"valuesDigest": sha(serialized), "bodyDigest": sha(values["body"]) if "body" in values else "n/a"}
+    result = {"valuesDigest": sha(serialized), "bodyDigest": sha(values["body"]) if "body" in values else "n/a"}
+    if kind == "issue-actions":
+        result["bodyDigests"] = [sha(entry["body"]) if entry["action"] == "comment" else "n/a" for entry in values["actions"]]
+    return result
 
 
 def verify(kind, payload):
@@ -497,6 +523,24 @@ def resolver_envelope(status, v):
         require(v["Invalid"] != "none", "INVALID_ISSUES requires invalid references")
 
 
+def issue_envelope(status, v):
+    action = v["Action"]
+    require(action in ("read", "comment", "close"), "invalid issue Action")
+    require(v["Index"] == "n/a" if action == "read" else re.fullmatch(NUMBER, v["Index"]), "invalid issue Index")
+    if action in ("comment", "close") and status in ("PASS", "VERIFY_FAILED", "ISSUE_CHANGED"):
+        approved(v)
+    if status != "PASS":
+        return
+    if action == "read":
+        require(v["Write attempted"] == "no", "read forbids a write")
+    if action == "comment":
+        require(https_url(v["Comment URL"]), "comment requires a confirmed URL")
+        equal_body_digests(v)
+    elif action == "close":
+        require(v["Write attempted"] == "yes", "close requires a write")
+        require(v["State after"] == "closed" and v["State reason after"] == "not planned", "close requires closed, not planned")
+
+
 def envelope(specialist, text):
     prefix, statuses, field_text = ENVELOPES[specialist]
     lines = text.splitlines()
@@ -540,6 +584,7 @@ def envelope(specialist, text):
         "Head source": ("checkout", "remote"),
         "Auto-close": ("yes", "no", "unverifiable", "none"),
         "Outcome": ("exact", "additions", "drift", "n/a"),
+        "Write attempted": ("yes", "no"),
         "Reviewer source": ("user", "CODEOWNERS", "none-confirmed", "none"),
         "Solo repository condition": ("yes", "no", "unknown"),
         "Label source": ("override", "inferred", "none"),
@@ -557,7 +602,7 @@ def envelope(specialist, text):
         require(values["PR state"] in ("draft", "ready") or values["PR state"].startswith("invalid: "), "invalid PR state")
     checks = {"issue-reference-resolver": resolver_envelope, "preflight-validator": preflight_envelope, "diff-analyzer": analyzer_envelope,
               "review-metadata-suggester": metadata_envelope, "pr-submitter": submit_envelope,
-              "branch-rebaser": rebase_envelope, "pr-updater": update_envelope}
+              "branch-rebaser": rebase_envelope, "pr-updater": update_envelope, "issue-updater": issue_envelope}
     if specialist in checks:
         checks[specialist](status, values)
     print("valid")

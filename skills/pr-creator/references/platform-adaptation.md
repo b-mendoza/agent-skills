@@ -22,7 +22,7 @@ On leaving `InspectRepo`, the orchestrator selects one playbook from the inspect
 - `bitbucket`: [`./references/platform-bitbucket.md`](./platform-bitbucket.md)
 - `unknown`: select none and go to `GatePlatformTooling`.
 
-Pass the selected path as `PLATFORM_PLAYBOOK` to preflight, the issue resolver, the metadata specialist, the submitter and the updater. Each reads that file and no other playbook.
+Pass the selected path as `PLATFORM_PLAYBOOK` to preflight, the issue resolver, the metadata specialist, the submitter, the updater and the issue-updater. Each reads that file and no other playbook.
 
 ## Unsupported fields
 

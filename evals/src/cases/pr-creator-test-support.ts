@@ -1,3 +1,9 @@
+import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
+
+import { Schema } from "effect";
+
 import {
   CREATE_CAPTURE,
   type CreateOutcome,
@@ -81,6 +87,23 @@ const values = {
     baselineAssignees: [],
     baselineReviewers: [],
     baselineLabels: [],
+  },
+  "issue-actions": {
+    repository: issue.repository,
+    actions: [
+      {
+        action: "comment",
+        number: issue.number,
+        baselineState: "open",
+        body: "Comment text",
+      },
+      {
+        action: "close",
+        number: issue.number,
+        baselineState: "open",
+        reason: "not planned",
+      },
+    ],
   },
 };
 
@@ -191,4 +214,41 @@ export function createdObservation(
       }),
     },
   });
+}
+
+const path = "../../../skills/pr-creator/scripts/validate-output.py";
+const script = fileURLToPath(new URL(path, import.meta.url));
+const SUCCESS = 0;
+export function run(mode: string, kind: string, input: unknown) {
+  const args = ["-I", script, mode, ...(kind === "" ? [] : [kind])];
+  return spawnSync("python3", args, {
+    input: JSON.stringify(input),
+    encoding: "utf8",
+  });
+}
+export function verify(
+  kind: string,
+  values: unknown,
+  approval: unknown,
+  observed?: unknown,
+) {
+  return run("verify", kind, { values, approval, observed });
+}
+export function digest(kind: string, values: unknown) {
+  const result = run("digest", kind, values);
+  assert.equal(result.status, SUCCESS, result.stderr);
+  return Schema.decodeUnknownSync(
+    Schema.Struct({
+      kind: Schema.String,
+      valuesDigest: Schema.String,
+      bodyDigest: Schema.String,
+    }),
+  )(JSON.parse(result.stdout));
+}
+export function status(kind: string, values: unknown) {
+  return run("digest", kind, values).status;
+}
+export function approval(kind: string, values: unknown) {
+  const proof = digest(kind, values);
+  return { ...proof, kind, wording: "approved", action: `approve ${kind}` };
 }

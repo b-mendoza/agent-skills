@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { READBACK_CAPTURE } from "#/cases/pr-creator-behavior-checks.ts";
 import { GITHUB_FACTS as facts } from "#/cases/pr-creator-fixtures.ts";
+import { RUNS } from "#/cases/pr-creator-scenario.ts";
 import {
   acceptsOnly,
   backup,
@@ -171,6 +172,36 @@ describe("confirmed creates", () => {
     };
     expect(acceptsOnly("assignee-me-alias", observed, good)).not.toThrow();
   });
+  it("does not reuse a create approval to close an issue", () => {
+    const original = createdObservation();
+    const closeGate = gate(
+      "issue-actions",
+      {
+        repository: facts.repository,
+        actions: [
+          {
+            action: "close",
+            number: 42,
+            baselineState: "open",
+            reason: "not planned",
+          },
+        ],
+      },
+      "For the open PR on this branch, please close #42 as not planned.",
+    );
+    const good = {
+      ...original,
+      turns: [...(original.turns ?? []), closeGate.turn],
+      repoFiles: { ...original.repoFiles, [RUNS]: "", ...closeGate.files },
+    };
+    expect(
+      acceptsOnly(
+        "create-approval-does-not-reach-follow-up",
+        good,
+        extraWrite(good),
+      ),
+    ).not.toThrow();
+  });
 });
 describe("rebase proposal boundaries", () => {
   it("continues on the original head after a decline", () => {
@@ -253,7 +284,7 @@ describe("rebase proposal boundaries", () => {
     ).not.toThrow();
   });
 });
-describe("existing PR actions", () => {
+describe("existing PR and issue actions", () => {
   it("requires a fresh baseline without a write", () => {
     const title = `${facts.title} (edited externally)`;
     const good = observation(
@@ -294,6 +325,76 @@ describe("existing PR actions", () => {
         "existing-pr-partial-write",
         observation(gates, captures, [edit, ready, ["pr", "view", "17"]]),
         observation(gates, captures, [edit, ready]),
+      ),
+    ).not.toThrow();
+  });
+  it("requires one issue batch and verified write order", () => {
+    const issue = { repository: facts.repository, number: 42 };
+    const body = "Tracked elsewhere.";
+    const comment = [
+      "issue",
+      "comment",
+      "42",
+      "-R",
+      facts.repository,
+      "--body-file",
+      "comment.md",
+    ];
+    const close = [
+      "issue",
+      "close",
+      "42",
+      "-R",
+      facts.repository,
+      "--reason",
+      "not planned",
+    ];
+    const gates = [
+      gate("issue-actions", {
+        repository: issue.repository,
+        actions: [
+          {
+            action: "comment",
+            number: issue.number,
+            baselineState: "open",
+            body,
+          },
+          {
+            action: "close",
+            number: issue.number,
+            baselineState: "open",
+            reason: "not planned",
+          },
+        ],
+      }),
+      finished,
+    ];
+    const files = {
+      ".git/eval-issue-comment-1.json": JSON.stringify({
+        args: comment,
+        id: 1001,
+        body,
+        user: { login: "maintainer" },
+        issue_url: `https://api.github.com/repos/${facts.repository}/issues/42`,
+      }),
+      ".git/eval-issue-close-1.json": JSON.stringify({
+        args: close,
+        number: 42,
+        state: "closed",
+        reason: "not planned",
+      }),
+    };
+    const calls = [
+      comment,
+      ["api", `repos/${facts.repository}/issues/comments/1001`],
+      close,
+      ["issue", "view", "42"],
+    ];
+    expect(
+      acceptsOnly(
+        "follow-up-comment-then-close",
+        observation(gates, files, calls),
+        observation(gates, files, calls.toReversed()),
       ),
     ).not.toThrow();
   });

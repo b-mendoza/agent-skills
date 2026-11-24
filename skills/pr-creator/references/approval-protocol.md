@@ -8,7 +8,7 @@ Use `python3 -I "${SKILL_DIR}/scripts/validate-output.py"` in both runtimes. The
 
 | Mode | Stdin | Output on exit 0 |
 | --- | --- | --- |
-| `digest <kind>` | The exact values object | JSON with `kind`, `valuesDigest` and `bodyDigest`. Keep digests in tool output, never in a reply. |
+| `digest <kind>` | The exact values object | JSON with `kind`, `valuesDigest` and `bodyDigest`; `issue-actions` also returns `bodyDigests` in entry order. Keep digests in tool output, never in a reply. |
 | `verify <kind>` | `{ "values": <values>, "approval": <record> }`, plus `observed` for `scope` and `update` only | `valid` |
 | `envelope <specialist>` | The complete specialist block | `valid` |
 | `body` | Exact UTF-8 body bytes | SHA-256 of those bytes; keep it in tool output, never in a reply |
@@ -27,8 +27,9 @@ Exit 1 means invalid input (for `title`, findings are on stderr); exit 2 means i
 | `GateForcePush` | `force-push` | `headRemote headBranch baseSha oldHeadSha newHeadSha source extras action` |
 | `GatePreview` | `preview` | `repository baseRemote targetBranch headRemote headBranch baseSha headSha effectiveState title body state reviewers labels assignees closes related autoClose unsupported` |
 | `GateUpdate` | `update` | `repository number baseRef headRef headSha baselineTitle baselineBodyDigest baselineState baselineReviewers baselineLabels baselineAssignees title body state reviewers labels assignees closes related autoClose unsupported` |
+| `GateIssueActions` | `issue-actions` | `repository actions` |
 
-- Except for `extras`, lists contain distinct nonempty strings and are sorted for hashing and equality. `number` is a positive integer; the scope counts are nonnegative integers. SHAs are full lowercase 40- or 64-hex strings. `baselineBodyDigest` is lowercase 64-hex. `repository` is the canonical repository path. `state`, `effectiveState`, and an update's `baselineState` are `draft` or `ready`. Other scalar values are nonempty strings except that an update's `body` may be empty.
+- Except for `extras` and `actions`, lists contain distinct nonempty strings and are sorted for hashing and equality. `number` is a positive integer; the scope counts are nonnegative integers. SHAs are full lowercase 40- or 64-hex strings. `baselineBodyDigest` is lowercase 64-hex. `repository` is the canonical repository path. `state`, `effectiveState`, and an update's `baselineState` are `draft` or `ready`. Other scalar values are nonempty strings except that an update's `body` may be empty.
 - `push`: `action` is exactly `git push <headRemote> <headBranch>`.
 - `rebase`: `sourceSha` is the tip to replay, published or local, and must differ from `baseSha`. `oldHeadSha` is always the published tip, which supplies the lease at the next gate.
 - `force-push`: `source` is `rebase` for this run's rebase result or `local-branch` for direct publication. `newHeadSha` differs from `oldHeadSha`, and `action` is exactly `git push --force-with-lease=refs/heads/<headBranch>:<oldHeadSha> <headRemote> <newHeadSha>:refs/heads/<headBranch>`.
@@ -37,10 +38,11 @@ Exit 1 means invalid input (for `title`, findings are on stderr); exit 2 means i
 - `preview` and `update`: `closes` and `related` are disjoint canonical `<repo path>#<number>` sets. For a preview or an update with a changed body, the checker scans the body as text: references attached to a closing keyword must equal `closes`, and every `related` reference must appear. It recognizes `close`, `closes`, `closed`, `closing`; `fix`, `fixes`, `fixed`, `fixing`; `resolve`, `resolves`, `resolved`, `resolving`; and `implement`, `implements`, `implemented`, `implementing`, case-insensitively. An optional colon and optional “issue” or “issues” can precede `#<number>`, a full repository reference, or an HTTP(S) issue URL. Commas and “and” can join references. This check is not a platform lookup; use the resolver for host and issue validation and the platform rules for keywords.
 - `unsupported` may list only `labels`, `assignees`, `closes`. A listed metadata field must have an empty approved list and, on update, an empty baseline list. `autoClose` is `none` when `closes` is empty, `unverifiable` when `closes` is nonempty and listed in `unsupported`, and `yes` or `no` otherwise. A nonempty `closes` list with `unverifiable` represents approved text, not verified automatic closure.
 - `update`: resulting reviewers, labels and assignees must contain their baseline sets. The body digest, title, state, or at least one metadata set must change. Changing only the issue lists or `autoClose` does not satisfy that check.
+- `issue-actions`: `actions` is an ordered list of 1 to 10 entries. Each is exactly `{"action":"comment","number":<positive integer>,"baselineState":"open" or "closed","body":"<nonblank text>"}` or `{"action":"close","number":<positive integer>,"baselineState":"open","reason":"not planned"}`. An identical entry cannot appear twice; each issue can have at most one close; no comment on an issue can follow its close. The list order is part of the digest. `bodyDigests` has the exact body hash for each comment and `n/a` for each close, in that same order.
 
 ## Records and fresh observations
 
-The approval record has exactly `kind`, `valuesDigest`, `bodyDigest`, `wording`, `action`. `valuesDigest` is SHA-256 of the canonical UTF-8 JSON (sorted object keys and string lists, compact separators, no ASCII escaping). `bodyDigest` is SHA-256 of the exact UTF-8 body for `preview` or `update`, otherwise `n/a`. `wording` is the user's reply verbatim and `action` describes the action they saw; for either push kind, `action` must equal the exact command in the values. The checker requires nonblank `wording` and `action`, rejects a bare 64-hex digest with or without an approval prefix, and checks the kind and both digests. The reply itself is evaluated by the orchestrator, not the checker.
+The approval record has exactly `kind`, `valuesDigest`, `bodyDigest`, `wording`, `action`. `valuesDigest` is SHA-256 of the canonical UTF-8 JSON (sorted object keys and string lists, preserved action order, compact separators, no ASCII escaping). `bodyDigest` is SHA-256 of the exact UTF-8 body for `preview` or `update`, otherwise `n/a`, including for `issue-actions`. The batch record does not store `bodyDigests`. `wording` is the user's reply verbatim and `action` describes the action they saw; for either push kind, `action` must equal the exact command in the values. The checker requires nonblank `wording` and `action`, rejects a bare 64-hex digest with or without an approval prefix, and checks the kind and both digests. The reply itself is evaluated by the orchestrator, not the checker.
 
 For `scope`, `observed` has exactly `baseSha headSha changedPaths excludedPaths adjustedChangedLines excludedLines`. The analyzer recomputes them from the pinned diff; `verify` checks equality with the approved values. Keep the approved `rules` and do not re-judge `unrelated-areas>=3`. For `update`, `observed` has exactly `repository number baseRef headRef headSha baselineTitle baselineBodyDigest baselineState baselineReviewers baselineLabels baselineAssignees`. The receiving specialist reads those afresh and `verify` checks equality with the approved baseline before any write. No other kind takes `observed`.
 
@@ -62,9 +64,9 @@ Output keys are `outcome`, `fields` (per-field results), `extras` (extra members
 
 ## Plain approval
 
-**One approval, one proposal.** A plain affirmative in any language approves only the one proposal shown in the immediately preceding assistant turn, when the whole reply is unconditional and at most restates it. An approval covers the writes that proposal showed, in the order shown, and nothing else. A push also sends what the git settings listed in its proposal add to it. The digest stays out of user replies, and nothing said earlier counts.
+**One approval, one proposal.** A plain affirmative in any language approves only the one proposal shown in the immediately preceding assistant turn, when the whole reply is unconditional and at most restates it. An approval covers the writes that proposal showed, in the order shown, and nothing else. A proposal is one write, with two exceptions: an issue batch lists every comment and close it covers, and a push also sends what the git settings listed in its proposal add to it. The digest stays out of user replies, and nothing said earlier counts.
 
-The approval gates are `GatePush`, `GateScope`, `GateRebase`, `GateForcePush`, `GatePreview`, and `GateUpdate`. `GateRebaseResult` is a choice gate: accept `preserve` or `discard`, not an approval, and write no approval record.
+The approval gates are `GatePush`, `GateScope`, `GateRebase`, `GateForcePush`, `GatePreview`, `GateUpdate`, and `GateIssueActions`. `GateRebaseResult` is a choice gate: accept `preserve` or `discard`, not an approval, and write no approval record.
 
 1. A proposal is the complete artifact for exactly one approval kind, followed by one approval question. Before showing it, save `<kind>-values.json` and run the command above for that kind. Require a successful digest and a saved `pending.json` containing exactly the emitted JSON.
 2. A turn that shows a proposal shows only that proposal, ends with its question, and performs no action after it. There is at most one pending proposal; showing another, or changing any value, replaces it.
@@ -82,9 +84,9 @@ Approval requires `pending.json`, `<kind>-values.json` for the displayed kind, a
 
 Derive `RUN_DIR=.handoffs/pr-creator/<run-id>/` once in `NormalizeInputs`, with `<run-id>` formed from UTC `YYYYMMDDTHHMMSSZ` plus four random hex characters. Require `git check-ignore --quiet -- "$RUN_DIR/probe"` before the first write. If it fails, ask for a scratch directory outside the repository and use that as `RUN_DIR`, or stop; never write a run file to an unignored path. Keep only these recorded paths under the run directory:
 
-- `pending.json` is the exact digest output (`kind`, `valuesDigest`, `bodyDigest`). Keep `<kind>-{values,record}.json` (one values file and one record file per kind).
-- `body.md`, `baseline-body.md`, and `returned.json` for exact body bytes and readback.
-- `actions.json` for the update result and evidence.
+- `pending.json` is the exact digest output (`kind`, `valuesDigest`, `bodyDigest`, plus `bodyDigests` for `issue-actions`). Keep `<kind>-{values,record}.json` (one values file and one record file per kind, including `issue-actions-values.json` and `issue-actions-record.json`).
+- `body.md`, `baseline-body.md`, `returned.json`, and `comment-<index>.md` for exact body bytes and readback. The comment filename uses the one-based index in the frozen batch, counting close entries too.
+- `actions.json` for follow-up order, results and evidence.
 - `rebase/` for the temporary worktree.
 
 At every terminal except `TerminalAwaitingUser`, clean up only recorded run files and run-owned refs. When nothing was published, delete the backup ref together with the rebased ref, if present. A rebased ref explicitly kept aside at `GateRebaseResult` survives cleanup; remove the backup and report the kept ref. After a verified push, remove the rebased ref and retain `refs/pr-creator/backup/<run-id>`. If a push outcome is uncertain, retain any backup for recovery and say the result could not be confirmed. Whenever a backup is retained, name it and say: "The backup exists only on this machine."
