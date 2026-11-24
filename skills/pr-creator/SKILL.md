@@ -92,7 +92,7 @@ Fork-aware, idempotent, approval-bound. Trusted compare range after preflight: `
 | Preparing or interpreting an approval, digest or verification | `./references/approval-protocol.md` |
 | Template, title convention, verification evidence                   | `./references/drafting-inputs.md`                       |
 | Adapting to a host or resolving a platform capability or state fallback | `references/platform-adaptation.md` |
-| On leaving `InspectRepo`, load only the inspected platform's playbook. GitHub Enterprise uses GitHub's. A needed unconfirmed fact stops the run and names it. | `./references/platform-github.md` |
+| On leaving `InspectRepo`, load only the inspected platform's playbook. GitHub Enterprise uses GitHub's. A needed unconfirmed fact stops the run and names it. | `./references/platform-github.md` or `./references/platform-gitlab.md` |
 | CLI/API syntax or writing guidance                                  | `./references/external-resources.md`, then fetch ≤1 URL |
 | Specialist execution                                                | Selected `./subagents/*.md`                             |
 | Specialist return shape                                             | Matching `./references/*-contract.md`                   |

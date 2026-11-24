@@ -19,10 +19,6 @@ Current-state reference. Update when a linked command or reference changes.
 
 | Resource                                                                                    | Use                                                   |
 | ------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
-| <https://docs.gitlab.com/user/project/merge_requests/creating_merge_requests/>              | GitLab MR semantics and fork/source project behavior. |
-| <https://gitlab.com/gitlab-org/cli/-/blob/main/docs/source/mr/create.md>                    | `glab mr create` syntax.                              |
-| <https://docs.gitlab.com/user/project/codeowners/>                                          | GitLab Code Owners.                                   |
-| <https://docs.gitlab.com/user/project/labels/>                                              | GitLab label validation.                              |
 | <https://support.atlassian.com/bitbucket-cloud/docs/create-a-pull-request/>                 | Bitbucket PR creation and state capabilities.         |
 | <https://developer.atlassian.com/cloud/bitbucket/rest/api-group-pullrequests/>              | Bitbucket REST create/query/verify path.              |
 | <https://support.atlassian.com/bitbucket-cloud/docs/use-default-reviewers-on-a-repository/> | Bitbucket default reviewer analogue.                  |
