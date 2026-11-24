@@ -71,7 +71,8 @@ test("every behavioral case explicitly declares its mutation policy", () => {
 
 const routingCases = cases.filter(({ tier }) => tier === ROUTING_TIER);
 const isPositiveRoute = ({ id, skill }: EvalCase) =>
-  id === `${skill}/trigger-positive`;
+  id === `${skill}/trigger-positive` ||
+  id.startsWith(`${skill}/trigger-positive-`);
 const positiveRoutes = routingCases.filter((evalCase) =>
   isPositiveRoute(evalCase),
 );
