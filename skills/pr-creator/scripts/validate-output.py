@@ -20,7 +20,7 @@ USAGE = __doc__
 # Exact field order is part of each co-located specialist's output contract.
 ENVELOPES = {
     "repo-state-inspector": ("REPO_STATE", "PASS BLOCKED ERROR", "Execution mode support|Current branch|Head branch|Head source|Target branch|Target branch candidate|PR state|Remotes|Head remote|Base remote|Topology|Topology candidates|Platform|Platform adapter needed|Uncommitted work|Reason|Decision needed"),
-    "preflight-validator": ("PREFLIGHT", "PASS PUSH_REQUIRED PUSH_REJECTED PR_EXISTS AUTH BASE_BRANCH_MISSING HEAD_BRANCH_UNPUSHED BLOCKED ERROR", "Platform|Head remote|Base remote|Base branch|Head branch|Head remote state|Head source|Local head state|Base SHA|Head SHA|Existing PR|Push attempted|Push command|Push rejection reason|Approval record|Reason|Decision needed"),
+    "preflight-validator": ("PREFLIGHT", "PASS PUSH_REQUIRED PUSH_REJECTED PR_EXISTS AUTH BASE_BRANCH_MISSING HEAD_BRANCH_UNPUSHED BLOCKED ERROR", "Platform|Head remote|Base remote|Base branch|Head branch|Head remote state|Head source|Local head state|Base SHA|Head SHA|Existing PR|Push attempted|Push command|Push extras|Push rejection reason|Approval record|Reason|Decision needed"),
     "diff-analyzer": ("DIFF_ANALYSIS", "PASS LARGE_PR_CONFIRMATION_REQUIRED STALE_PINS EMPTY_DIFF ERROR", "Range|Compared Base SHA|Compared Head SHA|Pinned SHA match|Shortstat|Adjusted changed lines|Changed files|Excluded generated/vendored/lock totals|Scope gate rule fired|Scope approval|Scope values|Changed paths|Grouped areas|Diff summary|Behavior before|Behavior after|Retained behavior|Type candidates|Scope candidates|Tests|Risk notes|Reason|Decision needed"),
     "pr-drafter": ("PR_DRAFT", "PASS NEEDS_CHOICE ERROR", "Title|Title source|Body source|Template path|Type choice|Scope choice|Traceability notes|Body|Reason|Decision needed"),
     "review-metadata-suggester": ("REVIEW_METADATA", "PASS NEEDS_REVIEWER INVALID_LABELS INVALID_ASSIGNEES AUTH ERROR", "Reviewers|Reviewer source|Normalized reviewers|Solo repository condition|CODEOWNERS source|CODEOWNERS matches|Labels|Label source|Invalid labels|Suggested valid labels|Assignees|Invalid assignees|Reason|Decision needed"),
@@ -39,7 +39,7 @@ def sha(text):
 
 SCOPE_OBSERVED = "baseSha headSha changedPaths excludedPaths adjustedChangedLines excludedLines"
 SCHEMAS = {
-    "push": "headRemote headBranch action",
+    "push": "headRemote headBranch headSha extras action",
     "scope": SCOPE_OBSERVED + " rules",
     "preview": "baseRemote targetBranch headRemote headBranch baseSha headSha title body reviewers labels assignees state effectiveState",
 }
@@ -59,11 +59,22 @@ def string_list(field, value):
     return sorted(value)
 
 
+def validate_extra(item):
+    require(isinstance(item, str) and item.strip(), "expected a non-empty push setting")
+    require(not re.search(r"[A-Za-z][A-Za-z0-9+.-]*://[^/\s?#@]*@", item), "push setting contains URL credentials")
+    require(re.fullmatch(r"[A-Za-z0-9-]+\.(?:[^=\r\n]+\.)?[A-Za-z][A-Za-z0-9-]*=[^\r\n]*", item), "expected one git setting as key=value")
+
+
 def normalized_fields(values, schema):
     exact_keys(values, schema, "values")
     result = dict(values)
     for key, value in values.items():
-        if key in LISTS:
+        if key == "extras":
+            require(isinstance(value, list), "extras must be a list")
+            for item in value:
+                validate_extra(item)
+            result[key] = sorted(value)
+        elif key in LISTS:
             result[key] = string_list(key, value)
         elif key in ("adjustedChangedLines", "excludedLines"):
             require(type(value) is int and value >= 0, "invalid " + key)
@@ -110,6 +121,8 @@ def verify(kind, payload):
     require(not re.fullmatch(r"(?:approved\s+)?[0-9a-f]{64}", record["wording"].strip(), re.I), "digest is not approval wording")
     expected = digests(kind, payload["values"])
     require(all(record[key] == expected[key] for key in ("valuesDigest", "bodyDigest")), "approval digest mismatch")
+    if kind == "push":
+        require(record["action"] == payload["values"]["action"], "approval action differs from push command")
     if kind in OBSERVED:
         fields = OBSERVED[kind]
         observed = normalized_fields(payload["observed"], fields)
@@ -147,6 +160,7 @@ def preflight_envelope(status, v):
         for field in ("Base SHA", "Head SHA"):
             full_sha(field, v)
     elif status == "PUSH_REQUIRED":
+        full_sha("Head SHA", v)
         require(v["Head source"] == "checkout", "PUSH_REQUIRED requires checkout")
 
 
@@ -241,6 +255,10 @@ def envelope(specialist, text):
     for field, choices in enums.items():
         if field in values:
             require(values[field] in choices, "invalid " + field)
+    if "Push extras" in values and values["Push extras"] != "none":
+        for item in values["Push extras"].split("; "):
+            require(len(item.splitlines()) == 1 and item != "none", "invalid Push extras")
+            validate_extra(item)
     if specialist == "repo-state-inspector":
         require(values["PR state"] in ("draft", "ready") or values["PR state"].startswith("invalid: "), "invalid PR state")
     checks = {"preflight-validator": preflight_envelope, "diff-analyzer": analyzer_envelope, "pr-submitter": submit_envelope}

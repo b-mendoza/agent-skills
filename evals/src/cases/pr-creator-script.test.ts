@@ -197,15 +197,45 @@ describe("pr-creator shipped approval validator", () => {
       expect(verify("preview", preview, invalid).status).toBe(INVALID);
     }
   });
+  const pushCommand = "git push origin feature/cart";
+  const push = { ...branch, headSha: head, action: pushCommand };
   it("verifies a plain reply for the proposed push", () => {
-    const action = "git push origin feature/cart";
-    const values = { ...branch, action };
+    const action = pushCommand;
+    const values = { ...push, extras: [] };
     const receipt = digest("push", values);
     expect(receipt.kind).toBe("push");
     expect(receipt.bodyDigest).toBe("n/a");
     expect(
       verify("push", values, { ...receipt, action, wording: "yes" }).status,
     ).toBe(VALID);
+  });
+  it("binds push settings in sorted order without credentials", () => {
+    const extras = [
+      "remote.origin.pushurl=https://host/r",
+      "push.followTags=true",
+    ];
+    const proof = digest("push", { ...push, extras });
+    expect(digest("push", { ...push, extras: [...extras].reverse() })).toEqual(
+      proof,
+    );
+    expect(digest("push", { ...push, extras: [] })).not.toEqual(proof);
+    for (const bad of [
+      undefined,
+      "none",
+      [false],
+      ["https://host/r refs/tags/v1"],
+      [""],
+      ["remote.origin.pushurl=https://u@host/r"],
+      ["ssh://u:secret@host/r"],
+    ]) {
+      expect(status("push", { ...push, extras: bad })).toBe(INVALID);
+    }
+  });
+  it("rejects a push approval naming a different command", () => {
+    const values = { ...push, extras: [] };
+    const record = { ...approval("push", values), action: "git push --force" };
+    expect(verify("push", values, record).status).toBe(INVALID);
+    expect(status("push", { ...values, action: "git push" })).toBe(INVALID);
   });
   it("requires fresh observations rather than verifying only the digest", () => {
     expect(verify("scope", scope, approval("scope", scope)).status).toBe(

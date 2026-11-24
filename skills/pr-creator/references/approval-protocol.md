@@ -19,21 +19,23 @@ Exit 1 means invalid input; exit 2 means invalid invocation. An invalid envelope
 
 | Gate | Kind | Exact keys |
 | --- | --- | --- |
-| `GatePush` | `push` | `headRemote headBranch action` |
+| `GatePush` | `push` | `headRemote headBranch headSha extras action` |
 | `GateScope` | `scope` | `baseSha headSha changedPaths excludedPaths adjustedChangedLines excludedLines rules` |
 | `GatePreview` | `preview` | `baseRemote targetBranch headRemote headBranch baseSha headSha effectiveState title body state reviewers labels assignees` |
 
 - `push`: `action` is exactly `git push <headRemote> <headBranch>`.
 
+`extras` holds one `key=value` string per active git setting, with no credentials: `push.followTags=true`, `remote.<R>.pushurl=<url>` once per push URL that differs from the fetch URL, `push.recurseSubmodules=on-demand`, and `push.pushOption=<text>` once per option. Use `[]` when no setting is active. The checker requires a single-line git-setting form, rejects URL credentials and sorts the list for hashing without deduplicating it. The specialist checks which settings actually apply.
+
 - `scope`: the analyzer emits `Scope values`; store that JSON line verbatim. `changedPaths` lists all changed paths, including `excludedPaths`, which must be a subset. Nonempty `rules` can contain only `adjusted-lines>1000`, `changed-files>40`, `unrelated-areas>=3`. The first two appear if and only if the corresponding threshold is exceeded (`changed-files` counts `changedPaths`). Display-only grouping and judgments are not added to the values.
 
 - `preview`: Metadata fields are string lists, empty for none. States are `draft` or `ready`. These are the literal fields shown in the preview; base SHA binds the diff as well as head SHA. No environment-dependent display text enters the digest.
 
-The canonical serialization is Python `json.dumps(values, sort_keys=True, ensure_ascii=False, separators=(",", ":"), allow_nan=False)` encoded as UTF-8, no BOM and no appended newline. Object keys sort lexicographically; all list fields are sets, deduplicated by the producer and sorted by Unicode code point by the helper. Duplicate entries, unknown/missing fields, noninteger counts and nonlowercase/full Git SHAs are rejected. Strings are otherwise byte-preserved: no trimming, Unicode normalization, newline conversion or final-newline insertion. Body digest is SHA-256 of the body's UTF-8 bytes, not its JSON representation. Digests are 64 lowercase hexadecimal characters. Never independently reimplement this serialization in a specialist.
+The canonical serialization is Python `json.dumps(values, sort_keys=True, ensure_ascii=False, separators=(",", ":"), allow_nan=False)` encoded as UTF-8, no BOM and no appended newline. Object keys sort lexicographically; all list fields except `extras` are sets, deduplicated by the producer and sorted by Unicode code point by the helper. Duplicate set entries, unknown/missing fields, noninteger counts and nonlowercase/full Git SHAs are rejected. Strings are otherwise byte-preserved: no trimming, Unicode normalization, newline conversion or final-newline insertion. Body digest is SHA-256 of the body's UTF-8 bytes, not its JSON representation. Digests are 64 lowercase hexadecimal characters. Never independently reimplement this serialization in a specialist.
 
 ## Records and fresh observations
 
-The approval record has exactly `kind`, `valuesDigest`, `bodyDigest`, `wording`, `action`. Non-preview `bodyDigest` is `n/a`. `wording` is the user's reply verbatim and `action` describes the action they saw. The checker requires nonblank `wording` and `action`, rejects a bare 64-hex digest with or without an approval prefix, and checks the kind and both digests. The reply itself is evaluated by the orchestrator, not the checker.
+The approval record has exactly `kind`, `valuesDigest`, `bodyDigest`, `wording`, `action`. Non-preview `bodyDigest` is `n/a`. `wording` is the user's reply verbatim and `action` describes the action they saw; for `push`, `action` must equal the exact command in the values. The checker requires nonblank `wording` and `action`, rejects a bare 64-hex digest with or without an approval prefix, and checks the kind and both digests. The reply itself is evaluated by the orchestrator, not the checker.
 
 For `scope`, `observed` has exactly `baseSha headSha changedPaths excludedPaths adjustedChangedLines excludedLines`. The analyzer recomputes them from the pinned diff; `verify` checks equality with the approved values. Keep the approved `rules` and do not re-judge `unrelated-areas>=3`. No other kind takes `observed`.
 
@@ -47,7 +49,7 @@ Let the JSON appear unchanged in tool output: do not capture it in a variable, r
 
 ## Plain approval
 
-**One approval, one proposal.** A plain affirmative in any language approves only the one proposal shown in the immediately preceding assistant turn, when the whole reply is unconditional and at most restates it. An approval covers the writes that proposal showed, in the order shown, and nothing else. The digest stays out of user replies, and nothing said earlier counts.
+**One approval, one proposal.** A plain affirmative in any language approves only the one proposal shown in the immediately preceding assistant turn, when the whole reply is unconditional and at most restates it. An approval covers the writes that proposal showed, in the order shown, and nothing else. A push also sends what the git settings listed in its proposal add to it. The digest stays out of user replies, and nothing said earlier counts.
 
 The approval gates are `GatePush`, `GateScope`, and `GatePreview`.
 

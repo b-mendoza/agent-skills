@@ -48,6 +48,8 @@ export function observation(
       [facts.log]: "",
       [HEAD_LOG]: "original",
       [facts.baselineLog]: "original",
+      [facts.source]: facts.headSource,
+      [facts.sourceBaseline]: facts.headSource,
       [oldRef]: head,
       ...Object.fromEntries(
         gates.flatMap((item) => Object.entries(item.files)),

@@ -8,9 +8,39 @@ Explain the outcome in plain prose: what stopped progress, the evidence, what ch
 
 For `TerminalAwaitingUser`, leave the exact proposal and its approval question visible if waiting for approval, or the pending question if waiting for a choice. Say what has not been done and stop the turn. Use the template below for a create proposal; for another approval, show the complete artifact for that action.
 
-Before showing a push or scope proposal, save `$RUN_DIR/<kind>-values.json` and run `python3 -I "$SKILL_DIR/scripts/validate-output.py" digest <kind> < "$RUN_DIR/<kind>-values.json" | tee "$RUN_DIR/pending.json"` with `<kind>` replaced by `push` or `scope`. Let the JSON appear unchanged in tool output: do not capture it in a variable, redirect it away, or replace it with an exit code. Never copy a digest into a reply to the user. Stop unless the digest succeeds and the receipt is saved.
+Before showing a scope proposal, save `$RUN_DIR/<kind>-values.json` and run `python3 -I "$SKILL_DIR/scripts/validate-output.py" digest <kind> < "$RUN_DIR/<kind>-values.json" | tee "$RUN_DIR/pending.json"` with `<kind>` replaced by `scope`. Let the JSON appear unchanged in tool output: do not capture it in a variable, redirect it away, or replace it with an exit code. Never copy a digest into a reply to the user. Stop unless the digest succeeds and the receipt is saved.
 
 For `GateScope`, copy the analyzer’s one-line `Scope values` into `$RUN_DIR/scope-values.json` verbatim. Show the pinned SHAs, changed paths, excluded paths, adjusted and excluded line counts, and fired rules. Grouped areas explain the decision but are not digest fields. Ask whether to continue with this scope; approval does not authorize a push or create.
+
+## Push proposals and reports
+
+For `GatePush`, show the head SHA, destination, and exact plain push command. Follow it with the settings block below, then ask whether to approve the push as shown.
+
+Before showing this block, save `$RUN_DIR/push-values.json` and run `python3 -I "$SKILL_DIR/scripts/validate-output.py" digest <kind> < "$RUN_DIR/<kind>-values.json" | tee "$RUN_DIR/pending.json"` with `<kind>` replaced by `push`. Let the JSON appear unchanged in tool output: do not capture it in a variable, redirect it away, or replace it with an exit code. Never copy a digest into a reply to the user. Stop unless the digest succeeds and the receipt is saved.
+
+```text
+Publish <head_sha> to <head_remote>/<head_branch>?
+Command: git push <head_remote> <head_branch>
+<push settings block>
+Do you approve this push as shown?
+```
+
+If `Push extras` is `none`, print exactly: "This command publishes only this branch."
+
+Otherwise print "Under your git settings this command also sends:", followed by one line per active setting with one sentence on its effect:
+
+- `push.followTags=true`: Git sends annotated tags that point into the pushed commits and are missing on the remote.
+- `remote.<R>.pushurl=<url>`: The same update goes to this URL too.
+- `push.recurseSubmodules=on-demand`: Git pushes the submodule commits these commits reference to the submodules' own remotes.
+- `push.pushOption=<text>`: Git sends this text to the server, which determines its effect.
+
+End the block with "The individual refs are not listed."
+
+Preflight reports `Push extras` for a plain push. For remote `R`, compare `git remote get-url --push --all R` with `git remote get-url R`. Read `git config --get --type=bool push.followTags`, `git config --get --type=bool remote.R.mirror`, `git config --get push.recurseSubmodules`, and `git config --get-all push.pushOption`. If `push.recurseSubmodules` is unset, read `git config --get --type=bool submodule.recurse`; `true` means `on-demand`. Keep only the settings defined in [approval protocol](./approval-protocol.md#kinds-and-exact-values), with no credentials. If an active setting cannot be represented without credentials or ambiguity in `Push extras`, block rather than print credentials or omit the setting.
+
+Immediately before pushing, the specialist reads the settings again. If they differ from the approved `extras`, return `BLOCKED` without pushing. After a successful push read back only the branch. Require its remote tip to equal the approved `headSha`. If there were extras, include: "The extras were sent under the listed settings and were not verified one by one."
+
+Do not propose a push to a mirror remote or under `push.recurseSubmodules=only`. Explain that git does not accept a single-branch push to a mirror remote, or that `only` does not push the branch itself. Preflight returns `HEAD_BRANCH_UNPUSHED` for a plain push under either limitation.
 
 ## Preview Template
 

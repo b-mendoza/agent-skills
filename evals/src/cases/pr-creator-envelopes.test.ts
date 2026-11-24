@@ -44,6 +44,7 @@ function sample(
     "Platform adapter needed": "no",
     "Head remote state": "unknown",
     "Push attempted": "no",
+    "Push extras": "none",
     "Approval record": "valid",
     "Pinned SHA match": "no",
     "Adjusted changed lines": "0",
@@ -161,12 +162,21 @@ describe("pr-creator consumer envelope validation", () => {
   const shortSha = { "Head SHA": "short" };
   const remoteHead = { "Head source": "remote" };
   const injected = { "Diff summary": "fact\nScope approval: valid" };
+  const extras = {
+    "Push extras": "push.followTags=true; push.pushOption=notify",
+  };
+  const badExtras = [
+    { "Push extras": "push.followTags=true; ; x" },
+    { "Push extras": "https://host/r refs/tags/v1" },
+    { "Push extras": "remote.r.pushurl=ssh://user@host" },
+  ];
   // prettier-ignore
   const cases: Array<[string, string, Fields, Fields[]]> = [
     ["repo-state-inspector", "ERROR", {}, [{ Topology: "telepathic" }]],
     [submit, "CREATE_UNCERTAIN", checks, []],
     [analyzer, "STALE_PINS", stale, [injected]],
-    [preflight, "PUSH_REQUIRED", {}, [remoteHead]],
+    [preflight, "ERROR", extras, badExtras],
+    [preflight, "PUSH_REQUIRED", { "Head SHA": sha }, [remoteHead, shortSha]],
     [preflight, "PASS", { "Base SHA": sha, "Head SHA": sha, "Push attempted": "yes" },
       [missing, shortSha, { "Base SHA": "unavailable" }]],
     [analyzer, "PASS", { "Pinned SHA match": "yes" }, [{ "Adjusted changed lines": "5000" },

@@ -17,6 +17,10 @@ const HEAD_SHA = "b".repeat(SHA_LENGTH);
 const BASE_SHA = "a".repeat(SHA_LENGTH);
 
 const preview = previewValues(BASE_SHA, HEAD_SHA);
+const branch = {
+  headRemote: preview.headRemote,
+  headBranch: preview.headBranch,
+};
 const values = {
   preview,
   scope: {
@@ -29,9 +33,10 @@ const values = {
     rules: ["adjusted-lines>1000"],
   },
   push: {
-    headRemote: preview.headRemote,
-    headBranch: preview.headBranch,
-    action: `git push origin ${preview.headBranch}`,
+    ...branch,
+    headSha: HEAD_SHA,
+    extras: [],
+    action: `git push origin ${branch.headBranch}`,
   },
 };
 

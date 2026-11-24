@@ -105,7 +105,7 @@ Advance states in [`state-machine.md`](./state-machine.md). Summary:
 1. `ResolveMode` then `NormalizeInputs`. Do not ask for `TARGET_BRANCH` until `InspectRepo` has a candidate.
 2. `InspectRepo` (`repo-state-inspector`). Select the platform playbook per the loading map. Route topology, target, platform, and state-fallback gates per the transition table.
 3. Load `./references/platform-adaptation.md` only in `AdaptPlatform` / related gates. Draft-without-equivalent → ask ready-or-stop before preview.
-4. `RunPreflight`. `PUSH_REQUIRED` → `GatePush` (plain push only) then redispatch with push `APPROVAL_RECORD`. `PR_EXISTS` → `TerminalPrExists`.
+4. Run `preflight-validator` (`RunPreflight`); load `./references/execution-contracts.md` for `push` at `GatePush`. `PR_EXISTS` → `TerminalPrExists`.
 5. `AnalyzeDiff` only after `PREFLIGHT: PASS`. Never defer authentication, hosting resolution, or the existing-PR lookup until creation; unresolved preflight stops before drafting or preview. For a large or mixed diff, show the pinned SHAs, paths, exclusions, counts and fired rules at `GateScope`. Save its `Scope values` JSON verbatim. On approval redispatch with the record; the analyzer runs `verify scope` against fresh observations before continuing. `STALE_PINS` refreshes preflight and discards scope/preview approval.
 6. `DraftPr` then `SuggestMetadata` with exact changed-file paths. Title/template, reviewer, label and assignee gates redispatch only the affected specialist. `REVIEWERS=none` satisfies reviewer resolution.
 7. `ShowPreview` / `GatePreview`: load `./references/execution-contracts.md`, show exact preview (head SHA, effective state). Edits invalidate approval and return to the earliest affected state. Decline without edits → `TerminalCancelled`.
@@ -114,9 +114,10 @@ Advance states in [`state-machine.md`](./state-machine.md). Summary:
 
 ## Core Rules
 
-- **One approval, one proposal.** A plain affirmative in any language approves only the one proposal shown in the immediately preceding assistant turn, when the whole reply is unconditional and at most restates it. An approval covers the writes that proposal showed, in the order shown, and nothing else. The digest stays out of user replies, and nothing said earlier counts.
+- **One approval, one proposal.** A plain affirmative in any language approves only the one proposal shown in the immediately preceding assistant turn, when the whole reply is unconditional and at most restates it. An approval covers the writes that proposal showed, in the order shown, and nothing else. A push also sends what the git settings listed in its proposal add to it. The digest stays out of user replies, and nothing said earlier counts.
 - Before showing a proposal, save `<kind>-values.json` and run `digest <kind>`. Require a successful digest and a saved `pending.json` containing exactly the emitted JSON.
 - A change request is a revision even with a “yes.” If the pending record, bound files or preceding proposal turn cannot be verified, show the proposal again and ask again.
+- Every push proposal lists the active git settings and what they add beyond the branch, not the individual refs. Use settings reads only; a change before execution blocks the push. Read back only the branch and report that the extras were not verified one by one. Never propose a push to a mirror remote or with `push.recurseSubmodules=only`; explain why.
 - Never force-push (`--force`, `--force-with-lease`, `+refspec`) or auto-resolve diverged branches.
 - Never create when an open PR/MR already exists for the same head/base; check in preflight and again immediately before create.
 - Only platform-existing labels may reach preview.

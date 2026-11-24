@@ -43,7 +43,7 @@ When attached, an omitted head or the checked-out branch itself selects that bra
 | `RunPreflight`             | `TerminalHeadUnpushed`     | `HEAD_BRANCH_UNPUSHED`, including a named remote head that is missing; never offer a plain push for `Head source: remote` |
 | `RunPreflight`             | `TerminalBlocked`          | `BLOCKED` or `ERROR`                                                               |
 | `RunPreflight`             | `FinalDecision`            | `PUSH_REQUIRED` for a checkout head and push cycles ≥ 3                                                |
-| `GatePush`                 | `RunPreflight`             | plain push approved; redispatch with push `APPROVAL_RECORD`                        |
+| `GatePush`                 | `RunPreflight`             | plain push approved; redispatch with `headRemote headBranch headSha extras action` and push `APPROVAL_RECORD`                        |
 | `GatePush`                 | `TerminalAwaitingUser`     | question pending; the proposal has no editable part, so a change request is answered with the available choices and asked again                                                                   |
 | `GatePush`                 | `TerminalHeadUnpushed`     | push declined                                                                      |
 | `GatePushRejected`         | `RunPreflight`             | user confirms manual resolution                                                    |

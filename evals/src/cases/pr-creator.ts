@@ -19,6 +19,7 @@ import {
   seedGithubFixture,
 } from "#/cases/pr-creator-fixtures.ts";
 import { previewCases } from "#/cases/pr-creator-preview-cases.ts";
+import { rewriteCases } from "#/cases/pr-creator-rewrite-cases.ts";
 import {
   assertNoMutation,
   checkNegativeRouting,
@@ -150,4 +151,5 @@ export const cases = [
   },
   ...behaviorCases,
   ...previewCases,
+  ...rewriteCases,
 ] as const satisfies readonly EvalCase[];
