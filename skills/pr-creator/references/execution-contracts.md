@@ -42,9 +42,9 @@ Immediately before pushing, the specialist reads the settings again. If they dif
 
 Do not propose a push to a mirror remote or under `push.recurseSubmodules=only`. Explain that git does not accept a single-branch push to a mirror remote, or that `only` does not push the branch itself. Preflight returns `HEAD_BRANCH_UNPUSHED` for a plain push under either limitation.
 
-## Preview Template
+## Preview template
 
-Show this block exactly before asking approval to create:
+Show this block before asking approval to create:
 
 Before showing this block, save `$RUN_DIR/preview-values.json` and run `python3 -I "$SKILL_DIR/scripts/validate-output.py" digest <kind> < "$RUN_DIR/<kind>-values.json" | tee "$RUN_DIR/pending.json"` with `<kind>` replaced by `preview`. Let the JSON appear unchanged in tool output: do not capture it in a variable, redirect it away, or replace it with an exit code. Never copy a digest into a reply to the user. Stop unless the digest succeeds and the receipt is saved.
 
@@ -65,15 +65,14 @@ State:        <requested_state> (effective: <platform_effective_state>)
 
 Description:
 <exact description>
+
+Unresolved review findings:
+<findings | none>
 ```
 
-The source note reports how the local copy relates to the selected remote head, including when it is behind, absent, or unknown. Do not imply uncommitted files or unpushed commits are part of the PR. For `Closes`, give the expectation from `autoClose`: automatic on merge, no automatic close, or none. If `closes` is in `unsupported`, show the refs or `none` followed by “not verifiable on <platform>.”
+The source note reports how the local copy relates to the selected remote head, including when it is behind, absent, or unknown. Do not imply uncommitted files or unpushed commits are part of the PR. For `Closes`, give the expectation from `autoClose`: automatic on merge, no automatic close, or none. If `closes` is in `unsupported`, show the refs or `none` followed by “not verifiable on <platform>.” Show unresolved findings above the question, outside the exact description.
 
 End with a prose question such as “Do you approve creating this PR exactly as shown?” Do not perform an action after asking. A change to any bound value invalidates consent and routes to the earliest affected phase. Use [approval-protocol.md](./approval-protocol.md) for the consent rules: the orchestrator recomputes the digest, and the receiving specialist verifies its own record with fresh observations where required.
-
-## Approval Record
-
-Sensitive redispatches use records instead of bare booleans. Load [approval-protocol.md](./approval-protocol.md) for the exact JSON field sets, byte serialization, helper invocations, scope-record lifetime and plain approval. Never invent a digest or hash the rendered preview independently.
 
 ## Body template
 
@@ -114,6 +113,7 @@ Maintain independent counters. Count the relevant recovery or repair cycle, not 
 | `validation` | 1 | `TerminalBlocked` on another invalid envelope; applies to every registered specialist. |
 | `approval-reask[gate]` | 1 | `TerminalAwaitingUser` if still unclear. |
 | `issue-refs` | 3 | `ResolveIssues` routes to `FinalDecision`. |
+| `review` | 2 | Show the create preview with remaining findings disclosed if the digest can be computed; otherwise `FinalDecision`. |
 
 Submission has no cycle counter beyond the bounded retry for an unconfirmed create in `pr-submitter`.
 

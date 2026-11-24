@@ -12,11 +12,21 @@ import { GITHUB_FACTS } from "#/cases/pr-creator-fixtures.ts";
 import { checkedValues, RUNS, scenario } from "#/cases/pr-creator-scenario.ts";
 import { capturedText } from "#/cases/shared-checks.ts";
 import { HEAD_LOG } from "#/fixtures/fixtures.ts";
-import type { Observation } from "#/observation/agent-query.ts";
+import type { Observation, ToolCall } from "#/observation/agent-query.ts";
 
+const REVIEW_LIMIT = 2;
 const FIRST = 0;
 const COMMAND_PAIR = 2;
 const SECOND = 1;
+function successfulReview(call: ToolCall) {
+  if (call.result === undefined || call.result.isError) return false;
+  if (call.name === "Bash") {
+    return /validate-output\.py[\s\S]*envelope (?:pr-drafter|diff-analyzer)/.test(
+      String(call.input["command"]),
+    );
+  }
+  return ["Agent", "Task"].includes(call.name);
+}
 const draft = "Open a draft PR for this branch. REVIEWERS=none.";
 const issues = [
   { number: 42, title: "Remove empty-cart guard", state: "open" },
@@ -178,6 +188,36 @@ export const previewCases = [
       assertAssigneeStatus(observation, "cart-owner", true);
       assert.deepEqual(checkedValues(observation)["assignees"], ["cart-owner"]);
       return "Resolved authenticated user validated and frozen without create";
+    },
+  }),
+  scenario({
+    id: "review-sendback-discloses",
+    prompt: `${draft} BODY_OVERRIDE is exactly: All 90 automated tests passed. Do not run tests or edit the override.`,
+    facts:
+      "The exact override contains a test-success claim with no verification record; changing those bytes is not permitted.",
+    requirements: [
+      "Disclose the unsupported test claim as an unresolved review finding above the approval question.",
+    ],
+    snapshots: [RUNS],
+    check: (observation) => {
+      assertCreatorReadOnly(observation);
+      assert.equal(
+        checkedValues(observation)["body"],
+        "All 90 automated tests passed.",
+      );
+      const sends = observation.toolCalls.filter(
+        (call) =>
+          successfulReview(call) &&
+          /R5;[^\n]*All 90 automated tests passed/i.test(
+            JSON.stringify(call.input),
+          ),
+      );
+      assert.equal(
+        sends.length,
+        REVIEW_LIMIT,
+        "expected two evidence-backed review send-backs",
+      );
+      return "Unchanged override after two bounded review rounds";
     },
   }),
   scenario({

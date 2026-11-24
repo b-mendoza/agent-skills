@@ -74,10 +74,10 @@ Guard terms:
 | `DraftPr` | `FinalDecision` | type/scope cycles ≥ 3 (including a failing `title` check) |
 | `GateTypeScope`            | `TerminalAwaitingUser`     | question pending                                                                   |
 | `GateTypeScope`            | `DraftPr`                  | choice answered; redispatch                                                        |
-| `SuggestMetadata` | `ShowPreview` | `REVIEW_METADATA: PASS` |
+| `SuggestMetadata` | `ReviewResults` | `REVIEW_METADATA: PASS` |
 | `SuggestMetadata` | `GateReviewer` | `NEEDS_REVIEWER` and reviewer cycles < 3 |
-| `SuggestMetadata` | `GateLabels` | `INVALID_LABELS` (including unsupported labels) and label cycles < 3 |
-| `SuggestMetadata` | `GateAssignees` | `INVALID_ASSIGNEES` (including unsupported assignees) and assignee cycles < 3 |
+| `SuggestMetadata` | `GateLabels` | `INVALID_LABELS` and label cycles < 3 |
+| `SuggestMetadata` | `GateAssignees` | `INVALID_ASSIGNEES` and assignee cycles < 3 |
 | `SuggestMetadata` | `TerminalAuth` | `AUTH` |
 | `SuggestMetadata` | `TerminalBlocked` | `ERROR` |
 | `SuggestMetadata` | `FinalDecision` | reviewer, label or assignee cycles ≥ 3 |
@@ -87,17 +87,22 @@ Guard terms:
 | `GateLabels` | `SuggestMetadata` | labels resolved; redispatch |
 | `GateAssignees` | `TerminalAwaitingUser` | question pending |
 | `GateAssignees` | `SuggestMetadata` | assignable users or none supplied; redispatch |
-| `ShowPreview` | `FinalDecision` | preview digest fails because the exact body conflicts with the issue lists; show no proposal |
-| `ShowPreview`              | `GatePreview`              | preview shown; `pending.json` written                                                                      |
-| `GatePreview`              | `TerminalAwaitingUser`     | question pending                                                                   |
-| `GatePreview`              | `FreezeApproval`           | exact preview approved                                                             |
-| `GatePreview`              | `TerminalCancelled`        | declined without edits                                                             |
-| `GatePreview`              | `InspectRepo`              | edits; earliest phase is repo/platform; preview-edit cycles &lt; 3                 |
+| `ReviewResults` | `FinalDecision` | values digest exits 1 and (the offending text is a user override or review rounds ≥ 2) |
+| `ReviewResults` | `AnalyzeDiff` | findings; earliest affected specialist is `diff-analyzer`; review rounds < 2 |
+| `ReviewResults` | `ResolveIssues` | findings; earliest is `issue-reference-resolver`; review rounds < 2 |
+| `ReviewResults` | `DraftPr` | findings; earliest is `pr-drafter`; review rounds < 2 |
+| `ReviewResults` | `SuggestMetadata` | findings; earliest is `review-metadata-suggester`; review rounds < 2 |
+| `ReviewResults` | `ShowPreview` | create path; digest computed; no findings, or review rounds ≥ 2 with findings disclosed |
+| `ShowPreview` | `GatePreview` | preview shown; `pending.json` written |
 | `GatePreview` | `ResolveIssues` | edits; earliest phase is issue references; preview-edit cycles < 3 |
+| `GatePreview` | `TerminalAwaitingUser` | question pending |
+| `GatePreview` | `FreezeApproval` | exact preview approved |
+| `GatePreview` | `TerminalCancelled` | declined without edits |
+| `GatePreview` | `InspectRepo` | edits; earliest phase is repo/platform; preview-edit cycles < 3 |
 | `GatePreview` | `AnalyzeDiff` | edits; earliest phase is diff/scope; cycles < 3 |
-| `GatePreview`              | `DraftPr`                  | edits; earliest phase is title/body; cycles &lt; 3                                 |
-| `GatePreview`              | `SuggestMetadata`          | edits; earliest phase is reviewers/labels/assignees; cycles &lt; 3                 |
-| `GatePreview`              | `FinalDecision`            | preview-edit cycles ≥ 3                                                            |
+| `GatePreview` | `DraftPr` | edits; earliest phase is title/body; cycles < 3 |
+| `GatePreview` | `SuggestMetadata` | edits; earliest phase is reviewers/labels/assignees; cycles < 3 |
+| `GatePreview` | `FinalDecision` | preview-edit cycles ≥ 3 |
 | `FreezeApproval` | `SubmitPr` | freeze + preview `APPROVAL_RECORD` ready |
 | `SubmitPr` | `VerifySubmit` | `PR_SUBMIT: PASS`, `CREATED_WITH_ADDITIONS` or `CREATED_WITH_DRIFT` |
 | `SubmitPr` | `RunPreflight` | `HEAD_MOVED`; clear scope/preview approval (preview-edit cycle) |
@@ -108,9 +113,9 @@ Guard terms:
 | `VerifySubmit` | `TerminalSuccess` | status `PASS` and the orchestrator's `compare preview` outcome is `exact` |
 | `VerifySubmit` | `TerminalCreatedWithAdditions` | the worse of the two outcomes is `additions` |
 | `VerifySubmit` | `TerminalCreatedWithDrift` | the worse of the two outcomes is `drift`, or `compare` cannot run |
+| `FinalDecision` | `ResolveIssues` | exact recovery targets issue references |
 | `FinalDecision`            | `InspectRepo`              | exact recovery targets repo/branch                                                 |
 | `FinalDecision`            | `RunPreflight`             | exact recovery targets preflight                                                   |
-| `FinalDecision` | `ResolveIssues` | exact recovery targets issue references |
 | `FinalDecision`            | `AnalyzeDiff`              | exact recovery targets diff                                                        |
 | `FinalDecision`            | `DraftPr`                  | exact recovery targets draft                                                       |
 | `FinalDecision`            | `SuggestMetadata`          | exact recovery targets metadata                                                    |
@@ -144,6 +149,7 @@ Independent counters (max 3 non-`PASS` redispatches per gate, then `FinalDecisio
 
 - `validation`: 1; `TerminalBlocked`. Applies to every registered specialist.
 - `approval-reask[gate]`: 1; `TerminalAwaitingUser`.
+- `review`: 2; `ReviewResults` to `ShowPreview` with findings disclosed, or `FinalDecision` when no digest can be computed.
 
 ## Terminal decisions
 

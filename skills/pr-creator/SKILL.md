@@ -44,6 +44,7 @@ Execution is a finite-state machine. [`state-machine.md`](./state-machine.md) is
 | `ResolveIssues` → `GateIssueRefs` | Validated issue references and closure expectation |
 | `DraftPr` → `GateTypeScope`                      | Title and body                                      |
 | `SuggestMetadata` → reviewer/label/assignee gates         | Reviewers, labels and assignees                                |
+| `ReviewResults` | Send findings to the earliest affected specialist or disclose them before preview |
 | `ShowPreview` → `GatePreview` → `FreezeApproval` | Frozen fields + preview `APPROVAL_RECORD`           |
 | `SubmitPr` → `VerifySubmit`                      | Created or found PR/MR, field-verified              |
 | Terminals                                        | Verified URL or plain-language stop explanation     |
@@ -98,6 +99,7 @@ Fork-aware, idempotent, approval-bound. Trusted compare range after preflight: `
 | On leaving `InspectRepo`, load only the inspected platform's playbook. GitHub Enterprise uses GitHub's. An unknown platform selects none and asks at `GatePlatformTooling`. A needed unconfirmed fact stops the run and names it. | `./references/platform-github.md`, `./references/platform-gitlab.md` or `./references/platform-bitbucket.md` |
 | CLI/API syntax or writing guidance                                  | `./references/external-resources.md`, then fetch ≤1 URL |
 | Resolving issue inputs or discovered mentions | `./references/issue-references.md` |
+| Reviewing evidence before preview in `ReviewResults` | `./references/review-checklist.md` |
 | Specialist execution                                                | Selected `./subagents/*.md`                             |
 | Specialist return shape                                             | Matching `./references/*-contract.md`                   |
 
@@ -111,7 +113,7 @@ Advance states in [`state-machine.md`](./state-machine.md). Summary:
 4. Run `preflight-validator` (`RunPreflight`); load `./references/execution-contracts.md` for `push` at `GatePush`. `PR_EXISTS` → `TerminalPrExists`.
 5. `AnalyzeDiff` only after `PREFLIGHT: PASS`. Never defer authentication, hosting resolution, or the existing-PR lookup until creation; unresolved preflight stops before drafting or preview. For a large or mixed diff, show the pinned SHAs, paths, exclusions, counts and fired rules at `GateScope`. Save its `Scope values` JSON verbatim. On approval redispatch with the record; the analyzer runs `verify scope` against fresh observations before continuing. `STALE_PINS` refreshes preflight and discards scope/preview approval.
 6. Resolve references with `issue-reference-resolver` (`ResolveIssues`, `./references/issue-references.md`) before `DraftPr`; pass the selected base host, preflight’s `Base repository` and `Unsupported fields`, and the analyzer’s `Issue mentions` verbatim. Dispatch only for named issues or when discovery is on and the analyzer reported mentions; discovery alone never authorizes a closing keyword. Then run `DraftPr` and `SuggestMetadata` with exact changed-file paths and preflight’s `Unsupported fields` as `UNSUPPORTED_FIELDS`. Title/template, reviewer, label and assignee gates redispatch only the affected specialist. `REVIEWERS=none` satisfies reviewer resolution.
-7. `ShowPreview` / `GatePreview`: load `./references/execution-contracts.md`, show exact preview (head SHA, effective state). Edits invalidate approval and return to the earliest affected state. Decline without edits → `TerminalCancelled`.
+7. Follow `./references/review-checklist.md` (`ReviewResults`). Send findings to the earliest affected specialist for at most two rounds. Disclose remaining findings only when the values digest succeeds. At `ShowPreview` / `GatePreview`: load `./references/execution-contracts.md`, show exact preview (head SHA, effective state). Edits invalidate approval and return to the earliest affected state. Decline without edits → `TerminalCancelled`.
 8. `FreezeApproval` then `SubmitPr`. `HEAD_MOVED` → explain, discard both approvals, and refresh `RunPreflight` (preview-edit cycle). At `VerifySubmit`, rerun `compare preview` on the saved readback. Use the worse of the two outcomes (`exact` < `additions` < `drift`); if comparison cannot run, treat verification as drift. Never retry or edit a confirmed create.
 9. Independent three-cycle ledgers: push, scope, type/scope, reviewer, label, assignee, issue-refs, preview-edit; validation repair cap is one. Exhaustion → `FinalDecision` then recovery or `TerminalEscalated`.
 
@@ -134,6 +136,6 @@ Use the prose replies in `./references/execution-contracts.md` for every outcome
 
 ## Examples
 
-Happy path: `TARGET_BRANCH=main`, `PR_STATE=draft`, `REVIEWERS=none` → `InspectRepo` PASS (same-remote) → `RunPreflight` PASS with pinned SHAs → diff/draft/metadata PASS → exact preview → `SubmitPr` PASS with matching digests → `VerifySubmit` → PR URL.
+Happy path: `TARGET_BRANCH=main`, `PR_STATE=draft`, `REVIEWERS=none` → `InspectRepo` PASS (same-remote) → `RunPreflight` PASS with pinned SHAs → diff/draft/metadata PASS → `ReviewResults` → exact preview → `SubmitPr` PASS with matching digests → `VerifySubmit` → PR URL.
 
 Failure path: `RunPreflight` returns `PR_EXISTS` → stop at `TerminalPrExists` with the existing URL; do not update that PR/MR (out of scope). Reply requirements: `./references/execution-contracts.md`.

@@ -43,7 +43,7 @@ End the body with `## Issues` when there are approved references. Use one line p
 - Related: example/library#7 — Documents the retry limit.
 ```
 
-Both lists belong in the approved values. If a body override's closing keywords disagree with the approved list, the preview digest fails; go to `FinalDecision` without showing a proposal. Report missing or extra recognized closures issue by issue on readback. If `closes` is unsupported, the final report says it was not compared and does not claim closure was verified.
+Both lists belong in the approved values. If a body override's closing keywords disagree with the approved list, `ReviewResults` sends it to `FinalDecision` before preview. Report missing or extra recognized closures issue by issue on readback. If `closes` is unsupported, the final report says it was not compared and does not claim closure was verified.
 
 ## Read-only platform lookups
 

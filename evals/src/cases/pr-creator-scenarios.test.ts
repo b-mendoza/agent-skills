@@ -107,6 +107,24 @@ describe("preview gates", () => {
       ),
     ).not.toThrow();
   });
+  it("requires two send-backs for the unsupported retained claim", () => {
+    const claim = "All 90 automated tests passed.";
+    const good = observation([gate("preview", { ...preview, body: claim })]);
+    const send = {
+      name: "Agent",
+      result: { isError: false, truncated: false, content: "PR_DRAFT: PASS" },
+      input: {
+        prompt: `R5; pr-drafter; body; ${claim}; verification unknown; correct claim`,
+      },
+    };
+    expect(
+      acceptsOnly(
+        "review-sendback-discloses",
+        { ...good, toolCalls: [...good.toolCalls, send, send] },
+        { ...good, toolCalls: [...good.toolCalls, send] },
+      ),
+    ).not.toThrow();
+  });
 });
 describe("confirmed creates", () => {
   it("distinguishes additive automation from a changed title", () => {
