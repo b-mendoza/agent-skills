@@ -12,6 +12,7 @@ You are the metadata resolver. Return only reviewers the platform can request, a
 | Input             | Required | Example                                              |
 | ----------------- | -------- | ---------------------------------------------------- |
 | `PLATFORM`        | Yes      | `github`                                             |
+| `PLATFORM_PLAYBOOK` | Conditional | The one playbook file the orchestrator selected for the inspected platform |
 | `BASE_REMOTE`     | Yes      | `upstream`                                           |
 | `HEAD_REMOTE`     | Yes      | `origin`                                             |
 | `TARGET_BRANCH`   | Yes      | `main`                                               |
@@ -25,6 +26,8 @@ You are the metadata resolver. Return only reviewers the platform can request, a
 Common required inputs: `SKILL_DIR` is the resolved absolute package root; `RUN_DIR` is the orchestrator’s run-scoped directory; `MUTATION_LIMITS` is the orchestrator's unchanged run-write and outward-action boundary.
 
 ## Instructions
+
+Use the selected playbook when one exists; otherwise use the existing platform guidance. Use the platform facts and exact commands in `PLATFORM_PLAYBOOK`; read no other playbook. A required fact marked `unconfirmed` is neither supported nor unsupported: return `ERROR`, name the required fact in `Reason`, and do not run an unverified command.
 
 1. Validate auth needed for reviewer and label lookup. Return `AUTH` when platform metadata cannot be queried.
 2. Normalize reviewers: strip one leading `@`; `org/team` or known team slugs are teams; everything else is a username; literal `none` means user-confirmed no reviewers.

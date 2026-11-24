@@ -57,7 +57,7 @@ Six specialists stay separate on purpose: each owns a distinct status prefix and
 | `review-metadata-suggester` | `./subagents/review-metadata-suggester.md` | `./references/review-metadata-suggester-contract.md` | Requestable reviewers, `none`, existing labels           |
 | `pr-submitter`              | `./subagents/pr-submitter.md`              | `./references/pr-submitter-contract.md`              | Post-approval submit; uncertain-create; field verify     |
 
-Dispatch only the selected specialist with its path, contract path, absolute `SKILL_DIR`, `RUN_DIR` and `MUTATION_LIMITS`. If dispatch is unavailable, run the same specialist inline with the same inputs, limits and exact return contract. Specialists do not dispatch.
+Dispatch only the selected specialist with its path, contract path, absolute `SKILL_DIR`, `RUN_DIR` and `MUTATION_LIMITS`. Pass the selected playbook path as `PLATFORM_PLAYBOOK` to platform specialists. Use the selected playbook when one exists; otherwise use the existing platform guidance. If dispatch is unavailable, run the same specialist inline with the same inputs, limits and exact return contract. Specialists do not dispatch.
 
 ## Validation and mutation limits
 
@@ -91,7 +91,8 @@ Fork-aware, idempotent, approval-bound. Trusted compare range after preflight: `
 | Stop outcome, preview, body template, approval record, cycle ledger | `./references/execution-contracts.md`                   |
 | Preparing or interpreting an approval, digest or verification | `./references/approval-protocol.md` |
 | Template, title convention, verification evidence                   | `./references/drafting-inputs.md`                       |
-| Non-GitHub / state capability                                       | `./references/platform-adaptation.md`                   |
+| Adapting to a host or resolving a platform capability or state fallback | `references/platform-adaptation.md` |
+| On leaving `InspectRepo`, load only the inspected platform's playbook. GitHub Enterprise uses GitHub's. A needed unconfirmed fact stops the run and names it. | `./references/platform-github.md` |
 | CLI/API syntax or writing guidance                                  | `./references/external-resources.md`, then fetch ≤1 URL |
 | Specialist execution                                                | Selected `./subagents/*.md`                             |
 | Specialist return shape                                             | Matching `./references/*-contract.md`                   |
@@ -101,7 +102,7 @@ Fork-aware, idempotent, approval-bound. Trusted compare range after preflight: `
 Advance states in [`state-machine.md`](./state-machine.md). Summary:
 
 1. `ResolveMode` then `NormalizeInputs`. Do not ask for `TARGET_BRANCH` until `InspectRepo` has a candidate.
-2. `InspectRepo` (`repo-state-inspector`). Route topology, target, platform, and state-fallback gates per the transition table.
+2. `InspectRepo` (`repo-state-inspector`). Select the platform playbook per the loading map. Route topology, target, platform, and state-fallback gates per the transition table.
 3. Load `./references/platform-adaptation.md` only in `AdaptPlatform` / related gates. Draft-without-equivalent → ask ready-or-stop before preview.
 4. `RunPreflight`. `PUSH_REQUIRED` → `GatePush` (plain push only) then redispatch with push `APPROVAL_RECORD`. `PR_EXISTS` → `TerminalPrExists`.
 5. `AnalyzeDiff` only after `PREFLIGHT: PASS`. Never defer authentication, hosting resolution, or the existing-PR lookup until creation; unresolved preflight stops before drafting or preview. Echo pinned SHAs. Large/mixed → `GateScope` then redispatch with a SHA/evidence-bound scope record, never a boolean. `STALE_PINS` refreshes preflight and discards scope/preview approval.
