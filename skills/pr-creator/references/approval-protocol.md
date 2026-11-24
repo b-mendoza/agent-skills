@@ -22,7 +22,7 @@ Exit 1 means invalid input (for `title`, findings are on stderr); exit 2 means i
 | --- | --- | --- |
 | `GatePush` | `push` | `headRemote headBranch headSha extras action` |
 | `GateScope` | `scope` | `baseSha headSha changedPaths excludedPaths adjustedChangedLines excludedLines rules` |
-| `GatePreview` | `preview` | `baseRemote targetBranch headRemote headBranch baseSha headSha effectiveState title body state reviewers labels assignees` |
+| `GatePreview` | `preview` | `repository baseRemote targetBranch headRemote headBranch baseSha headSha effectiveState title body state reviewers labels assignees unsupported` |
 
 - `push`: `action` is exactly `git push <headRemote> <headBranch>`.
 
@@ -30,7 +30,8 @@ Exit 1 means invalid input (for `title`, findings are on stderr); exit 2 means i
 
 - `scope`: the analyzer emits `Scope values`; store that JSON line verbatim. `changedPaths` lists all changed paths, including `excludedPaths`, which must be a subset. Nonempty `rules` can contain only `adjusted-lines>1000`, `changed-files>40`, `unrelated-areas>=3`. The first two appear if and only if the corresponding threshold is exceeded (`changed-files` counts `changedPaths`). Display-only grouping and judgments are not added to the values.
 
-- `preview`: Metadata fields are string lists, empty for none. States are `draft` or `ready`. These are the literal fields shown in the preview; base SHA binds the diff as well as head SHA. No environment-dependent display text enters the digest.
+- `preview`: `repository` is the canonical repository path. Metadata fields are string lists, empty for none. `state` and `effectiveState` are `draft` or `ready`.
+- `unsupported` may list only `labels` and `assignees`. A listed metadata field must have an empty approved list.
 
 The canonical serialization is Python `json.dumps(values, sort_keys=True, ensure_ascii=False, separators=(",", ":"), allow_nan=False)` encoded as UTF-8, no BOM and no appended newline. Object keys sort lexicographically; all list fields except `extras` are sets, deduplicated by the producer and sorted by Unicode code point by the helper. Duplicate set entries, unknown/missing fields, noninteger counts and nonlowercase/full Git SHAs are rejected. Strings are otherwise byte-preserved: no trimming, Unicode normalization, newline conversion or final-newline insertion. Body digest is SHA-256 of the body's UTF-8 bytes, not its JSON representation. Digests are 64 lowercase hexadecimal characters. Never independently reimplement this serialization in a specialist.
 

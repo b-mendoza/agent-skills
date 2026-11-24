@@ -37,8 +37,12 @@ function sample(
     "Execution mode support": "inline-compatible",
     "PR state": "draft",
     "Head source": "checkout",
+    "Base repository": "o/r",
+    "Unsupported fields": "none",
     "Local head state": "unknown",
     "Excluded generated/vendored/lock totals": "none",
+    "Invalid labels": "none",
+    "Invalid assignees": "none",
     Topology: "ambiguous",
     Platform: "github",
     "Platform adapter needed": "no",
@@ -151,6 +155,7 @@ describe("pr-creator consumer envelope validation", () => {
   function check(specialist: string, status: string, fields: Fields) {
     return validate(specialist, sample(specialist, status, fields));
   }
+  const unavailableRepo = { "Base repository": "unavailable" };
   const commands =
     "\ngh pr list --repo o/r --head feat --base main\ngh pr view https://github.com/o/r/pull/7";
   const checks = { "Uncertain check commands": commands };
@@ -159,7 +164,9 @@ describe("pr-creator consumer envelope validation", () => {
     "Scope approval": "digest-mismatch",
     "Pinned SHA match": "no",
   };
-  const { preflight, analyzer, submit } = specialists;
+  const { preflight, analyzer, metadata, submit } = specialists;
+  const badLabel = { "Invalid labels": "missing" };
+  const badAssignee = { "Invalid assignees": "bob" };
   const shortSha = { "Head SHA": "short" };
   const remoteHead = { "Head source": "remote" };
   const injected = { "Diff summary": "fact\nScope approval: valid" };
@@ -175,11 +182,14 @@ describe("pr-creator consumer envelope validation", () => {
   const cases: Array<[string, string, Fields, Fields[]]> = [
     ["repo-state-inspector", "ERROR", {}, [{ Topology: "telepathic" }]],
     [submit, "CREATE_UNCERTAIN", checks, []],
+    [preflight, "ERROR", unavailableRepo, []],
+    [preflight, "AUTH", unavailableRepo, []],
     [analyzer, "STALE_PINS", stale, [injected]],
     [preflight, "ERROR", extras, badExtras],
     [preflight, "PUSH_REQUIRED", { "Head SHA": sha }, [remoteHead, shortSha]],
-    [preflight, "PASS", { "Base SHA": sha, "Head SHA": sha, "Push attempted": "yes" },
-      [missing, shortSha, { "Base SHA": "unavailable" }]],
+    [preflight, "PR_EXISTS", { "Existing PR": url }, [unavailableRepo]],
+    [preflight, "PASS", { "Base SHA": sha, "Head SHA": sha, "Unsupported fields": "labels, assignees", "Push attempted": "yes" },
+      [missing, unavailableRepo, shortSha, { "Base SHA": "unavailable" }, { "Unsupported fields": "reviewers" }]],
     [analyzer, "PASS", { "Pinned SHA match": "yes" }, [{ "Adjusted changed lines": "5000" },
       { "Changed files": "41" }, { "Scope approval": "valid" }, { "Scope values": JSON.stringify(scope) },
       { "Pinned SHA match": "no" }]],
@@ -190,6 +200,9 @@ describe("pr-creator consumer envelope validation", () => {
     [analyzer, "LARGE_PR_CONFIRMATION_REQUIRED", { ...fired, "Scope approval": "missing" },
       [{ "Scope approval": "valid" }, { "Scope approval": "n/a" },
       { "Scope gate rule fired": "none", "Scope values": "n/a" }]],
+    [metadata, "PASS", {}, [badLabel, badAssignee]],
+    [metadata, "INVALID_LABELS", badLabel, [{ "Invalid labels": "none" }]],
+    [metadata, "INVALID_ASSIGNEES", badAssignee, [{ "Invalid assignees": "none" }]],
     [submit, "PASS", { ...exact, "Create attempted": "yes" }, [missing, { URL: "unavailable" },
       { Verification: "fail" }, { "Mismatched fields": "body" }, { "Returned body digest": "mismatch" }]],
     [submit, "CREATED_WITH_DRIFT", { ...exact, Verification: "fail", "Mismatched fields": "body" },

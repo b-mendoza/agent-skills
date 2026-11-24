@@ -242,6 +242,7 @@ function isReadbackCall(args: readonly string[]): boolean {
 
 export function previewValues(baseSha: string, headSha: string) {
   return {
+    repository: GITHUB_FACTS.repository,
     baseRemote: "origin",
     headRemote: "origin",
     targetBranch: "main",
@@ -255,6 +256,7 @@ export function previewValues(baseSha: string, headSha: string) {
     labels: [],
     state: "draft",
     effectiveState: "draft",
+    unsupported: [],
   };
 }
 

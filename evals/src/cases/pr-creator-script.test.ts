@@ -16,6 +16,7 @@ const head = "a".repeat(SHA_LENGTH);
 const base = "b".repeat(SHA_LENGTH);
 const branch = { headBranch: "feature/cart", headRemote: "origin" };
 const pins = { baseSha: base, headSha: head };
+const repository = "o/r";
 const body = "## Résumé\n\n雪\n";
 const title = "feat: café";
 const metadata = {
@@ -28,11 +29,13 @@ const result = {
   body,
   ...metadata,
   state: "draft",
+  unsupported: [],
 };
 const preview = {
   ...branch,
   ...pins,
   ...result,
+  repository,
   baseRemote: "origin",
   targetBranch: "main",
   effectiveState: "draft",
@@ -230,6 +233,20 @@ describe("pr-creator shipped approval validator", () => {
       ["ssh://u:secret@host/r"],
     ]) {
       expect(status("push", { ...push, extras: bad })).toBe(INVALID);
+    }
+  });
+  it("binds metadata to platform capability", () => {
+    digest("preview", {
+      ...preview,
+      assignees: [],
+      unsupported: ["assignees"],
+    });
+    for (const change of [
+      { unsupported: ["assignees"] },
+      { unsupported: ["reviewers"] },
+      { repository: "invalid" },
+    ]) {
+      expect(status("preview", { ...preview, ...change })).toBe(INVALID);
     }
   });
   it.each([

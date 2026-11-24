@@ -64,19 +64,19 @@ When attached, an omitted head or the checked-out branch itself selects that bra
 | `DraftPr` | `FinalDecision` | type/scope cycles ≥ 3 (including a failing `title` check) |
 | `GateTypeScope`            | `TerminalAwaitingUser`     | question pending                                                                   |
 | `GateTypeScope`            | `DraftPr`                  | choice answered; redispatch                                                        |
-| `SuggestMetadata`          | `ShowPreview`              | `REVIEW_METADATA: PASS`                                                            |
-| `SuggestMetadata`          | `GateReviewer`             | `NEEDS_REVIEWER` and reviewer cycles &lt; 3                                        |
-| `SuggestMetadata`          | `GateLabels`               | `INVALID_LABELS` and label cycles &lt; 3                                           |
-| `SuggestMetadata`          | `GateAssignees`            | `INVALID_ASSIGNEES` and assignee cycles &lt; 3                                     |
-| `SuggestMetadata`          | `TerminalAuth`             | `AUTH`                                                                             |
-| `SuggestMetadata`          | `TerminalBlocked`          | `ERROR`                                                                            |
-| `SuggestMetadata`          | `FinalDecision`            | reviewer, label or assignee cycles ≥ 3                                             |
-| `GateReviewer`             | `TerminalAwaitingUser`     | question pending                                                                   |
-| `GateReviewer`             | `SuggestMetadata`          | reviewers or `none`; redispatch                                                    |
-| `GateLabels`               | `TerminalAwaitingUser`     | question pending                                                                   |
-| `GateLabels`               | `SuggestMetadata`          | labels resolved; redispatch                                                        |
-| `GateAssignees`            | `TerminalAwaitingUser`     | question pending                                                                   |
-| `GateAssignees`            | `SuggestMetadata`          | assignable users or none supplied; redispatch                                      |
+| `SuggestMetadata` | `ShowPreview` | `REVIEW_METADATA: PASS` |
+| `SuggestMetadata` | `GateReviewer` | `NEEDS_REVIEWER` and reviewer cycles < 3 |
+| `SuggestMetadata` | `GateLabels` | `INVALID_LABELS` (including unsupported labels) and label cycles < 3 |
+| `SuggestMetadata` | `GateAssignees` | `INVALID_ASSIGNEES` (including unsupported assignees) and assignee cycles < 3 |
+| `SuggestMetadata` | `TerminalAuth` | `AUTH` |
+| `SuggestMetadata` | `TerminalBlocked` | `ERROR` |
+| `SuggestMetadata` | `FinalDecision` | reviewer, label or assignee cycles ≥ 3 |
+| `GateReviewer` | `TerminalAwaitingUser` | question pending |
+| `GateReviewer` | `SuggestMetadata` | reviewers or `none`; redispatch |
+| `GateLabels` | `TerminalAwaitingUser` | question pending |
+| `GateLabels` | `SuggestMetadata` | labels resolved; redispatch |
+| `GateAssignees` | `TerminalAwaitingUser` | question pending |
+| `GateAssignees` | `SuggestMetadata` | assignable users or none supplied; redispatch |
 | `ShowPreview`              | `GatePreview`              | preview shown; `pending.json` written                                                                      |
 | `GatePreview`              | `TerminalAwaitingUser`     | question pending                                                                   |
 | `GatePreview`              | `FreezeApproval`           | exact preview approved                                                             |

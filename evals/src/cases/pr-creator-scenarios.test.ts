@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { GITHUB_FACTS as facts } from "#/cases/pr-creator-fixtures.ts";
 import {
   acceptsOnly,
   change,
@@ -61,5 +62,29 @@ describe("preview gates", () => {
         change(good, { [HEAD_LOG]: "switched branches" }),
       ),
     ).not.toThrow();
+  });
+});
+describe("confirmed creates", () => {
+  it("resolves the authenticated identity before assigning", () => {
+    const endpoint = `repos/${facts.repository}/assignees/cart-owner`;
+    const good = observation(
+      [gate("preview", { ...preview, assignees: ["cart-owner"] })],
+      {},
+      [
+        ["api", "user"],
+        ["api", endpoint],
+      ],
+    );
+    const observed = {
+      ...good,
+      toolCalls: [
+        ...good.toolCalls,
+        {
+          ...shell("HTTP/2.0 204 No Content"),
+          input: { command: `gh api ${endpoint} -i` },
+        },
+      ],
+    };
+    expect(acceptsOnly("assignee-me-alias", observed, good)).not.toThrow();
   });
 });

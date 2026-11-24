@@ -39,13 +39,14 @@ type Gate = ReturnType<typeof gate>;
 export function observation(
   gates: Gate[],
   extra: Record<string, string | null> = {},
+  calls: ReadonlyArray<readonly string[]> = [],
 ): Observation {
   return createObservation({
     toolCalls: gates.flatMap((item) => item.turn.toolCalls),
     turns: gates.map((item) => item.turn),
     repoFiles: {
       [RUNS]: "",
-      [facts.log]: "",
+      [facts.log]: calls.map((args) => JSON.stringify(args)).join("\n"),
       [HEAD_LOG]: "original",
       [facts.baselineLog]: "original",
       [facts.source]: facts.headSource,

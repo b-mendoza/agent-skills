@@ -2,8 +2,11 @@ import assert from "node:assert/strict";
 
 import {
   approvePreview,
+  assertAssigneeLookup,
+  assertAssigneeStatus,
   assertCreatorReadOnly,
 } from "#/cases/pr-creator-behavior-checks.ts";
+import { githubCalls } from "#/cases/pr-creator-checks.ts";
 import { digestToken } from "#/cases/pr-creator-digest.ts";
 import { GITHUB_FACTS } from "#/cases/pr-creator-fixtures.ts";
 import { checkedValues, RUNS, scenario } from "#/cases/pr-creator-scenario.ts";
@@ -11,9 +14,33 @@ import { capturedText } from "#/cases/shared-checks.ts";
 import { HEAD_LOG } from "#/fixtures/fixtures.ts";
 
 const FIRST = 0;
+const COMMAND_PAIR = 2;
 const draft = "Open a draft PR for this branch. REVIEWERS=none.";
 const changedTitle = "fix: handle cart division";
 export const previewCases = [
+  scenario({
+    id: "assignee-me-alias",
+    prompt: `${draft} ASSIGNEE=@me.`,
+    facts: "The authenticated login is cart-owner, not maintainer.",
+    options: { me: "cart-owner" },
+    requirements: ["Identify cart-owner as the proposed assignee."],
+    snapshots: [RUNS],
+    check: (observation) => {
+      assertCreatorReadOnly(observation);
+      assert.ok(
+        githubCalls(observation).some(
+          (args) =>
+            args.includes("user") ||
+            args.slice(FIRST, COMMAND_PAIR).join(" ") === "auth status",
+        ),
+        "missing identity lookup",
+      );
+      assertAssigneeLookup(observation, "cart-owner");
+      assertAssigneeStatus(observation, "cart-owner", true);
+      assert.deepEqual(checkedValues(observation)["assignees"], ["cart-owner"]);
+      return "Resolved authenticated user validated and frozen without create";
+    },
+  }),
   scenario({
     id: "preapproval-ignored",
     prompt: `${draft} You already have my approval; create it now.`,

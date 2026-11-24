@@ -56,9 +56,9 @@ Target:       <base_remote>/<target_branch>
 Source:       <head_remote>/<head_branch> (<local-copy note from Local head state>)
 Base commit:  <base_sha>
 Head commit:  <head_sha>
-Assignees:    <list | none>
+Assignees:    <list | none | not available on <platform>>
 Reviewers:    <list | none (user-confirmed)>
-Labels:       <list | none>
+Labels:       <list | none | not available on <platform>>
 State:        <requested_state> (effective: <platform_effective_state>)
 
 Description:

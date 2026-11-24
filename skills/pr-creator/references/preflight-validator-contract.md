@@ -5,8 +5,10 @@ Return exactly one status block. Do not include secrets, tokens, or full command
 ```text
 PREFLIGHT: <PASS | PUSH_REQUIRED | PUSH_REJECTED | PR_EXISTS | AUTH | BASE_BRANCH_MISSING | HEAD_BRANCH_UNPUSHED | BLOCKED | ERROR>
 Platform: <github | github-enterprise | gitlab | bitbucket | unknown>
+Unsupported fields: <none | comma list of labels, assignees>
 Head remote: <name>
 Base remote: <name>
+Base repository: <repo path | unavailable>
 Base branch: <target branch>
 Head branch: <selected branch>
 Head remote state: <up-to-date | missing | local-ahead | diverged | unknown>
@@ -23,6 +25,8 @@ Approval record: <valid | missing | digest-mismatch | n/a>
 Reason: <one line>
 Decision needed: <none | approve plain push | user resolves rejected push | next action>
 ```
+
+`PASS` and `PR_EXISTS` require a known base repository; other statuses may report `unavailable`.
 
 Code semantics:
 

@@ -21,7 +21,7 @@ USAGE = __doc__
 # Exact field order is part of each co-located specialist's output contract.
 ENVELOPES = {
     "repo-state-inspector": ("REPO_STATE", "PASS BLOCKED ERROR", "Execution mode support|Current branch|Head branch|Head source|Target branch|Target branch candidate|PR state|Remotes|Head remote|Base remote|Topology|Topology candidates|Platform|Platform adapter needed|Uncommitted work|Reason|Decision needed"),
-    "preflight-validator": ("PREFLIGHT", "PASS PUSH_REQUIRED PUSH_REJECTED PR_EXISTS AUTH BASE_BRANCH_MISSING HEAD_BRANCH_UNPUSHED BLOCKED ERROR", "Platform|Head remote|Base remote|Base branch|Head branch|Head remote state|Head source|Local head state|Base SHA|Head SHA|Existing PR|Push attempted|Push command|Push extras|Push rejection reason|Approval record|Reason|Decision needed"),
+    "preflight-validator": ("PREFLIGHT", "PASS PUSH_REQUIRED PUSH_REJECTED PR_EXISTS AUTH BASE_BRANCH_MISSING HEAD_BRANCH_UNPUSHED BLOCKED ERROR", "Platform|Unsupported fields|Head remote|Base remote|Base repository|Base branch|Head branch|Head remote state|Head source|Local head state|Base SHA|Head SHA|Existing PR|Push attempted|Push command|Push extras|Push rejection reason|Approval record|Reason|Decision needed"),
     "diff-analyzer": ("DIFF_ANALYSIS", "PASS LARGE_PR_CONFIRMATION_REQUIRED STALE_PINS EMPTY_DIFF ERROR", "Range|Compared Base SHA|Compared Head SHA|Pinned SHA match|Shortstat|Adjusted changed lines|Changed files|Excluded generated/vendored/lock totals|Scope gate rule fired|Scope approval|Scope values|Changed paths|Grouped areas|Diff summary|Behavior before|Behavior after|Retained behavior|Type candidates|Scope candidates|Tests|Risk notes|Reason|Decision needed"),
     "pr-drafter": ("PR_DRAFT", "PASS NEEDS_CHOICE ERROR", "Title|Title source|Body source|Template path|Type choice|Scope choice|Traceability notes|Body|Reason|Decision needed"),
     "review-metadata-suggester": ("REVIEW_METADATA", "PASS NEEDS_REVIEWER INVALID_LABELS INVALID_ASSIGNEES AUTH ERROR", "Reviewers|Reviewer source|Normalized reviewers|Solo repository condition|CODEOWNERS source|CODEOWNERS matches|Labels|Label source|Invalid labels|Suggested valid labels|Assignees|Invalid assignees|Reason|Decision needed"),
@@ -39,13 +39,15 @@ def sha(text):
 
 
 SCOPE_OBSERVED = "baseSha headSha changedPaths excludedPaths adjustedChangedLines excludedLines"
+RESULT = "title body state reviewers labels assignees unsupported"
 SCHEMAS = {
     "push": "headRemote headBranch headSha extras action",
     "scope": SCOPE_OBSERVED + " rules",
-    "preview": "baseRemote targetBranch headRemote headBranch baseSha headSha title body reviewers labels assignees state effectiveState",
+    "preview": "repository baseRemote targetBranch headRemote headBranch baseSha headSha effectiveState " + RESULT,
 }
 OBSERVED = {"scope": SCOPE_OBSERVED}
-LISTS = {"excludedPaths", "rules", "changedPaths", "reviewers", "labels", "assignees"}
+LISTS = {"excludedPaths", "rules", "changedPaths", "reviewers", "labels", "assignees", "unsupported"}
+REPO = r"[\w.-]+(?:/[\w.-]+)+"
 
 
 def exact_keys(obj, fields, name):
@@ -83,6 +85,8 @@ def normalized_fields(values, schema):
             require(isinstance(value, str) and value, key + " must be a string and not empty")
             if key.endswith("Sha"):
                 require(re.fullmatch(r"[a-f0-9]{40}|[a-f0-9]{64}", value), key + " must be a full lowercase SHA")
+            elif key == "repository":
+                require(re.fullmatch(REPO, value), "invalid repository")
             elif key in ("state", "effectiveState"):
                 require(value in ("draft", "ready"), "invalid " + key)
     return result
@@ -98,12 +102,21 @@ def validate_scope(values):
         require((rule in rules) == fired, "inconsistent rule " + rule)
 
 
+def validate_result(v):
+    unsupported = set(v["unsupported"])
+    require(unsupported <= {"assignees", "labels"}, "invalid unsupported field")
+    for field in unsupported:
+        require(not v[field], field + " is unsupported")
+
+
 def canonical(kind, values):
     v = normalized_fields(values, SCHEMAS[kind])
     if kind == "scope":
         validate_scope(v)
     elif kind == "push":
         require(v["action"] == "git push {headRemote} {headBranch}".format(**v), "push action differs from target")
+    elif kind == "preview":
+        validate_result(v)
     return v
 
 
@@ -217,6 +230,9 @@ def approved(v):
 def preflight_envelope(status, v):
     if v["Push attempted"] == "yes":
         approved(v)
+    repository = v["Base repository"]
+    require(re.fullmatch(REPO, repository) or (repository == "unavailable" and status not in ("PASS", "PR_EXISTS")), "invalid Base repository")
+    require(set(comma_list(v["Unsupported fields"])) <= {"assignees", "labels"}, "invalid Unsupported fields")
     if status == "PASS":
         for field in ("Base SHA", "Head SHA"):
             full_sha(field, v)
@@ -257,6 +273,14 @@ def analyzer_envelope(status, v):
             require(approval == "n/a", "no fired rule requires approval n/a")
     if status == "PASS":
         require(v["Pinned SHA match"] == "yes", "PASS requires matching pins")
+
+
+def metadata_envelope(status, v):
+    for field, invalid_status in (("Invalid labels", "INVALID_LABELS"), ("Invalid assignees", "INVALID_ASSIGNEES")):
+        if status == "PASS":
+            require(v[field] == "none", "PASS requires " + field + ": none")
+        elif status == invalid_status:
+            require(v[field] not in ("none", "n/a"), invalid_status + " requires " + field)
 
 
 def submit_envelope(status, v):
@@ -325,7 +349,8 @@ def envelope(specialist, text):
             validate_extra(item)
     if specialist == "repo-state-inspector":
         require(values["PR state"] in ("draft", "ready") or values["PR state"].startswith("invalid: "), "invalid PR state")
-    checks = {"preflight-validator": preflight_envelope, "diff-analyzer": analyzer_envelope, "pr-submitter": submit_envelope}
+    checks = {"preflight-validator": preflight_envelope, "diff-analyzer": analyzer_envelope,
+              "review-metadata-suggester": metadata_envelope, "pr-submitter": submit_envelope}
     if specialist in checks:
         checks[specialist](status, values)
     print("valid")

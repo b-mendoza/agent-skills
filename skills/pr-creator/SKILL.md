@@ -22,7 +22,7 @@ Portable target: OpenCode and Claude Code. Plain Markdown, minimal frontmatter, 
 | `TITLE_OVERRIDE`        | No          | `docs(skills): refine pr creator`                         |
 | `BODY_OVERRIDE`         | No          | `## Summary\n...`                                         |
 | `LABELS_OVERRIDE`       | No          | `documentation,enhancement`                               |
-| `ASSIGNEES`             | No          | `alice,bob`, `none`, omitted means empty                  |
+| `ASSIGNEES` (alias `ASSIGNEE`) | No | Explicit assignable users, `@me` for the authenticated user, or `none`. Omission assigns nobody. |
 | `TEMPLATE_PATH`         | No          | `.github/PULL_REQUEST_TEMPLATE.md`                        |
 | `TITLE_CONVENTION` | No | Semicolon-separated `type`, `scope`, `ticket`, `case`, `max` clauses; normalize free text to clauses. Ticket placement is required: `ticket=<KEY>@<start\|after-colon\|end>`. |
 | `VERIFICATION_EVIDENCE` | No          | Command, outcome, source locator, checked revision        |
@@ -40,7 +40,7 @@ Execution is a finite-state machine. [`state-machine.md`](./state-machine.md) is
 | `RunPreflight` → push gates                      | Auth, existing PR, pinned SHAs, optional plain push |
 | `AnalyzeDiff` → `GateScope`                      | Pinned trusted diff; measurable scope               |
 | `DraftPr` → `GateTypeScope`                      | Title and body                                      |
-| `SuggestMetadata` → reviewer/label gates         | Reviewers and labels                                |
+| `SuggestMetadata` → reviewer/label/assignee gates         | Reviewers, labels and assignees                                |
 | `ShowPreview` → `GatePreview` → `FreezeApproval` | Frozen fields + preview `APPROVAL_RECORD`           |
 | `SubmitPr` → `VerifySubmit`                      | Created or found PR/MR, field-verified              |
 | Terminals                                        | Verified URL or plain-language stop explanation     |
@@ -55,7 +55,7 @@ Six specialists stay separate on purpose: each owns a distinct status prefix and
 | `preflight-validator`       | `./subagents/preflight-validator.md`       | `./references/preflight-validator-contract.md`       | Auth, refs, existing PRs, safe push, pinned SHAs         |
 | `diff-analyzer`             | `./subagents/diff-analyzer.md`             | `./references/diff-analyzer-contract.md`             | Analyze pinned changes and scope evidence              |
 | `pr-drafter`                | `./subagents/pr-drafter.md`                | `./references/pr-drafter-contract.md`                | Conventional-Commit title and grounded body              |
-| `review-metadata-suggester` | `./subagents/review-metadata-suggester.md` | `./references/review-metadata-suggester-contract.md` | Requestable reviewers, `none`, existing labels           |
+| `review-metadata-suggester` | `./subagents/review-metadata-suggester.md` | `./references/review-metadata-suggester-contract.md` | Resolve requestable reviewers, existing labels and assignable assignees.           |
 | `pr-submitter`              | `./subagents/pr-submitter.md`              | `./references/pr-submitter-contract.md`              | Post-approval submit; uncertain-create; field verify     |
 
 Dispatch only the selected specialist with its path, contract path, absolute `SKILL_DIR`, `RUN_DIR` and `MUTATION_LIMITS`. Pass the selected playbook path as `PLATFORM_PLAYBOOK` to platform specialists. If dispatch is unavailable, run the same specialist inline with the same inputs, limits and exact return contract. Specialists do not dispatch.
@@ -107,7 +107,7 @@ Advance states in [`state-machine.md`](./state-machine.md). Summary:
 3. Load `./references/platform-adaptation.md` only in `AdaptPlatform` / related gates. Draft-without-equivalent → ask ready-or-stop before preview.
 4. Run `preflight-validator` (`RunPreflight`); load `./references/execution-contracts.md` for `push` at `GatePush`. `PR_EXISTS` → `TerminalPrExists`.
 5. `AnalyzeDiff` only after `PREFLIGHT: PASS`. Never defer authentication, hosting resolution, or the existing-PR lookup until creation; unresolved preflight stops before drafting or preview. For a large or mixed diff, show the pinned SHAs, paths, exclusions, counts and fired rules at `GateScope`. Save its `Scope values` JSON verbatim. On approval redispatch with the record; the analyzer runs `verify scope` against fresh observations before continuing. `STALE_PINS` refreshes preflight and discards scope/preview approval.
-6. `DraftPr` then `SuggestMetadata` with exact changed-file paths. Title/template, reviewer, label and assignee gates redispatch only the affected specialist. `REVIEWERS=none` satisfies reviewer resolution.
+6. `DraftPr` then `SuggestMetadata` with exact changed-file paths and preflight’s `Unsupported fields` as `UNSUPPORTED_FIELDS`. Title/template, reviewer, label and assignee gates redispatch only the affected specialist. `REVIEWERS=none` satisfies reviewer resolution.
 7. `ShowPreview` / `GatePreview`: load `./references/execution-contracts.md`, show exact preview (head SHA, effective state). Edits invalidate approval and return to the earliest affected state. Decline without edits → `TerminalCancelled`.
 8. `FreezeApproval` then `SubmitPr`. `HEAD_MOVED` → explain, discard both approvals, and refresh `RunPreflight` (preview-edit cycle). On `PASS`, `VerifySubmit` compares every echoed field and both body digests before `TerminalSuccess`. A confirmed URL with mismatches goes to `TerminalCreatedWithDrift`, never a create retry.
 9. Independent three-cycle ledgers: push, scope, type/scope, reviewer, label, assignee, preview-edit; validation repair cap is one. Exhaustion → `FinalDecision` then recovery or `TerminalEscalated`.
@@ -120,8 +120,7 @@ Advance states in [`state-machine.md`](./state-machine.md). Summary:
 - Every push proposal lists the active git settings and what they add beyond the branch, not the individual refs. Use settings reads only; a change before execution blocks the push. Read back only the branch and report that the extras were not verified one by one. Never propose a push to a mirror remote or with `push.recurseSubmodules=only`; explain why.
 - Never force-push (`--force`, `--force-with-lease`, `+refspec`) or auto-resolve diverged branches.
 - Never create when an open PR/MR already exists for the same head/base; check in preflight and again immediately before create.
-- Only platform-existing labels may reach preview.
-- Reviewers: named requestable reviewers or user-confirmed `none`. Assignees: only explicit, platform-assignable users or empty.
+- For create, resolve requestable reviewers or user-confirmed `none`, existing labels and explicit assignable assignees or none. Never change the base or head. Mark a field unsupported only on a sourced `no`; show it as unavailable, not matched.
 - `BODY_OVERRIDE` beats repository template, and `TITLE_OVERRIDE` beats bounded `TITLE_CONVENTION`. Missing observed test evidence means unknown, not “not run.”
 - Approval records replace bare booleans. Missing or stale scope approval asks again; mutation consumers return `BLOCKED` for missing or mismatched digests.
 - Cycle ledgers bound thrash; submit uses only the bounded retry inside `pr-submitter`. Prefer `--body-file` (or platform-safe body transport) at create.

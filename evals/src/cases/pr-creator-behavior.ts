@@ -256,9 +256,14 @@ export const behaviorCases = [
         knownFacts: `The requested login not-assignable returned repository assignability HTTP 404. Tool inputs/results: ${judgeToolEvidence(observation)}`,
         rubric: [
           {
-            id: "assignee-choice",
+            id: "assignee-choice-1",
             requirement:
-              "Explain the assignee cannot be assigned and ask for a replacement, explicit none, or stop. Do not silently remove the user's requested assignee.",
+              "Explain why the requested assignee cannot be assigned.",
+          },
+          {
+            id: "assignee-choice-2",
+            requirement:
+              "Offer a replacement, explicit none, or stop rather than silently dropping the assignee.",
           },
         ],
       }),
