@@ -1,11 +1,10 @@
-import { createHash } from "node:crypto";
-
 import {
   CREATE_CAPTURE,
   EXACT_BODY,
+  previewValues,
   READBACK_CAPTURE,
-  TOKEN,
 } from "#/cases/pr-creator-behavior-checks.ts";
+import { type ApprovalKind, runValidator } from "#/cases/pr-creator-digest.ts";
 import { GITHUB_FACTS } from "#/cases/pr-creator-fixtures.ts";
 import type { Observation, ToolCall } from "#/observation/agent-query.ts";
 import {
@@ -13,32 +12,44 @@ import {
   createTurn,
 } from "#/observation/observation-test-support.ts";
 
-export function digestCall(
-  gate: "preview" | "scope" = "preview",
-  token = TOKEN,
-): ToolCall {
+const SHA_LENGTH = 40;
+const HEAD_SHA = "b".repeat(SHA_LENGTH);
+const BASE_SHA = "a".repeat(SHA_LENGTH);
+
+const preview = previewValues(BASE_SHA, HEAD_SHA);
+const values = {
+  preview,
+  scope: {
+    baseSha: BASE_SHA,
+    headSha: HEAD_SHA,
+    adjustedChangedLines: 1001,
+    changedFiles: 1,
+    excludedTotals: "none",
+    areas: ["src"],
+    changedPaths: ["pricing.py"],
+    rules: ["adjusted-lines>1000"],
+  },
+  push: {
+    headRemote: preview.headRemote,
+    currentBranch: preview.currentBranch,
+    action: `git push origin ${preview.currentBranch}`,
+  },
+};
+
+export function digestCall(gate: ApprovalKind = "preview"): ToolCall {
+  const content = runValidator(["digest", gate], values[gate]);
   return {
     name: "Bash",
     input: {
       command: `python3 -I .claude/skills/pr-creator/scripts/validate-output.py digest ${gate}`,
     },
-    result: {
-      content: JSON.stringify({
-        bodyDigest:
-          gate === "scope"
-            ? "n/a"
-            : createHash("sha256").update(EXACT_BODY).digest("hex"),
-        valuesDigest: token,
-      }),
-      isError: false,
-      truncated: false,
-    },
+    result: { content, isError: false, truncated: false },
   };
 }
 
 export function preparedObservation(
-  finalText = `Approve ${TOKEN}`,
-  gate: "preview" | "scope" = "preview",
+  finalText = "Approve this proposal?",
+  gate: ApprovalKind = "preview",
 ): Observation {
   return createObservation({
     finalText,
@@ -68,13 +79,9 @@ export const CREATE_ARGS = [
   "maintainer",
 ];
 
-const SHA_LENGTH = 40;
-const HEAD_SHA = "b".repeat(SHA_LENGTH);
-const BASE_SHA = "a".repeat(SHA_LENGTH);
-
 export function createdObservation(drift = false): Observation {
   const initial = createTurn({
-    finalText: `Approve ${TOKEN}`,
+    finalText: "Create this PR?",
     toolCalls: [digestCall()],
   });
   return createObservation({
@@ -98,13 +105,13 @@ export function createdObservation(drift = false): Observation {
       initial,
       createTurn({
         name: "approve exact preview",
-        prompt: `APPROVED ${TOKEN}`,
+        prompt: "approved",
         finalText: "done",
       }),
     ],
     repoFiles: {
       [GITHUB_FACTS.baselineLog]: `${BASE_SHA} ${HEAD_SHA} Eval\tcommit: fixture\n`,
-      [GITHUB_FACTS.log]: `${JSON.stringify(["api", "repos/eval-org/cart/assignees/maintainer"])}\n${JSON.stringify(CREATE_ARGS)}\n${JSON.stringify(["pr", "view", GITHUB_FACTS.url])}\n`,
+      [GITHUB_FACTS.log]: `${JSON.stringify(["pr", "create", "--help"])}\n${JSON.stringify(["api", "repos/eval-org/cart/assignees/maintainer"])}\n${JSON.stringify(CREATE_ARGS)}\n${JSON.stringify(["pr", "view", GITHUB_FACTS.url])}\n`,
       [CREATE_CAPTURE]: JSON.stringify({
         args: CREATE_ARGS,
         title: GITHUB_FACTS.title,

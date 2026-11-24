@@ -42,7 +42,7 @@ Six specialists stay separate: each owns a distinct status prefix and failure mo
 | `RunPreflight`             | `TerminalBlocked`          | `BLOCKED` or `ERROR`                                                               |
 | `RunPreflight`             | `FinalDecision`            | `PUSH_REQUIRED` and push cycles ≥ 3                                                |
 | `GatePush`                 | `RunPreflight`             | plain push approved; redispatch with push `APPROVAL_RECORD`                        |
-| `GatePush`                 | `TerminalAwaitingUser`     | question pending                                                                   |
+| `GatePush`                 | `TerminalAwaitingUser`     | question pending; the proposal has no editable part, so a change request is answered with the available choices and asked again                                                                   |
 | `GatePush`                 | `TerminalHeadUnpushed`     | push declined                                                                      |
 | `GatePushRejected`         | `RunPreflight`             | user confirms manual resolution                                                    |
 | `GatePushRejected`         | `TerminalHeadUnpushed`     | stop                                                                               |
@@ -52,8 +52,8 @@ Six specialists stay separate: each owns a distinct status prefix and failure mo
 | `AnalyzeDiff`              | `RunPreflight`             | `STALE_PINS`; discard scope and preview approval                                   |
 | `AnalyzeDiff`              | `TerminalBlocked`          | `ERROR`                                                                            |
 | `AnalyzeDiff`              | `FinalDecision`            | scope cycles ≥ 3                                                                   |
-| `GateScope`                | `AnalyzeDiff`              | current scope token approved; record pinned SHA/evidence digest and redispatch     |
-| `GateScope`                | `TerminalAwaitingUser`     | question pending                                                                   |
+| `GateScope`                | `AnalyzeDiff`              | current scope approved; record pinned SHA/evidence digest and redispatch     |
+| `GateScope`                | `TerminalAwaitingUser`     | question pending; the proposal has no editable part, so a change request is answered with the available choices and asked again                                                                   |
 | `GateScope`                | `TerminalCancelled`        | scope declined                                                                     |
 | `DraftPr`                  | `SuggestMetadata`          | `PR_DRAFT: PASS`                                                                   |
 | `DraftPr`                  | `GateTypeScope`            | `NEEDS_CHOICE` and type/scope cycles &lt; 3                                        |
@@ -74,7 +74,7 @@ Six specialists stay separate: each owns a distinct status prefix and failure mo
 | `GateLabels`               | `SuggestMetadata`          | labels resolved; redispatch                                                        |
 | `GateAssignees`            | `TerminalAwaitingUser`     | question pending                                                                   |
 | `GateAssignees`            | `SuggestMetadata`          | assignable users or none supplied; redispatch                                      |
-| `ShowPreview`              | `GatePreview`              | preview shown                                                                      |
+| `ShowPreview`              | `GatePreview`              | preview shown; `pending.json` written                                                                      |
 | `GatePreview`              | `TerminalAwaitingUser`     | question pending                                                                   |
 | `GatePreview`              | `FreezeApproval`           | exact preview approved                                                             |
 | `GatePreview`              | `TerminalCancelled`        | declined without edits                                                             |
@@ -113,13 +113,20 @@ Six specialists stay separate: each owns a distinct status prefix and failure mo
 | `TerminalCreateUncertain`  | `[*]`                      | explain stop and next action in prose                                              |
 | `TerminalEscalated`        | `[*]`                      | explain stop and next action in prose                                              |
 
+`RunPreflight` is read-only unless entered with the plain push approved at `GatePush`.
+
 ## Consumer validation
 
-Before any specialist-status transition, the orchestrator executes the shipped `envelope` validator. Nonzero output redispatches that specialist once with findings under the independent `validation` counter; a second invalid result, usage failure or missing Python/shell routes directly to `TerminalBlocked`. Never route from unchecked fields. Human gates accept only current `APPROVED <token>`, `REVISE: <edits>`, or `ABORT` per `approval-protocol.md`; `approval-reask[gate]` counter cap 1, then `TerminalAwaitingUser`. `GateTypeScope` also resolves template selection and bounded title conventions.
+Before routing on output from every registered specialist, the orchestrator runs the shipped `envelope` validator for that specialist. An invalid envelope gets one redispatch with findings; a second invalid result, a usage failure or missing Python/shell goes to `TerminalBlocked`. Never route on unchecked fields.
+
+Approval gates: `GatePush`, `GateScope`, `GatePreview`. All others are choice gates. Use the plain-approval rule in [approval-protocol.md](references/approval-protocol.md). `GateTypeScope` also resolves template selection and bounded title conventions.
 
 ## Cycle ledgers
 
 Independent counters (max 3 non-`PASS` redispatches per gate, then `FinalDecision`): `push`, `scope`, `type/scope`, `reviewer`, `label`, `assignee`, `preview-edit`. Submission uses only the bounded create retry inside `pr-submitter`.
+
+- `validation`: 1; `TerminalBlocked`. Applies to every registered specialist.
+- `approval-reask[gate]`: 1; `TerminalAwaitingUser`.
 
 ## Terminal decisions
 

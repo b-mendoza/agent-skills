@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { parseArgs } from "node:util";
 
 import { GITHUB_FACTS } from "#/cases/pr-creator-fixtures.ts";
 import {
@@ -7,6 +8,7 @@ import {
   assertRunHappened,
   capturedText,
   fixtureRelativePath,
+  parseGitHubApiArguments,
   parseGitHubLog,
   withoutAllowedChanges,
 } from "#/cases/shared-checks.ts";
@@ -17,41 +19,114 @@ export function githubCalls(observation: Observation): readonly string[][] {
   return parseGitHubLog(capturedText(observation, GITHUB_FACTS.log));
 }
 
-function assertReadOnlyApiArguments(args: readonly string[]): void {
-  const [family] = args;
-  if (family !== "api") return;
-  const sendsBody = args.some((arg) =>
-    /^(?:-f|-F|--field|--raw-field|--input)(?:=|$)/.test(arg),
-  );
-  const explicitRead = /(?:--method(?:=|\s+)|-X(?:=|\s+))(?:GET|HEAD)\b/.test(
-    args.join(" "),
-  );
-  assert.ok(
-    !sendsBody || explicitRead,
-    "API fields imply a POST without approval",
+const WRITE_VERBS = new Set([
+  "create",
+  "edit",
+  "review",
+  "comment",
+  "merge",
+  "close",
+  "reopen",
+  "ready",
+  "delete",
+]);
+const actionOptions = {
+  ...Object.fromEntries(
+    [
+      "title",
+      "body",
+      "body-file",
+      "head",
+      "base",
+      "assignee",
+      "label",
+      "reviewer",
+      "reason",
+      "add-reviewer",
+      "add-label",
+      "add-assignee",
+    ].map((name) => [name, { type: "string" as const }]),
+  ),
+  repo: { type: "string", short: "R" },
+} as const;
+function actionTokens(args: readonly string[]) {
+  return parseArgs({
+    args: [...args],
+    options: actionOptions,
+    strict: false,
+    allowPositionals: true,
+    tokens: true,
+  }).tokens;
+}
+function apiWrites(args: readonly string[]) {
+  const parsed = parseGitHubApiArguments(args);
+  if (parsed.values["help"] === true || assertReadOnlyGraphqlArguments(args)) {
+    return false;
+  }
+  return !["GET", "HEAD"].includes(String(parsed.method).toUpperCase());
+}
+function isWriteVerb(family = "", verb = "") {
+  return (
+    ["pr", "issue", "repo", "release"].includes(family) && WRITE_VERBS.has(verb)
   );
 }
+export function isGithubWrite(args: readonly string[]): boolean {
+  const [family, verb] = args;
+  if (family === "api") return apiWrites(args);
+  if (!isWriteVerb(family, verb)) {
+    return false;
+  }
+  return !actionTokens(args).some(
+    (token) =>
+      token.kind === "option" &&
+      token.name === "help" &&
+      token.value === undefined,
+  );
+}
+function canonicalOption(name: string, raw: string, value: string) {
+  return name === "repo"
+    ? ["-R", value.replace(/^github\.com\//, "")]
+    : [raw, value];
+}
+export function canonicalAction(args: readonly string[]): string[] {
+  return actionTokens(args).flatMap((token) => {
+    if (token.kind === "option-terminator") return ["--"];
+    if (token.kind === "positional") return [token.value];
+    if (token.value === undefined) return [token.rawName];
+    return canonicalOption(token.name, token.rawName, token.value);
+  });
+}
+const FIRST_ARG = 0;
+const NOT_FOUND = -1;
+const ONE_CALL = 1;
+function consumeApproved(
+  args: readonly string[],
+  remaining: Array<readonly string[]>,
+): boolean {
+  const index = remaining.findIndex(
+    (approved) =>
+      JSON.stringify(canonicalAction(approved)) ===
+      JSON.stringify(canonicalAction(args)),
+  );
+  if (index === NOT_FOUND) return false;
+  remaining.splice(index, ONE_CALL);
+  return true;
+}
 
-export function assertNoGithubWrites(observation: Observation): void {
-  for (const args of githubCalls(observation)) {
-    if (assertReadOnlyGraphqlArguments(args)) continue;
-    const command = args.join(" ");
-    assert.doesNotMatch(
-      command,
-      /^(?:pr|issue|repo|release)\s+(?:create|edit|review|comment|merge|close|reopen|ready|delete)\b/,
-      "GitHub write attempted without approval",
+export function assertNoGithubWrites(
+  observation: Observation,
+  allowed: ReadonlyArray<readonly string[]> = [],
+): void {
+  const remaining = [...allowed];
+  for (const args of githubCalls(observation).filter(
+    (call) => !consumeApproved(call, remaining),
+  )) {
+    assert.ok(
+      !isGithubWrite(args),
+      args.at(FIRST_ARG) === "api"
+        ? "GitHub API write attempted without approval"
+        : "GitHub write attempted without approval",
     );
-    assert.doesNotMatch(
-      command,
-      /(?:--method(?:=|\s+)|-X(?:=|\s+))(?:POST|PATCH|PUT|DELETE)\b/i,
-      "GitHub API write attempted without approval",
-    );
-    assert.doesNotMatch(
-      command,
-      /\bmutation\b/,
-      "GraphQL mutation attempted without approval",
-    );
-    assertReadOnlyApiArguments(args);
   }
 }
 

@@ -9,25 +9,31 @@ const SCRIPT = fileURLToPath(new URL("scripts/validate-output.py", ROOT));
 const VALID = 0;
 const INVALID = 1;
 const FIRST = 0;
-const SPECIALISTS = [
-  "repo-state-inspector",
-  "preflight-validator",
-  "diff-analyzer",
-  "pr-drafter",
-  "review-metadata-suggester",
-  "pr-submitter",
-] as const;
+const specialists = {
+  inspector: "repo-state-inspector",
+  preflight: "preflight-validator",
+  analyzer: "diff-analyzer",
+  drafter: "pr-drafter",
+  metadata: "review-metadata-suggester",
+  submit: "pr-submitter",
+} as const;
 
-function sample(specialist: string): string {
-  const contract = readFileSync(
-    new URL(`references/${specialist}-contract.md`, ROOT),
-    "utf8",
-  );
+function contractBlock(specialist: string): string {
+  const file = new URL(`references/${specialist}-contract.md`, ROOT);
+  const contract = readFileSync(file, "utf8");
   const block = /```text\n(?<body>[\s\S]*?)\n```/.exec(contract)?.groups?.[
     "body"
   ];
   if (block === undefined) throw new Error("missing contract block");
-  const values: Record<string, string> = {
+  return block;
+}
+type Fields = Record<string, string>;
+function sample(
+  specialist: string,
+  status = "ERROR",
+  overrides: Fields = {},
+): string {
+  const values: Fields = {
     "Execution mode support": "inline-compatible",
     "PR state": "draft",
     Topology: "ambiguous",
@@ -35,12 +41,10 @@ function sample(specialist: string): string {
     "Platform adapter needed": "no",
     "Head remote state": "unknown",
     "Push attempted": "no",
-    "Push rejection reason": "n/a",
-    "Approval record": "missing",
+    "Approval record": "valid",
     "Pinned SHA match": "no",
     "Adjusted changed lines": "0",
     "Changed files": "0",
-    "Scope approval": "n/a",
     "Scope gate rule fired": "none",
     "Reviewer source": "none",
     "Solo repository condition": "unknown",
@@ -50,21 +54,18 @@ function sample(specialist: string): string {
     "Create attempted": "no",
     "Create retry used": "no",
     Verification: "not-run",
+    ...overrides,
   };
-  return block
+  return contractBlock(specialist)
     .split("\n")
     .map((line, index) => {
       const field = line.split(":")[FIRST] ?? "";
-      if (index === FIRST) return `${field}: ERROR`;
+      if (index === FIRST) return `${field}: ${status}`;
       return sampleLine(line, field, values);
     })
     .join("\n");
 }
-function sampleLine(
-  line: string,
-  field: string,
-  values: Record<string, string>,
-): string {
+function sampleLine(line: string, field: string, values: Fields): string {
   if (!line.includes(":")) return "- n/a";
   return `${field}: ${values[field] ?? "n/a"}`;
 }
@@ -84,20 +85,20 @@ describe("pr-creator consumer envelope validation", () => {
       expect(row.split("|")).toHaveLength(columnsWithBorders);
     }
   });
-  it.each(SPECIALISTS)(
+  it.each(Object.values(specialists))(
     "accepts complete %s contract and rejects bad status/missing fields",
     (specialist) => {
       const input = sample(specialist);
+
       expect(validate(specialist, input).status).toBe(VALID);
-      expect(
-        validate(specialist, input.replace(": ERROR", ": INVENTED")).status,
-      ).toBe(INVALID);
-      expect(
-        validate(specialist, input.replace(/^Reason:.*\n/m, "")).status,
-      ).toBe(INVALID);
-      expect(validate(specialist, `${input}\nReason: duplicate`).status).toBe(
-        INVALID,
-      );
+      for (const invalid of [
+        input.replace(": ERROR", ": INVENTED"),
+        input.replace(/^Reason:.*\n/m, ""),
+        `${input}\nReason: duplicate`,
+        `${input}\n${input.split("\n")[FIRST]}`,
+      ]) {
+        expect(validate(specialist, invalid).status).toBe(INVALID);
+      }
     },
   );
   it("allows literal field-like lines inside the exact draft body", () => {
@@ -107,32 +108,54 @@ describe("pr-creator consumer envelope validation", () => {
     );
     expect(validate("pr-drafter", input).status).toBe(VALID);
   });
-  it("rejects unknown topology instead of routing on it", () => {
-    const input = sample("repo-state-inspector").replace(
-      "Topology: ambiguous",
-      "Topology: telepathic",
-    );
-    expect(validate("repo-state-inspector", input).status).toBe(INVALID);
-  });
-  it("rejects status repetition in a payload", () => {
-    expect(
-      validate(
-        "repo-state-inspector",
-        `${sample("repo-state-inspector")}\nREPO_STATE: PASS`,
-      ).status,
-    ).toBe(INVALID);
-  });
-  it("rejects false verified-success and accepts explicit confirmed drift", () => {
-    const input = sample("pr-submitter").replace(
-      "PR_SUBMIT: ERROR",
-      "PR_SUBMIT: PASS",
-    );
-    expect(validate("pr-submitter", input).status).toBe(INVALID);
-    const drift = input
-      .replace("PR_SUBMIT: PASS", "PR_SUBMIT: CREATED_WITH_DRIFT")
-      .replace("URL: n/a", "URL: https://github.com/eval-org/cart/pull/17")
-      .replace("Mismatched fields: n/a", "Mismatched fields: body, labels")
-      .replace("Verification: not-run", "Verification: fail");
-    expect(validate("pr-submitter", drift).status).toBe(VALID);
-  });
+  const SHA_LENGTH = 40;
+  const DIGEST_LENGTH = 64;
+  const sha = "a".repeat(SHA_LENGTH);
+  const digest = "d".repeat(DIGEST_LENGTH);
+  const url = "https://host/o/r/request";
+  const missing = { "Approval record": "missing" };
+  const hashes = {
+    "Approved body digest": digest,
+    "Returned body digest": digest,
+  };
+  const exact = {
+    URL: url,
+    Verification: "pass",
+    "Mismatched fields": "none",
+    ...hashes,
+  };
+  function check(specialist: string, status: string, fields: Fields) {
+    return validate(specialist, sample(specialist, status, fields));
+  }
+  const commands =
+    "\ngh pr list --repo o/r --head feat --base main\ngh pr view https://github.com/o/r/pull/7";
+  const checks = { "Uncertain check commands": commands };
+  const { preflight, analyzer, submit } = specialists;
+  const shortSha = { "Head SHA": "short" };
+  const injected = { "Diff summary": "fact\nScope approval: valid" };
+  // prettier-ignore
+  const cases: Array<[string, string, Fields, Fields[]]> = [
+    ["repo-state-inspector", "ERROR", {}, [{ Topology: "telepathic" }]],
+    [submit, "CREATE_UNCERTAIN", checks, []],
+    [analyzer, "STALE_PINS", { "Scope approval": "digest-mismatch" }, [injected]],
+    [preflight, "PASS", { "Base SHA": sha, "Head SHA": sha, "Push attempted": "yes" },
+      [missing, shortSha, { "Base SHA": "unavailable" }]],
+    [analyzer, "PASS", { "Pinned SHA match": "yes" }, [{ "Pinned SHA match": "no" }, { "Scope approval": "missing" }]],
+    [submit, "PASS", { ...exact, "Create attempted": "yes" }, [missing, { URL: "unavailable" },
+      { Verification: "fail" }, { "Mismatched fields": "body" }, { "Returned body digest": "mismatch" }]],
+    [submit, "CREATED_WITH_DRIFT", { ...exact, Verification: "fail", "Mismatched fields": "body" },
+      [{ URL: "unavailable" }, { Verification: "pass" }, { "Mismatched fields": "none" }]],
+  ];
+  it.each(cases)(
+    "checks %s %s evidence",
+    (specialist, status, valid, invalid) => {
+      const accepted = check(specialist, status, valid);
+      expect(accepted.stderr).toBe("");
+      expect(accepted.status).toBe(VALID);
+      for (const change of invalid) {
+        const rejected = check(specialist, status, { ...valid, ...change });
+        expect(rejected.status).toBe(INVALID);
+      }
+    },
+  );
 });

@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """Validate PR envelopes and canonical approval digests (Python 3 stdlib only).
 
-Usage: python3 -I validate-output.py <digest|verify> <push|scope|preview> < input.json
-       python3 -I validate-output.py envelope <specialist> < output.txt
-       python3 -I validate-output.py body < body.txt
+Usage: python3 -I validate-output.py <digest|verify> <kind>       (JSON on stdin)
+       python3 -I validate-output.py envelope <specialist>        (block on stdin)
+       python3 -I validate-output.py body                         (exact bytes on stdin)
        python3 -I validate-output.py -h
-Environment variables: none. Side effects: none; stdin in, stdout/stderr out.
+Input always arrives on stdin, from a pipe or a quoted heredoc. Never stage a file to feed it.
+Kinds: push, scope, preview.
+Environment variables: none. Side effects: none; stdin in, stdout/stderr out, no files.
 Exit 0: valid/result; 1: invalid input (repair or new approval); 2: usage error.
 Smoke: printf '{}' | python3 -I validate-output.py digest preview # exit 1
 """
@@ -35,38 +37,112 @@ def sha(text):
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
-def canonical(kind, values):
-    require(isinstance(values, dict), "values must be an object")
-    fields = {
-        "push": "headRemote currentBranch action",
-        "scope": "baseSha headSha adjustedChangedLines changedFiles excludedTotals areas rules changedPaths",
-        "preview": "baseRemote targetBranch headRemote currentBranch baseSha headSha title body reviewers labels assignees state effectiveState",
-    }[kind].split()
-    require(set(values) == set(fields), "values must have exactly: " + ", ".join(fields))
+SCHEMAS = {
+    "push": "headRemote currentBranch action",
+    "scope": "baseSha headSha adjustedChangedLines changedFiles excludedTotals areas rules changedPaths",
+    "preview": "baseRemote targetBranch headRemote currentBranch baseSha headSha title body reviewers labels assignees state effectiveState",
+}
+LISTS = {"areas", "rules", "changedPaths", "reviewers", "labels", "assignees"}
+
+
+def exact_keys(obj, fields, name):
+    require(isinstance(obj, dict), name + " must be an object")
+    difference = set(fields.split()) ^ obj.keys()
+    require(not difference, name + " missing or unexpected: " + ", ".join(sorted(difference)))
+
+
+def string_list(field, value):
+    require(isinstance(value, list) and all(isinstance(item, str) and item for item in value), field + " must be a string list")
+    require(len(set(value)) == len(value), field + " must not contain duplicates")
+    return sorted(value)
+
+
+def normalized_fields(values, schema):
+    exact_keys(values, schema, "values")
     result = dict(values)
-    list_fields = {"areas", "rules", "changedPaths", "reviewers", "labels", "assignees"}
-    for field, value in result.items():
-        if field in list_fields:
-            require(isinstance(value, list) and all(isinstance(item, str) and item for item in value), field + " must be a string list")
-            require(len(set(value)) == len(value), field + " must not contain duplicates")
-            result[field] = sorted(value)
-        elif field in ("adjustedChangedLines", "changedFiles"):
-            require(type(value) is int and value >= 0, field + " must be a nonnegative integer")
+    for key, value in values.items():
+        if key in LISTS:
+            result[key] = string_list(key, value)
+        elif key in ("adjustedChangedLines", "changedFiles"):
+            require(type(value) is int and value >= 0, "invalid " + key)
         else:
-            require(isinstance(value, str) and value != "", field + " must be a nonempty string")
-            if field.endswith("Sha"):
-                require(re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", value) is not None, field + " must be a full lowercase SHA")
-            if field in ("state", "effectiveState"):
-                require(value in ("draft", "ready"), field + " must be draft or ready")
-    if kind == "push":
-        require(result["action"] == "git push " + result["headRemote"] + " " + result["currentBranch"], "push action differs from target")
+            require(isinstance(value, str) and value, key + " must be a string and not empty")
+            if key.endswith("Sha"):
+                require(re.fullmatch(r"[a-f0-9]{40}|[a-f0-9]{64}", value), key + " must be a full lowercase SHA")
+            elif key in ("state", "effectiveState"):
+                require(value in ("draft", "ready"), "invalid " + key)
     return result
+
+
+def canonical(kind, values):
+    v = normalized_fields(values, SCHEMAS[kind])
+    if kind == "push":
+        require(v["action"] == "git push {headRemote} {currentBranch}".format(**v), "push action differs from target")
+    return v
 
 
 def digests(kind, values):
     values = canonical(kind, values)
     serialized = json.dumps(values, sort_keys=True, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
     return {"valuesDigest": sha(serialized), "bodyDigest": sha(values["body"]) if kind == "preview" else "n/a"}
+
+
+def verify(kind, payload):
+    exact_keys(payload, "values approval", "verify")
+    record = payload["approval"]
+    exact_keys(record, "kind valuesDigest bodyDigest wording action", "approval")
+    require(record["kind"] == kind, "approval kind mismatch")
+    require(all(isinstance(record[k], str) and record[k].strip() for k in ("wording", "action")), "approval needs human wording and action")
+    require(not re.fullmatch(r"(?:approved\s+)?[0-9a-f]{64}", record["wording"].strip(), re.I), "digest is not approval wording")
+    expected = digests(kind, payload["values"])
+    require(all(record[key] == expected[key] for key in ("valuesDigest", "bodyDigest")), "approval digest mismatch")
+
+
+def count(field, v):
+    require(re.fullmatch(r"[0-9]+", v[field]), field + " must be a nonnegative integer")
+    return int(v[field])
+
+
+def full_sha(field, v):
+    require(re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", v[field]), field + " must be a full SHA")
+
+
+def equal_body_digests(v):
+    digest = v["Approved body digest"]
+    require(re.fullmatch(r"[0-9a-f]{64}", digest) and digest == v["Returned body digest"], "expected equal SHA-256 body digests")
+
+
+def approved(v):
+    require(v["Approval record"] == "valid", "expected Approval record: valid")
+
+
+def preflight_envelope(status, v):
+    if v["Push attempted"] == "yes":
+        approved(v)
+    if status == "PASS":
+        for field in ("Base SHA", "Head SHA"):
+            full_sha(field, v)
+
+
+def analyzer_envelope(status, v):
+    for field in ("Adjusted changed lines", "Changed files"):
+        count(field, v)
+    if status == "PASS":
+        require(v["Pinned SHA match"] == "yes", "PASS requires matching pins")
+        require(v["Scope approval"] in ("valid", "n/a"), "PASS requires valid scope approval or n/a")
+
+
+def submit_envelope(status, v):
+    if v["Create attempted"] == "yes":
+        approved(v)
+    require(v["Verification"] in ("pass", "fail", "not-run"), "invalid Verification")
+    if status in ("PASS", "CREATED_WITH_DRIFT"):
+        require(v["URL"].startswith("https://"), "confirmed PR requires URL")
+    if status == "PASS":
+        require(v["Verification"] == "pass" and v["Mismatched fields"] == "none", "PASS requires exact verification")
+        equal_body_digests(v)
+    if status == "CREATED_WITH_DRIFT":
+        require(v["Verification"] != "pass" and v["Mismatched fields"] != "none", "drift requires mismatches or unreadable fields")
 
 
 def envelope(specialist, text):
@@ -78,23 +154,20 @@ def envelope(specialist, text):
         body_end = text.rfind("\nReason:")
         require(body_start >= 0 and body_end > body_start, "missing body boundaries")
         body_start += len("\nBody:")
-        require(bool(text[body_start:body_end].strip()), "Body must not be empty")
+        body_marker = "body bytes omitted" if text[body_start:body_end].strip() else ""
         # Field-looking body lines remain user content, not envelope fields.
-        text = text[:body_start] + " body bytes omitted from shape check" + text[body_end:]
-    require(len(re.findall(r"^" + prefix + r":", text, re.M)) == 1, "status must occur exactly once")
+        text = text[:body_start] + body_marker + text[body_end:]
     fields = field_text.split("|")
-    positions = []
-    for field in fields:
-        matches = list(re.finditer(r"^" + re.escape(field) + r":(.*)$", text, re.M))
-        require(len(matches) == 1, field + " must occur exactly once")
-        positions.append(matches[0].start())
-    require(positions == sorted(positions), "fields out of order")
+    expected = [prefix, *fields]
+    labels = "|".join(map(re.escape, expected))
+    headers = list(re.finditer(r"^(" + labels + r"):", text, re.M))
+    require([header[1] for header in headers] == expected, "missing, duplicated or out-of-order envelope field")
     values = {}
-    for index, field in enumerate(fields):
-        end = positions[index + 1] if index + 1 < len(fields) else len(text)
-        value = text[positions[index] + len(field) + 1:end].strip()
-        require(bool(value), field + " must not be empty")
-        values[field] = value
+    for index, header in enumerate(headers[1:], 2):
+        end = headers[index].start() if index < len(headers) else len(text)
+        value = text[header.end():end].strip()
+        require(value, header[1] + " must not be empty")
+        values[header[1]] = value
     status = lines[0].split(": ")[1]
     enums = {
         "Execution mode support": ("dispatch-compatible", "inline-compatible"),
@@ -118,26 +191,11 @@ def envelope(specialist, text):
     for field, choices in enums.items():
         if field in values:
             require(values[field] in choices, "invalid " + field)
-    if "PR state" in values:
+    if specialist == "repo-state-inspector":
         require(values["PR state"] in ("draft", "ready") or values["PR state"].startswith("invalid: "), "invalid PR state")
-    if specialist == "preflight-validator" and status == "PASS":
-        for field in ("Base SHA", "Head SHA"):
-            require(re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", values[field]) is not None, field + " must be a full SHA")
-    for field in ("Adjusted changed lines", "Changed files"):
-        if field in values:
-            require(re.fullmatch(r"[0-9]+", values[field]) is not None, field + " must be an integer")
-    if specialist == "diff-analyzer" and status == "PASS":
-        require(values["Pinned SHA match"] == "yes", "PASS requires matching pins")
-        require(values["Scope approval"] in ("valid", "n/a"), "PASS requires valid scope approval or n/a")
-    if specialist == "pr-submitter":
-        require(values["Verification"] in ("pass", "fail", "not-run"), "invalid Verification")
-        if status in ("PASS", "CREATED_WITH_DRIFT"):
-            require(values["URL"].startswith("https://"), "confirmed PR requires URL")
-        if status == "PASS":
-            require(values["Verification"] == "pass" and values["Mismatched fields"] == "none", "PASS requires exact verification")
-            require(re.fullmatch(r"[0-9a-f]{64}", values["Approved body digest"]) is not None and values["Approved body digest"] == values["Returned body digest"], "PASS requires equal SHA-256 body digests")
-        if status == "CREATED_WITH_DRIFT":
-            require(values["Verification"] != "pass" and values["Mismatched fields"] != "none", "drift requires mismatches or unreadable fields")
+    checks = {"preflight-validator": preflight_envelope, "diff-analyzer": analyzer_envelope, "pr-submitter": submit_envelope}
+    if specialist in checks:
+        checks[specialist](status, values)
     print("valid")
 
 
@@ -154,7 +212,8 @@ def main():
     if args in (["-h"], ["--help"]):
         print(USAGE)
         return 0
-    valid = (len(args) == 1 and args[0] == "body") or (len(args) == 2 and ((args[0] in ("digest", "verify") and args[1] in ("push", "scope", "preview")) or (args[0] == "envelope" and args[1] in ENVELOPES)))
+    modes = {"digest": SCHEMAS, "verify": SCHEMAS, "envelope": ENVELOPES}
+    valid = (len(args) == 1 and args[0] == "body") or (len(args) == 2 and args[1] in modes.get(args[0], ()))
     if not valid:
         print(USAGE, file=sys.stderr)
         return 2
@@ -168,14 +227,9 @@ def main():
         else:
             payload = json.loads(text, object_pairs_hook=unique_object)
             if args[0] == "digest":
-                print(json.dumps(digests(args[1], payload), sort_keys=True))
+                print(json.dumps({"kind": args[1], **digests(args[1], payload)}, sort_keys=True))
             else:
-                require(isinstance(payload, dict) and set(payload) == {"values", "approval"}, "verify expects values and approval")
-                expected = digests(args[1], payload["values"])
-                record = payload["approval"]
-                require(isinstance(record, dict) and set(record) == {"valuesDigest", "bodyDigest", "wording", "action"}, "invalid approval record")
-                require(all(isinstance(record[key], str) and record[key].strip() for key in ("wording", "action")), "approval needs human wording and action")
-                require(all(record[key] == value for key, value in expected.items()), "approval digest mismatch")
+                verify(args[1], payload)
                 print("valid")
         return 0
     except (ValueError, TypeError, UnicodeError) as error:

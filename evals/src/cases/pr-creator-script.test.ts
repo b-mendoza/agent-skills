@@ -5,36 +5,39 @@ import { fileURLToPath } from "node:url";
 import { Schema } from "effect";
 import { describe, expect, it } from "vitest";
 
-const script = fileURLToPath(
-  new URL(
-    "../../../skills/pr-creator/scripts/validate-output.py",
-    import.meta.url,
-  ),
-);
+const path = "../../../skills/pr-creator/scripts/validate-output.py";
+const script = fileURLToPath(new URL(path, import.meta.url));
 const SHA_LENGTH = 40;
 const VALID = 0;
 const INVALID = 1;
 const USAGE_ERROR = 2;
 const head = "a".repeat(SHA_LENGTH);
 const base = "b".repeat(SHA_LENGTH);
-const preview = {
-  baseRemote: "origin",
-  targetBranch: "main",
-  headRemote: "origin",
-  currentBranch: "feature/cart",
-  baseSha: base,
-  headSha: head,
-  title: "feat: café",
-  body: "## Résumé\n\n雪\n",
+const branch = { currentBranch: "feature/cart", headRemote: "origin" };
+const pins = { baseSha: base, headSha: head };
+const body = "## Résumé\n\n雪\n";
+const title = "feat: café";
+const metadata = {
   reviewers: ["bob", "alice"],
   labels: ["enhancement"],
   assignees: ["maintainer"],
+};
+const result = {
+  title,
+  body,
+  ...metadata,
   state: "draft",
+};
+const preview = {
+  ...branch,
+  ...pins,
+  ...result,
+  baseRemote: "origin",
+  targetBranch: "main",
   effectiveState: "draft",
 };
 const scope = {
-  baseSha: base,
-  headSha: head,
+  ...pins,
   adjustedChangedLines: 1001,
   changedFiles: 1,
   excludedTotals: "none",
@@ -42,28 +45,36 @@ const scope = {
   rules: ["adjusted-lines>1000"],
   changedPaths: ["src/cart.py"],
 };
+function hash(text: string) {
+  return createHash("sha256").update(text).digest("hex");
+}
 function run(mode: string, kind: string, input: unknown) {
-  return spawnSync("python3", ["-I", script, mode, kind], {
+  const args = ["-I", script, mode, ...(kind === "" ? [] : [kind])];
+  return spawnSync("python3", args, {
     input: JSON.stringify(input),
     encoding: "utf8",
   });
 }
-function digest(
-  kind: string,
-  values: unknown,
-): { valuesDigest: string; bodyDigest: string } {
+function verify(kind: string, values: unknown, approval: unknown) {
+  return run("verify", kind, { values, approval });
+}
+function digest(kind: string, values: unknown) {
   const result = run("digest", kind, values);
   expect(result.status).toBe(VALID);
   return Schema.decodeUnknownSync(
-    Schema.Struct({ valuesDigest: Schema.String, bodyDigest: Schema.String }),
+    Schema.Struct({
+      kind: Schema.String,
+      valuesDigest: Schema.String,
+      bodyDigest: Schema.String,
+    }),
   )(JSON.parse(result.stdout));
 }
+function status(kind: string, values: unknown) {
+  return run("digest", kind, values).status;
+}
 function approval(kind: string, values: unknown) {
-  return {
-    ...digest(kind, values),
-    wording: "APPROVED",
-    action: `approve ${kind}`,
-  };
+  const proof = digest(kind, values);
+  return { ...proof, wording: "approved", action: `approve ${kind}` };
 }
 
 describe("pr-creator shipped approval validator", () => {
@@ -76,8 +87,9 @@ describe("pr-creator shipped approval validator", () => {
       ),
     );
     expect(actual).toEqual({
-      valuesDigest: createHash("sha256").update(serialized).digest("hex"),
-      bodyDigest: createHash("sha256").update(preview.body).digest("hex"),
+      kind: "preview",
+      valuesDigest: hash(serialized),
+      bodyDigest: hash(preview.body),
     });
     expect(
       digest("preview", { ...preview, reviewers: ["alice", "bob"] }),
@@ -91,10 +103,7 @@ describe("pr-creator shipped approval validator", () => {
         [field]: field === "assignees" ? ["alice"] : `${preview[field]}x`,
       };
       expect(
-        run("verify", "preview", {
-          values: changed,
-          approval: approval("preview", preview),
-        }).status,
+        verify("preview", changed, approval("preview", preview)).status,
       ).toBe(INVALID);
     },
   );
@@ -136,28 +145,44 @@ describe("pr-creator shipped approval validator", () => {
       { ...preview, surprise: true },
       { ...preview, body: null },
     ]) {
-      expect(run("digest", "preview", values).status).toBe(INVALID);
+      expect(status("preview", values)).toBe(INVALID);
     }
-    expect(
-      run("digest", "scope", { ...scope, headSha: undefined }).status,
-    ).toBe(INVALID);
+    expect(status("scope", { ...scope, headSha: undefined })).toBe(INVALID);
   });
   it("requires recorded human wording and action", () => {
     for (const record of [
       { ...approval("preview", preview), wording: "" },
       { ...approval("preview", preview), action: "" },
     ]) {
-      expect(
-        run("verify", "preview", { values: preview, approval: record }).status,
-      ).toBe(INVALID);
+      expect(verify("preview", preview, record).status).toBe(INVALID);
     }
   });
+  it("rejects records issued for another kind or presented as approval tokens", () => {
+    const record = approval("preview", preview);
+    expect(verify("preview", preview, record).status).toBe(VALID);
+    for (const invalid of [
+      { ...record, kind: "scope" },
+      { ...record, kind: undefined },
+      { ...record, wording: record.valuesDigest },
+      { ...record, wording: `APPROVED ${record.valuesDigest}` },
+    ]) {
+      expect(verify("preview", preview, invalid).status).toBe(INVALID);
+    }
+  });
+  it("verifies a plain reply for the proposed push", () => {
+    const action = "git push origin feature/cart";
+    const values = { ...branch, action };
+    const receipt = digest("push", values);
+    expect(receipt.kind).toBe("push");
+    expect(receipt.bodyDigest).toBe("n/a");
+    expect(
+      verify("push", values, { ...receipt, action, wording: "yes" }).status,
+    ).toBe(VALID);
+  });
   it("declares usage and rejects unsupported modes", () => {
-    const help = spawnSync("python3", ["-I", script, "-h"], {
-      encoding: "utf8",
-    });
+    const help = run("-h", "", {});
     expect(help.status).toBe(VALID);
-    expect(help.stdout).toContain("Usage:");
+    expect(help.stdout).toContain("Kinds: push, scope, preview.");
     expect(run("unknown", "preview", preview).status).toBe(USAGE_ERROR);
   });
 });

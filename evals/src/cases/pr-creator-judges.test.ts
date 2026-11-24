@@ -41,7 +41,7 @@ describe("pr-creator prose quality stays in judge rubrics", () => {
       "unknown-verification-no-assignee",
       "unknown rather than passed or definitely not run",
     ],
-    ["scope-record-continues", "separate helper-token create approval"],
+    ["scope-record-continues", "separate create approval"],
     ["preview-awaits-approval", "complete proposed title, body"],
   ] as const)(
     "%s retains its semantic requirement",

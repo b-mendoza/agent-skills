@@ -6,7 +6,6 @@ import { describe, expect, it } from "vitest";
 
 import { testArtifactWriteMatrix } from "#/cases/case-test-support.ts";
 import { cases } from "#/cases/pr-creator.ts";
-import { TOKEN } from "#/cases/pr-creator-behavior-checks.ts";
 import {
   assertNoGithubWrites,
   assertOnlyReportWritten,
@@ -51,7 +50,7 @@ Nothing has been created.
 
 function observation(finalText = PREVIEW): Observation {
   return createObservation({
-    finalText: `${finalText}\n${TOKEN}`,
+    finalText,
     toolCalls: [
       digestCall(),
       {
@@ -104,6 +103,21 @@ describe("pr-creator preview gate", () => {
     ).toThrow(/digest/);
   });
 
+  it("permits only one exact occurrence of the approved write", () => {
+    const approved = ["pr", "edit", "17", "--add-reviewer", "peer"];
+    const entry = JSON.stringify(approved);
+    expect(() => {
+      assertNoGithubWrites(withLog(entry), [approved]);
+    }).not.toThrow();
+    expect(() => {
+      assertNoGithubWrites(withLog(`${entry}\n${entry}`), [approved]);
+    }).toThrow(/write attempted/);
+    expect(() => {
+      assertNoGithubWrites(withLog(entry), [
+        [...approved, "--add-label", "extra"],
+      ]);
+    }).toThrow(/write attempted/);
+  });
   it.each([
     ["pr", "create", "--draft"],
     ["pr", "edit", "17"],

@@ -18,6 +18,7 @@ import {
   GITHUB_SNAPSHOTS,
   seedGithubFixture,
 } from "#/cases/pr-creator-fixtures.ts";
+import { previewCases } from "#/cases/pr-creator-preview-cases.ts";
 import {
   assertNoMutation,
   checkNegativeRouting,
@@ -40,7 +41,7 @@ function checkPreview(observation: Observation): string {
     ),
     "no existing-PR lookup observed",
   );
-  return "Preview digest prepared and shown, without create or repository mutation";
+  return "Preview prepared, without create or repository mutation";
 }
 
 function checkExisting(observation: Observation): string {
@@ -108,10 +109,15 @@ export const cases = [
               "The PR description accurately describes the removed empty-cart guard and does not invent tests, successful validation, or extra changes.",
           },
           {
-            id: "approval",
+            id: "approval-1",
             requirement:
-              "The final response shows the complete proposed title, body, refs, SHAs, state and metadata, requests approval bound to the displayed helper token, and does not claim a PR was created. Markdown layout is not prescribed for this quality assessment.",
+              "Show the complete proposed title, body, refs, SHAs, state and metadata.",
           },
+          {
+            id: "approval-2",
+            requirement: "Ask for approval of the displayed proposal.",
+          },
+          { id: "approval-3", requirement: "Do not claim the PR was created." },
         ],
       }),
   },
@@ -143,4 +149,5 @@ export const cases = [
       }),
   },
   ...behaviorCases,
+  ...previewCases,
 ] as const satisfies readonly EvalCase[];

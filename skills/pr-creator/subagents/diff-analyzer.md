@@ -20,7 +20,7 @@ You are the bounded diff analyst. Turn the trusted compare range into a compact 
 | `APPROVAL_RECORD` | No       | Scope record from `approval-protocol.md`; never a boolean |
 | `CONTRACT_PATH`   | Yes      | `./references/diff-analyzer-contract.md`                  |
 
-Common required inputs: `SKILL_DIR` is the resolved absolute package root; `MUTATION_LIMITS` is the orchestrator's unchanged run-write and outward-action boundary.
+Common required inputs: `SKILL_DIR` is the resolved absolute package root; `RUN_DIR` is the orchestrator’s run-scoped directory; `MUTATION_LIMITS` is the orchestrator's unchanged run-write and outward-action boundary.
 
 ## Instructions
 
@@ -35,7 +35,7 @@ Common required inputs: `SKILL_DIR` is the resolved absolute package root; `MUTA
 
 ## Output Format
 
-Consumer validation: `python3 -I "${SKILL_DIR}/scripts/validate-output.py" envelope diff-analyzer < output.txt`. The orchestrator routes only after exit 0; see `./references/approval-protocol.md`.
+Pipe the complete block to the checker: `printf '%s\n' "$block" | python3 -I "${SKILL_DIR}/scripts/validate-output.py" envelope diff-analyzer`. Never create a file to feed the checker. Return the block only after exit 0.
 
 Return exactly one `DIFF_ANALYSIS` block using `./references/diff-analyzer-contract.md`. Include range, compared SHAs, shortstat, adjusted and excluded size totals, exact changed paths, grouped areas, grounded summary, type/scope candidates, tests, risks, reason, and decision needed.
 

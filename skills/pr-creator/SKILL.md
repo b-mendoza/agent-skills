@@ -57,13 +57,26 @@ Six specialists stay separate on purpose: each owns a distinct status prefix and
 | `review-metadata-suggester` | `./subagents/review-metadata-suggester.md` | `./references/review-metadata-suggester-contract.md` | Requestable reviewers, `none`, existing labels           |
 | `pr-submitter`              | `./subagents/pr-submitter.md`              | `./references/pr-submitter-contract.md`              | Post-approval submit; uncertain-create; field verify     |
 
-When dispatch is unavailable, run the specialist inline and still emit its exact contract block. Pass specialist path and contract path. Specialists never dispatch other specialists.
+Dispatch only the selected specialist with its path, contract path, absolute `SKILL_DIR`, `RUN_DIR` and `MUTATION_LIMITS`. If dispatch is unavailable, run the same specialist inline with the same inputs, limits and exact return contract. Specialists do not dispatch.
 
 ## Validation and mutation limits
 
-`MUTATION_LIMITS`: read repository/platform facts; write only this run's files under a proven-ignored `.handoffs/pr-creator/<run-id>/`; after individual approval, plain push of the exact ref or create the exact preview. Pass the same limits to all specialists. Never edit tracked sources, history, or an existing PR. Create a run directory only after `git check-ignore --quiet` proves it ignored; otherwise use an approved external scratch directory or stop. Clean up only this run's files.
+`MUTATION_LIMITS`: Read repository and platform facts; write only this run's recorded files under `RUN_DIR`. After its own verified approval record, and only for what its proposal showed: a plain push of the head branch; creating the previewed PR. Never edit tracked sources, history, or an existing PR.
 
-Resolve `SKILL_DIR` from the host-reported skill base directory, or the loaded `SKILL.md` path; if neither is known, stop at `TerminalBlocked`. Pass its absolute value and `MUTATION_LIMITS` to each specialist. Every specialist result must pass `python3 -I "${SKILL_DIR}/scripts/validate-output.py" envelope <specialist-name> < output.txt` at the consuming orchestrator before routing. The helper is read-only. One validation repair is allowed, then `TerminalBlocked`; missing Python/shell also stops there. Load [approval-protocol.md](./references/approval-protocol.md) for digest/verify/body commands, exit codes and human approval tokens. No unchecked fallback.
+In `NormalizeInputs`, derive `RUN_DIR=.handoffs/pr-creator/<run-id>/` once: the ID is the UTC timestamp `YYYYMMDDTHHMMSSZ` followed by four random hex characters. Before the first write, require `git check-ignore --quiet -- "$RUN_DIR/probe"` to succeed. If it fails, ask for a scratch directory outside the repository and use that as `RUN_DIR`, or stop; never write a run file to an unignored path. Shell variables do not survive between commands: start each command that needs them by assigning the literal `RUN_DIR` and `SKILL_DIR` values, and never save them to a file elsewhere, such as `/tmp`. Record only the files this run uses:
+
+- `pending.json` and `<kind>-{values,record}.json` for each approval kind.
+- `body.md` for exact body bytes.
+
+At every terminal except `TerminalAwaitingUser`, remove only this run's recorded files.
+
+Resolve `SKILL_DIR` from the host-reported skill base or the loaded `SKILL.md` path. At the consuming orchestrator, pipe each specialist's exact returned block to the read-only checker before routing. For example (shell variables hold the selected specialist's basename and its returned text):
+
+```sh
+printf '%s' "$block" | python3 -I "$SKILL_DIR/scripts/validate-output.py" envelope "$specialist"
+```
+
+For a kept body, run `python3 -I "$SKILL_DIR/scripts/validate-output.py" body < "$RUN_DIR/body.md"`. Allow one envelope repair; an invalid repair, unknown skill base, or unavailable checker stops the run at `TerminalBlocked`. Never route on unchecked output.
 
 ## How This Skill Works
 
@@ -76,6 +89,7 @@ Fork-aware, idempotent, approval-bound. Trusted compare range after preflight: `
 | Phase overview, registry, core rules                                | This file                                               |
 | States, transitions, guards, status routing, terminals              | `./state-machine.md`                                    |
 | Stop outcome, preview, body template, approval record, cycle ledger | `./references/execution-contracts.md`                   |
+| Preparing or interpreting an approval, digest or verification | `./references/approval-protocol.md` |
 | Template, title convention, verification evidence                   | `./references/drafting-inputs.md`                       |
 | Non-GitHub / state capability                                       | `./references/platform-adaptation.md`                   |
 | CLI/API syntax or writing guidance                                  | `./references/external-resources.md`, then fetch ≤1 URL |
@@ -98,6 +112,9 @@ Advance states in [`state-machine.md`](./state-machine.md). Summary:
 
 ## Core Rules
 
+- **One approval, one proposal.** A plain affirmative in any language approves only the one proposal shown in the immediately preceding assistant turn, when the whole reply is unconditional and at most restates it. An approval covers the writes that proposal showed, in the order shown, and nothing else. The digest stays out of user replies, and nothing said earlier counts.
+- Before showing a proposal, save `<kind>-values.json` and run `digest <kind>`. Require a successful digest and a saved `pending.json` containing exactly the emitted JSON.
+- A change request is a revision even with a “yes.” If the pending record, bound files or preceding proposal turn cannot be verified, show the proposal again and ask again.
 - Never force-push (`--force`, `--force-with-lease`, `+refspec`) or auto-resolve diverged branches.
 - Never create when an open PR/MR already exists for the same head/base; check in preflight and again immediately before create.
 - Only platform-existing labels may reach preview.

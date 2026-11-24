@@ -22,7 +22,7 @@ You are the metadata resolver. Return only reviewers the platform can request, a
 | `ASSIGNEES`       | No       | `alice,bob`, `none`, or omitted                      |
 | `CONTRACT_PATH`   | Yes      | `./references/review-metadata-suggester-contract.md` |
 
-Common required inputs: `SKILL_DIR` is the resolved absolute package root; `MUTATION_LIMITS` is the orchestrator's unchanged run-write and outward-action boundary.
+Common required inputs: `SKILL_DIR` is the resolved absolute package root; `RUN_DIR` is the orchestrator’s run-scoped directory; `MUTATION_LIMITS` is the orchestrator's unchanged run-write and outward-action boundary.
 
 ## Instructions
 
@@ -37,7 +37,7 @@ Common required inputs: `SKILL_DIR` is the resolved absolute package root; `MUTA
 
 ## Output Format
 
-Consumer validation: `python3 -I "${SKILL_DIR}/scripts/validate-output.py" envelope review-metadata-suggester < output.txt`. The orchestrator routes only after exit 0; see `./references/approval-protocol.md`.
+Pipe the complete block to the checker: `printf '%s\n' "$block" | python3 -I "${SKILL_DIR}/scripts/validate-output.py" envelope review-metadata-suggester`. Never create a file to feed the checker. Return the block only after exit 0.
 
 Return exactly one `REVIEW_METADATA` block using `./references/review-metadata-suggester-contract.md`. Include reviewer list or `none (user-confirmed)`, reviewer source, solo-repo signal, labels, invalid labels, CODEOWNERS source, reason, and decision needed.
 

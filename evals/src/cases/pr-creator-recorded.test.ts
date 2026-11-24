@@ -7,9 +7,9 @@ import {
   checkTemplate,
   checkUnknownVerification,
 } from "#/cases/pr-creator-behavior-checks.ts";
+import { digestToken } from "#/cases/pr-creator-digest.ts";
 import {
   createdObservation,
-  digestCall,
   preparedObservation,
 } from "#/cases/pr-creator-test-support.ts";
 import type { ToolCall } from "#/observation/agent-query.ts";
@@ -363,18 +363,16 @@ const TITLES = [
   {
     name: "pr-creator/template-title-observed-retained repeat 0",
     title: "Title:        feat: TASK-42 Simplify Unit Price",
-    token: "52f77b2ca64d95bd20ce2fda038819d20f55ecbbe5085667a4f5abae52ba8471",
   },
   {
     name: "pr-creator/template-title-observed-retained repeat 1",
     title: "Title:        feat: TASK-42 Simplify Unit Price",
-    token: "780788373fff7c1c199d2d0813e66e601d9c1e1277527376e8eb5ea74b0711e4",
   },
 ] as const;
 
 describe("pr-creator second-run machine regressions", () => {
   it.each(GATES)(
-    "approves only the captured displayed $gate digest: $name",
+    "rejects a disclosed $gate digest: $name",
     ({ gate, finalText, calls }) => {
       const toolCalls: ToolCall[] = [...calls];
       const observation = {
@@ -382,13 +380,29 @@ describe("pr-creator second-run machine regressions", () => {
         toolCalls,
       };
       const approvalGate = gate === "scope" ? approveScope : approvePreview;
-      expect(approvalGate(observation)).toHaveProperty("reply");
+      expect(() => approvalGate(observation)).toThrow(/digest/);
       expect(approvalGate({ ...observation, toolCalls: [] })).toHaveProperty(
         "gateNotReached",
       );
+      // The positive control fixes the recorded out-of-run write as well as the reply.
+      const confined = calls.map((call) => ({
+        ...call,
+        input: {
+          command: call.input.command.replace(
+            /\/tmp\/scope\.json/g,
+            ".handoffs/pr-creator/run1/scope.json",
+          ),
+        },
+      }));
       expect(
-        approvalGate({ ...observation, finalText: "No token shown" }),
-      ).toHaveProperty("gateNotReached");
+        approvalGate({
+          ...observation,
+          toolCalls: confined,
+          finalText: "Proceed?",
+        }),
+      ).toEqual({
+        reply: "approved",
+      });
     },
   );
   it.each(FINALS)(
@@ -400,14 +414,17 @@ describe("pr-creator second-run machine regressions", () => {
     },
   );
   it.each(TITLES)(
-    "preserves title structure, with grounding delegated to judge: $name",
-    ({ title, token }) => {
+    "rejects the visible digest even with a valid title: $name",
+    ({ title }) => {
+      const observation = preparedObservation(title);
+      const token = digestToken(observation, "preview");
+      expect(token).toBeDefined();
       expect(() =>
         checkTemplate({
-          ...preparedObservation(`${title}\n${token}`),
-          toolCalls: [digestCall("preview", token)],
+          ...observation,
+          finalText: `${title}\n${token}`,
         }),
-      ).not.toThrow();
+      ).toThrow(/digest/);
     },
   );
   it("keeps unknown-verification repeat 2 failing because it never ran the digest helper", () => {

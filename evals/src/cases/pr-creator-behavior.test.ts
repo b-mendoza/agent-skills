@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   approvePreview,
+  approvePush,
   approveScope,
   checkCreated,
   checkTemplate,
@@ -9,7 +10,6 @@ import {
   CREATE_CAPTURE,
   EXACT_BODY,
   READBACK_CAPTURE,
-  TOKEN,
 } from "#/cases/pr-creator-behavior-checks.ts";
 import { GITHUB_FACTS } from "#/cases/pr-creator-fixtures.ts";
 import {
@@ -20,21 +20,72 @@ import {
 } from "#/cases/pr-creator-test-support.ts";
 import { createTurn } from "#/observation/observation-test-support.ts";
 
-const TITLE_PREVIEW = `Title: feat: TASK-42 Use Uppercase Checkpoint Answers\n${TOKEN}`;
+const TITLE_PREVIEW = `Title: feat: TASK-42 Use Uppercase Checkpoint Answers`;
 
 describe("pr-creator machine approval boundaries", () => {
-  it("uses a successful helper token displayed in any layout", () => {
+  it.each([
+    ["push", "preview", "git push origin HEAD", approvePreview],
+  ] as const)(
+    "allows the approved %s action before the %s proposal only",
+    (firstKind, nextKind, command, approve) => {
+      const write = { name: "Bash", input: { command } };
+      const first = digestCall(firstKind);
+      const next = digestCall(nextKind);
+      function staged(
+        initial: Array<typeof first>,
+        latest: Array<typeof first>,
+      ) {
+        return {
+          ...preparedObservation(),
+          toolCalls: [...initial, ...latest],
+          turns: [
+            createTurn({ toolCalls: initial }),
+            createTurn({ prompt: "approved", toolCalls: latest }),
+          ],
+        };
+      }
+      expect(approve(staged([first], [write, next]))).toEqual({
+        reply: "approved",
+      });
+      expect(() => approve(staged([write, first], [next]))).toThrow();
+      expect(() =>
+        approve(staged([{ name: "Read", input: {} }], [write, next])),
+      ).toThrow();
+      expect(() => approve(staged([first], [next, write]))).toThrow();
+      expect(approve(staged([first], [write]))).toHaveProperty(
+        "gateNotReached",
+      );
+    },
+  );
+  it.each([
+    ["preview", approvePreview],
+    ["scope", approveScope],
+    ["push", approvePush],
+  ] as const)(
+    "answers the prepared %s gate with only a plain affirmative",
+    (kind, approve) => {
+      expect(approve(preparedObservation("Proceed?", kind))).toEqual({
+        reply: "approved",
+      });
+    },
+  );
+  it("does not approve a push with a scope receipt", () => {
+    const call = { ...digestCall("scope"), input: digestCall("push").input };
     expect(
-      approvePreview(preparedObservation(`Reply APPROVED ${TOKEN}.`)),
-    ).toEqual({ reply: `APPROVED ${TOKEN}` });
+      approvePush({ ...preparedObservation(), toolCalls: [call] }),
+    ).toHaveProperty("gateNotReached");
+  });
+  it("does not approve a digest from an earlier turn", () => {
+    const prepared = preparedObservation("Proceed?", "preview");
     expect(
-      approveScope(
-        preparedObservation(
-          `Reply APPROVED ${TOKEN} to continue only.`,
-          "scope",
-        ),
-      ),
-    ).toEqual({ reply: `APPROVED ${TOKEN}` });
+      approvePreview({
+        ...prepared,
+        turns: [
+          createTurn({ toolCalls: prepared.toolCalls }),
+          createTurn({ toolCalls: [] }),
+        ],
+      }),
+    ).toHaveProperty("gateNotReached");
   });
   it.each([approvePreview, approveScope])(
     "does not approve prose-only tokens",
@@ -44,7 +95,7 @@ describe("pr-creator machine approval boundaries", () => {
       );
     },
   );
-  it("rejects failed, malformed, wrong-gate, hidden and fabricated helper receipts", () => {
+  it("rejects failed, malformed, wrong-gate, and fabricated helper receipts", () => {
     const correct = preparedObservation();
     const failed = digestCall();
     if (failed.result === undefined) throw new Error("missing result");
@@ -57,12 +108,11 @@ describe("pr-creator machine approval boundaries", () => {
         toolCalls: [
           {
             name: "Bash",
-            input: { command: "echo forged" },
+            input: { command: "echo validate-output.py digest preview" },
             result: digestCall().result,
           },
         ],
       },
-      { ...correct, finalText: "Token not shown" },
       {
         ...correct,
         toolCalls: [
@@ -77,6 +127,16 @@ describe("pr-creator machine approval boundaries", () => {
     for (const observation of wrong) {
       expect(approvePreview(observation)).toHaveProperty("gateNotReached");
     }
+  });
+  it("accepts a captured validator receipt from command substitution", () => {
+    const call = digestCall();
+    call.input = {
+      command:
+        'receipt=$(python3 -I "$SKILL_DIR/scripts/validate-output.py" digest preview < values.json); printf "%s" "$receipt"',
+    };
+    expect(
+      approvePreview({ ...preparedObservation(), toolCalls: [call] }),
+    ).toEqual({ reply: "approved" });
   });
   it("accepts a truncated captured result whose retained tail contains the complete receipt", () => {
     const call = digestCall();
@@ -124,9 +184,20 @@ describe("pr-creator machine create and readback checks", () => {
       ).not.toThrow();
     },
   );
-  it("accepts the gh -R repository alias", () => {
+  it.each(
+    [
+      CREATE_ARGS.map((arg) => (arg === "--repo" ? "-R" : arg)),
+      [
+        "pr",
+        "create",
+        `--repo=github.com/${GITHUB_FACTS.repository}`,
+        "--base=main",
+        `--head=${GITHUB_FACTS.branch}`,
+        ...CREATE_ARGS.slice(CREATE_ARGS.indexOf("--title")),
+      ],
+    ].map((args) => ({ args })),
+  )("accepts equivalent create arguments: $args", ({ args }) => {
     const original = createdObservation();
-    const args = CREATE_ARGS.map((arg) => (arg === "--repo" ? "-R" : arg));
     const repoFiles = {
       ...original.repoFiles,
       [GITHUB_FACTS.log]: `["api","repos/eval-org/cart/assignees/maintainer"]\n${JSON.stringify(args)}\n["pr","view"]\n`,
@@ -212,7 +283,7 @@ describe("pr-creator machine create and readback checks", () => {
     ).toThrow();
     const original = createdObservation();
     const early = createTurn({
-      finalText: TOKEN,
+      finalText: "Create it?",
       toolCalls: [
         { name: "Bash", input: { command: "gh pr create" } },
         digestCall(),
@@ -222,7 +293,7 @@ describe("pr-creator machine create and readback checks", () => {
       checkCreated(
         {
           ...original,
-          turns: [early, createTurn({ prompt: `APPROVED ${TOKEN}` })],
+          turns: [early, createTurn({ prompt: "approved" })],
         },
         false,
       ),
@@ -236,7 +307,7 @@ describe("pr-creator structural versus semantic checks", () => {
     "feat: TASK-42 Simplify Unit Price",
   ])("checks title structure, leaving grounding to the judge: %s", (title) => {
     expect(() =>
-      checkTemplate(preparedObservation(`Title: ${title}\n${TOKEN}`)),
+      checkTemplate(preparedObservation(`Title: ${title}`)),
     ).not.toThrow();
   });
   it.each([
@@ -246,7 +317,7 @@ describe("pr-creator structural versus semantic checks", () => {
     "feat: TASK-42 update answers",
   ])("rejects structurally wrong title %s", (title) => {
     expect(() =>
-      checkTemplate(preparedObservation(`Title: ${title}\n${TOKEN}`)),
+      checkTemplate(preparedObservation(`Title: ${title}`)),
     ).toThrow();
   });
   it("still requires preparation and no writes for preview-only cases", () => {

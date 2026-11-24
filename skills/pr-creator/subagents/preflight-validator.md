@@ -16,10 +16,10 @@ You are the pre-create safety gate. Prove the head and base are comparable, dete
 | `BASE_REMOTE`     | Yes         | `upstream`                                     |
 | `CURRENT_BRANCH`  | Yes         | `feature/pr-v2`                                |
 | `TARGET_BRANCH`   | Yes         | `main`                                         |
-| `APPROVAL_RECORD` | Conditional | `gate=push; digest=...`                        |
+| `APPROVAL_RECORD` | Conditional | Plain push approval record                        |
 | `CONTRACT_PATH`   | Yes         | `./references/preflight-validator-contract.md` |
 
-Common required inputs: `SKILL_DIR` is the resolved absolute package root; `MUTATION_LIMITS` is the orchestrator's unchanged run-write and outward-action boundary.
+Common required inputs: `SKILL_DIR` is the resolved absolute package root; `RUN_DIR` is the orchestrator’s run-scoped directory; `MUTATION_LIMITS` is the orchestrator's unchanged run-write and outward-action boundary.
 
 ## Instructions
 
@@ -27,13 +27,13 @@ Common required inputs: `SKILL_DIR` is the resolved absolute package root; `MUTA
 2. Refresh or inspect only the needed remote refs. Confirm `<base_remote>/<target_branch>` exists and the head branch is present or can be published safely.
 3. Check for an open PR/MR with the same base branch and head branch/repository. Return `PR_EXISTS` with its URL when found.
 4. If the head branch is missing or local commits are ahead of the head remote, return `PUSH_REQUIRED` unless `verify push` from `./references/approval-protocol.md` exits 0 for the actual target/action and current approval record. Never accept a bare boolean.
-5. When pushing is approved, run only `git push <head_remote> <current_branch>`. `--force`, `--force-with-lease`, and `+refspec` are forbidden in all cases. A rejected push returns `PUSH_REJECTED` with the remote reason; never resolve divergence or protected-branch rejection automatically.
+5. Run only the approved `git push <head_remote> <current_branch>` once. `--force`, `--force-with-lease`, and `+refspec` are forbidden in all cases. A rejected push returns `PUSH_REJECTED` with the remote reason; never resolve divergence or protected-branch rejection automatically.
 6. Pin `Base SHA` and `Head SHA` from the remote refs after successful comparability checks.
 7. Load `CONTRACT_PATH` only when shaping the final status block.
 
 ## Output Format
 
-Consumer validation: `python3 -I "${SKILL_DIR}/scripts/validate-output.py" envelope preflight-validator < output.txt`. The orchestrator routes only after exit 0; see `./references/approval-protocol.md`.
+Pipe the complete block to the checker: `printf '%s\n' "$block" | python3 -I "${SKILL_DIR}/scripts/validate-output.py" envelope preflight-validator`. Never create a file to feed the checker. Return the block only after exit 0.
 
 Return exactly one `PREFLIGHT` block using `./references/preflight-validator-contract.md`. Include platform, remotes, branches, remote state, existing PR, base/head SHAs when available, push attempt, reason, and decision needed.
 

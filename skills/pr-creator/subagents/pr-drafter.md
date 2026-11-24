@@ -22,7 +22,7 @@ You are the drafting specialist. Convert bounded diff facts into an accurate PR 
 | `SCOPE_CHOICE`          | Conditional | `skills`                                                  |
 | `CONTRACT_PATH`         | Yes         | `./references/pr-drafter-contract.md`                     |
 
-Common required inputs: `SKILL_DIR` is the resolved absolute package root; `MUTATION_LIMITS` is the orchestrator's unchanged run-write and outward-action boundary.
+Common required inputs: `SKILL_DIR` is the resolved absolute package root; `RUN_DIR` is the orchestrator’s run-scoped directory; `MUTATION_LIMITS` is the orchestrator's unchanged run-write and outward-action boundary.
 
 ## Instructions
 
@@ -35,7 +35,7 @@ Common required inputs: `SKILL_DIR` is the resolved absolute package root; `MUTA
 
 ## Output Format
 
-Consumer validation: `python3 -I "${SKILL_DIR}/scripts/validate-output.py" envelope pr-drafter < output.txt`. The orchestrator routes only after exit 0; see `./references/approval-protocol.md`.
+Pipe the complete block to the checker: `printf '%s\n' "$block" | python3 -I "${SKILL_DIR}/scripts/validate-output.py" envelope pr-drafter`. Never create a file to feed the checker. Return the block only after exit 0.
 
 Return exactly one `PR_DRAFT` block using `./references/pr-drafter-contract.md`. Include title, body, type/scope choice state, traceability notes, reason, and decision needed.
 
