@@ -6,10 +6,19 @@ import {
   GITHUB_FACTS as facts,
   seedGithubFixture,
 } from "#/cases/pr-creator-fixtures.ts";
+import {
+  acceptsOnly,
+  finished,
+  gate,
+  observation,
+  preview,
+} from "#/cases/pr-creator-scenario-test-support.ts";
 import { makeFixture } from "#/fixtures/fixtures.ts";
 
 const SUCCESS = 0;
 const FAILURE = 1;
+const FIRST = 0;
+const LAST = -1;
 const branch = "feature/issue-42-cart";
 const reviewer = "cart-reviewer";
 const initialTitle = "Simplify unit price";
@@ -104,4 +113,39 @@ it("returns collaborator status for the requested login", () => {
   } finally {
     fixture.cleanup();
   }
+});
+const endpoints = ["42", "43", "17"].map((number) => [
+  "api",
+  `repos/${facts.repository}/issues/${number}`,
+]);
+it("requires lookup of the PR candidate but never classifies it as an issue", () => {
+  const values = {
+    ...preview,
+    headBranch: branch,
+    closes: [`${facts.repository}#42`],
+    related: [`${facts.repository}#43`],
+    autoClose: "yes",
+    body: "Closes #42; related: #43",
+  };
+  const gates = [
+    finished,
+    gate("preview", values, "Classify #42 as closes and #43 as related."),
+  ];
+  expect(
+    acceptsOnly(
+      "issue-refs-discovery-classify",
+      observation(gates, {}, endpoints),
+      observation(gates, {}, endpoints.slice(FIRST, LAST)),
+    ),
+  ).not.toThrow();
+});
+it("suppresses lookups even though the published head contains mentions", () => {
+  const gates = [gate("preview", { ...preview, headBranch: branch })];
+  expect(
+    acceptsOnly(
+      "issue-discovery-off",
+      observation(gates),
+      observation(gates, {}, endpoints),
+    ),
+  ).not.toThrow();
 });

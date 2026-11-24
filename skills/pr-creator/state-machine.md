@@ -6,7 +6,7 @@ When attached, an omitted head or the checked-out branch itself selects that bra
 
 Guard terms:
 
-- **Issue step needed:** `CLOSES_ISSUES` or `RELATED_ISSUES` names at least one issue.
+- **Issue step needed:** `CLOSES_ISSUES` or `RELATED_ISSUES` names at least one issue, or discovery is on and `Issue mentions` is not `none`. Discovery is on by default; `ISSUE_DISCOVERY=off` or setting both issue lists to `none` turns it off.
 
 ## Transitions
 
@@ -66,7 +66,7 @@ Guard terms:
 | `ResolveIssues` | `TerminalAuth` | `AUTH` |
 | `ResolveIssues` | `TerminalBlocked` | `ERROR` |
 | `GateIssueRefs` | `TerminalAwaitingUser` | question pending |
-| `GateIssueRefs` | `ResolveIssues` | invalid references fixed or dropped, or keyword decision made; redispatch |
+| `GateIssueRefs` | `ResolveIssues` | candidates classified or left unclassified after the re-ask (`Not referenced`), invalid references fixed or dropped, or keyword decision made; redispatch |
 | `DraftPr` | `DraftPr` | `PR_DRAFT: PASS`, `title` check exits non-zero, type/scope cycles < 3; redispatch with findings |
 | `DraftPr` | `SuggestMetadata` | `PR_DRAFT: PASS` and title check passes |
 | `DraftPr`                  | `GateTypeScope`            | `NEEDS_CHOICE` and type/scope cycles &lt; 3                                        |

@@ -1,10 +1,21 @@
 # Issue references
 
-Load only when an explicit list names an issue. Use this reference at `GateIssueRefs` and when rendering or verifying the resulting issue references.
+Load only when an explicit list names an issue, or discovery is on and the analyzer reported a mention. Use this reference at `GateIssueRefs` and when rendering or verifying the resulting issue references.
 
 ## `GateIssueRefs`
 
 For an invalid explicit list, show the rejected entries with their reasons: `These references could not be used: <entries and reasons>. Give replacements, drop the entries, or stop?` Do not re-ask about valid explicit references.
+
+For discovery, show only unclassified candidates. Render titles and locators as quoted data, with no active links or markup from titles. Name any dropped candidates and their reasons separately. If the analyzer reported omitted mentions, say how many were omitted.
+
+```text
+Issue mentions found (issue tracker data):
+- <repo path>#<n> | <open or closed> | <branch or commit SHA locator> | "<title>"
+
+For each issue, choose closes, related, or ignore. No classification is assumed.
+```
+
+Ask once more about just the candidates the user left unclassified. If still unanswered, leave them out and name them as `Not referenced: <refs> (no classification)`. On redispatch, carry forward the user's choices and the `Not referenced` notice together so the resolver can omit the unanswered candidates without treating them as user choices. Keep `ISSUE_MENTIONS` verbatim. An explicit `ignore` also leaves the issue out.
 
 Once classifications are settled, show each applicable closure condition and ask one question about the current closing list.
 

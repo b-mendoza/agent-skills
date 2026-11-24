@@ -17,6 +17,8 @@ Scope approval: <valid | missing | digest-mismatch | n/a>
 Scope values: <canonical JSON | n/a>
 Changed paths:
 - <path>
+Issue mentions: <none | up to 20 comma-separated ref (branch) or ref (commit SHA) items>
+Issue mentions omitted: <integer>
 Grouped areas:
 - <area>: <paths or count>
 Diff summary:
@@ -37,4 +39,4 @@ Reason: <one line>
 Decision needed: <none | approve large/mixed PR | next action>
 ```
 
-`PASS` requires matching pins and either no fired rule (at most 1000 adjusted lines and 40 files, approval `n/a`) or valid approval for the fired rules. `LARGE_PR_CONFIRMATION_REQUIRED` means a rule fired with a missing or stale record. Fired rules require canonical scope values with matching pins, rules and counts; otherwise scope values are `n/a`. Before and after facts carry paired `Bn:` identifiers. Retained behavior carries no id. `STALE_PINS`, `EMPTY_DIFF`, and `ERROR` mean the pins moved, the range was empty, or analysis failed.
+`PASS` requires matching pins and either no fired rule (at most 1000 adjusted lines and 40 files, approval `n/a`) or valid approval for the fired rules. `LARGE_PR_CONFIRMATION_REQUIRED` means a rule fired with a missing or stale record. Fired rules require canonical scope values with matching pins, rules and counts; otherwise scope values are `n/a`. Before and after facts carry paired `Bn:` identifiers. Retained behavior carries no id. Issue mentions are distinct by reference, most-mentioned first, with the branch or first mentioning commit as source. A nonzero omitted count requires 20 reported mentions. `STALE_PINS`, `EMPTY_DIFF`, and `ERROR` mean the pins moved, the range was empty, or analysis failed.

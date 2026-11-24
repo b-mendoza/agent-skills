@@ -57,6 +57,18 @@ describe("preview gates", () => {
       ),
     ).not.toThrow();
   });
+  it("rejects even a read-only issue lookup for a mention-free diff", () => {
+    const gates = [gate("preview", preview)];
+    expect(
+      acceptsOnly(
+        "no-mentions-no-resolver",
+        observation(gates),
+        observation(gates, {}, [
+          ["api", `repos/${facts.repository}/issues/42`],
+        ]),
+      ),
+    ).not.toThrow();
+  });
   it.each([false, true])(
     "requires both issue lookups and the correct closure expectation (non-default: %s)",
     (nonDefault) => {

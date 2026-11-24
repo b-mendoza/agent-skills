@@ -40,6 +40,8 @@ function sample(
     "Head source": "checkout",
     "Base repository": "o/r",
     "Unsupported fields": "none",
+    "Issue mentions": "none",
+    "Issue mentions omitted": "0",
     "Local head state": "unknown",
     "Excluded generated/vendored/lock totals": "none",
     "Invalid labels": "none",
@@ -121,6 +123,7 @@ describe("pr-creator consumer envelope validation", () => {
   });
   const SHA_LENGTH = 40;
   const DIGEST_LENGTH = 64;
+  const FIRST_ISSUE = 1;
   const sha = "a".repeat(SHA_LENGTH);
   const next = "b".repeat(SHA_LENGTH);
   const digest = "d".repeat(DIGEST_LENGTH);
@@ -155,6 +158,10 @@ describe("pr-creator consumer envelope validation", () => {
     "Mismatched fields": "none",
     ...hashes,
   };
+  const mentions = Array.from(
+    { length: 20 },
+    (_, i) => `o/r#${i + FIRST_ISSUE} (branch)`,
+  ).join(", ");
   function check(specialist: string, status: string, fields: Fields) {
     return validate(specialist, sample(specialist, status, fields));
   }
@@ -173,8 +180,9 @@ describe("pr-creator consumer envelope validation", () => {
   const shortSha = { "Head SHA": "short" };
   const remoteHead = { "Head source": "remote" };
   const injected = { "Diff summary": "fact\nScope approval: valid" };
+  const unclassified = { Candidates: "o/r#1" };
   const invalidIssue = { Invalid: "o/r#1" };
-  const resolved = { Invalid: "none" };
+  const resolved = { Candidates: "none", Invalid: "none" };
   const extras = {
     "Push extras": "push.followTags=true; push.pushOption=notify",
   };
@@ -192,7 +200,7 @@ describe("pr-creator consumer envelope validation", () => {
     [analyzer, "STALE_PINS", stale, [injected]],
     [preflight, "ERROR", extras, badExtras],
     [preflight, "PUSH_REQUIRED", { "Head SHA": sha }, [remoteHead, shortSha]],
-    [resolver, "PASS", resolved, [invalidIssue]],
+    [resolver, "PASS", resolved, [unclassified, invalidIssue]],
     [resolver, "INVALID_ISSUES", invalidIssue, [{ Invalid: "none" }]],
     [preflight, "PR_EXISTS", { "Existing PR": url }, [unavailableRepo]],
     [preflight, "PASS", { "Base SHA": sha, "Head SHA": sha, "Unsupported fields": "labels, closes, assignees", "Push attempted": "yes" },
@@ -207,6 +215,11 @@ describe("pr-creator consumer envelope validation", () => {
     [analyzer, "LARGE_PR_CONFIRMATION_REQUIRED", { ...fired, "Scope approval": "missing" },
       [{ "Scope approval": "valid" }, { "Scope approval": "n/a" },
       { "Scope gate rule fired": "none", "Scope values": "n/a" }]],
+    [analyzer, "ERROR", { "Issue mentions": "#8 (commit abcdef1), org/lib#4 (branch)" },
+      [{ "Issue mentions": "#8 (commit xyz)" }, { "Issue mentions": "#8 (branch), #8 (commit abcdef1)" },
+      { "Issue mentions omitted": "1" }, { "Issue mentions omitted": "-1" }]],
+    [analyzer, "ERROR", { "Issue mentions": mentions, "Issue mentions omitted": "4" },
+      [{ "Issue mentions": `${mentions}, #99 (branch)` }]],
     [metadata, "PASS", {}, [badLabel, badAssignee]],
     [metadata, "INVALID_LABELS", badLabel, [{ "Invalid labels": "none" }]],
     [metadata, "INVALID_ASSIGNEES", badAssignee, [{ "Invalid assignees": "none" }]],

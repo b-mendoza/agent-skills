@@ -24,6 +24,11 @@ const issues = [
 ] as const;
 const ref = (number: number) => `${GITHUB_FACTS.repository}#${String(number)}`;
 const changedTitle = "fix: handle cart division";
+const issueLookup = (args: readonly string[]) =>
+  args[FIRST] === "issue" ||
+  args.some((arg) =>
+    /\/issues(?:[/?]|$)|\bissue(?:s|OrPullRequest)?\s*[( {]/.test(arg),
+  );
 const issueView = (number: number) =>
   `repos/${GITHUB_FACTS.repository}/issues/${String(number)}`;
 const keepKeywords = "Keep the closing keywords.";
@@ -57,6 +62,18 @@ function closureRequirements(nonDefault: boolean) {
       ]
     : ["Explain which change delivers #42 or identify it as user-classified."];
 }
+const discoveryBranch = "feature/issue-42-cart";
+const classification = "Classify #42 as closes and #43 as related.";
+const discoveryOptions = {
+  headHistory: {
+    branch: discoveryBranch,
+    commitMessages: ["Simplify unit price", "Track #43; compare PR #17"],
+  },
+  issues: [
+    ...issues,
+    { number: 17, title: "Prior refactor", state: "open", isPr: true },
+  ],
+} as const;
 function candidateView(args: readonly string[], number: number) {
   const [family, verb, target] = args;
   const normalized = canonicalAction(args);
@@ -67,7 +84,79 @@ function candidateView(args: readonly string[], number: number) {
     normalized[repo + SECOND] === GITHUB_FACTS.repository
   );
 }
+function checkClassification(observation: Observation) {
+  assertCreatorReadOnly(observation);
+  const turns = observation.turns ?? [];
+  const first = turns[FIRST];
+  assert.ok(first !== undefined);
+  assert.equal(
+    digestToken({ ...observation, turns: [first] }, "preview"),
+    undefined,
+  );
+  assert.equal(turns[SECOND]?.prompt, classification);
+  for (const issue of discoveryOptions.issues) {
+    assert.ok(
+      githubCalls(observation).some(
+        (args) =>
+          args.includes(issueView(issue.number)) ||
+          candidateView(args, issue.number),
+      ),
+      "missing discovered candidate lookup",
+    );
+  }
+  const values = checkedValues(observation);
+  assert.equal(values["headBranch"], discoveryBranch);
+  assert.deepEqual(values["closes"], [ref(issues[FIRST].number)]);
+  assert.deepEqual(values["related"], [ref(issues[SECOND].number)]);
+  assert.equal(values["autoClose"], "yes");
+  return "Classified branch and commit mentions; PR excluded";
+}
 export const previewCases = [
+  scenario({
+    id: "issue-refs-discovery-classify",
+    prompt: draft,
+    facts:
+      "The branch mentions issue 42. A commit mentions issue 43 and PR 17.",
+    options: discoveryOptions,
+    snapshots: [RUNS],
+    requirements: [
+      "Ask how to classify issues 42 and 43.",
+      "Identify the branch as the source of 42.",
+      "Identify the mentioning commit for 43.",
+      "Report that 17 was dropped because it is a PR.",
+    ],
+    followUps: [
+      {
+        name: "classify issue mentions",
+        reply: (observation) =>
+          /#42\b/.test(observation.finalText) &&
+          /#43\b/.test(observation.finalText)
+            ? { reply: classification }
+            : { gateNotReached: "missing candidate list" },
+      },
+    ],
+    check: checkClassification,
+  }),
+  scenario({
+    id: "issue-discovery-off",
+    prompt: `${draft} ISSUE_DISCOVERY=off.`,
+    facts:
+      "The feature branch and commits contain mentions, but discovery was disabled.",
+    options: discoveryOptions,
+    snapshots: [RUNS],
+    requirements: [
+      "Proceed to the preview without asking a classification question.",
+    ],
+    check: (observation) => {
+      assertCreatorReadOnly(observation);
+      const values = checkedValues(observation);
+      assert.equal(values["headBranch"], discoveryBranch);
+      assert.deepEqual(values["closes"], []);
+      assert.deepEqual(values["related"], []);
+      assert.ok(!githubCalls(observation).some(issueLookup));
+      return "Mention-bearing head frozen without issue lookups";
+    },
+  }),
   scenario({
     id: "assignee-me-alias",
     prompt: `${draft} ASSIGNEE=@me.`,
@@ -153,6 +242,24 @@ export const previewCases = [
         "missing drafter choice evidence",
       );
       return "Drafter requests ticket before freezing";
+    },
+  }),
+  scenario({
+    id: "no-mentions-no-resolver",
+    prompt: draft,
+    facts: "Neither branch nor commit messages contain issue references.",
+    requirements: ["Show a preview without asking for issue classification."],
+    snapshots: [RUNS],
+    check: (observation) => {
+      assertCreatorReadOnly(observation);
+      const values = checkedValues(observation);
+      assert.deepEqual(values["closes"], []);
+      assert.deepEqual(values["related"], []);
+      assert.ok(
+        !githubCalls(observation).some(issueLookup),
+        "unexpected issue lookup",
+      );
+      return "Empty reference sets without an issue lookup";
     },
   }),
   ...[false, true].map((nonDefault) =>

@@ -23,8 +23,8 @@ USAGE = __doc__
 ENVELOPES = {
     "repo-state-inspector": ("REPO_STATE", "PASS BLOCKED ERROR", "Execution mode support|Current branch|Head branch|Head source|Target branch|Target branch candidate|PR state|Remotes|Head remote|Base remote|Topology|Topology candidates|Platform|Platform adapter needed|Uncommitted work|Reason|Decision needed"),
     "preflight-validator": ("PREFLIGHT", "PASS PUSH_REQUIRED PUSH_REJECTED PR_EXISTS AUTH BASE_BRANCH_MISSING HEAD_BRANCH_UNPUSHED BLOCKED ERROR", "Platform|Unsupported fields|Head remote|Base remote|Base repository|Base branch|Head branch|Head remote state|Head source|Local head state|Base SHA|Head SHA|Existing PR|Push attempted|Push command|Push extras|Push rejection reason|Approval record|Reason|Decision needed"),
-    "diff-analyzer": ("DIFF_ANALYSIS", "PASS LARGE_PR_CONFIRMATION_REQUIRED STALE_PINS EMPTY_DIFF ERROR", "Range|Compared Base SHA|Compared Head SHA|Pinned SHA match|Shortstat|Adjusted changed lines|Changed files|Excluded generated/vendored/lock totals|Scope gate rule fired|Scope approval|Scope values|Changed paths|Grouped areas|Diff summary|Behavior before|Behavior after|Retained behavior|Type candidates|Scope candidates|Tests|Risk notes|Reason|Decision needed"),
-    "issue-reference-resolver": ("ISSUE_REFS", "PASS NEEDS_DECISION INVALID_ISSUES AUTH ERROR", "Repository|Default branch|Target branch|Auto-close|Closes|Related|Invalid|Warnings|Reason|Decision needed"),
+    "diff-analyzer": ("DIFF_ANALYSIS", "PASS LARGE_PR_CONFIRMATION_REQUIRED STALE_PINS EMPTY_DIFF ERROR", "Range|Compared Base SHA|Compared Head SHA|Pinned SHA match|Shortstat|Adjusted changed lines|Changed files|Excluded generated/vendored/lock totals|Scope gate rule fired|Scope approval|Scope values|Changed paths|Issue mentions|Issue mentions omitted|Grouped areas|Diff summary|Behavior before|Behavior after|Retained behavior|Type candidates|Scope candidates|Tests|Risk notes|Reason|Decision needed"),
+    "issue-reference-resolver": ("ISSUE_REFS", "PASS NEEDS_DECISION INVALID_ISSUES AUTH ERROR", "Repository|Default branch|Target branch|Auto-close|Closes|Related|Candidates|Dropped candidates|Invalid|Warnings|Reason|Decision needed"),
     "pr-drafter": ("PR_DRAFT", "PASS NEEDS_CHOICE ERROR", "Title|Title source|Body source|Template path|Type choice|Scope choice|Traceability notes|Body|Reason|Decision needed"),
     "review-metadata-suggester": ("REVIEW_METADATA", "PASS NEEDS_REVIEWER INVALID_LABELS INVALID_ASSIGNEES AUTH ERROR", "Reviewers|Reviewer source|Normalized reviewers|Solo repository condition|CODEOWNERS source|CODEOWNERS matches|Labels|Label source|Invalid labels|Suggested valid labels|Assignees|Invalid assignees|Reason|Decision needed"),
     "pr-submitter": ("PR_SUBMIT", "PASS CREATED_WITH_ADDITIONS CREATED_WITH_DRIFT HEAD_MOVED CREATE_UNCERTAIN BLOCKED CREATE_ERROR AUTH ERROR", "Approval record|Frozen head SHA|Remote head SHA before create|Existing PR race check|Create attempted|Create retry used|URL|Base returned|Head ref returned|Head SHA returned|Title returned|State returned|Reviewers returned|Labels returned|Assignees returned|Body first line returned|Body line count returned|Approved body digest|Returned body digest|Outcome|Mismatched fields|Added fields|Closing issues returned|Returned values file|Uncertain check commands|Reason|Decision needed"),
@@ -314,6 +314,14 @@ def preflight_envelope(status, v):
 
 
 def analyzer_envelope(status, v):
+    mentions = comma_list(v["Issue mentions"])
+    refs = set()
+    for item in mentions:
+        match = re.fullmatch(rf"((?:{REPO})?#{NUMBER}) \((?:branch|commit [0-9a-fA-F]{{7,40}})\)", item)
+        require(match and match[1] not in refs, "invalid or duplicate Issue mentions item")
+        refs.add(match[1])
+    require(len(mentions) <= 20, "too many Issue mentions")
+    require(count("Issue mentions omitted", v) == 0 or len(mentions) == 20, "omitted count requires 20 mentions")
     for field in ("Behavior before", "Behavior after"):
         for item in v[field].splitlines():
             require(re.fullmatch(r"(?:- )?(?:B[1-9][0-9]*: \S.*|unknown|n/a)", item), field + " fact needs a Bn: id")
@@ -377,7 +385,7 @@ def submit_envelope(status, v):
 
 def resolver_envelope(status, v):
     if status == "PASS":
-        require(v["Invalid"] == "none", "PASS requires Invalid: none")
+        require(v["Candidates"] == v["Invalid"] == "none", "PASS requires Candidates: none and Invalid: none")
     elif status == "INVALID_ISSUES":
         require(v["Invalid"] != "none", "INVALID_ISSUES requires invalid references")
 
