@@ -23,10 +23,9 @@ const values = {
     baseSha: BASE_SHA,
     headSha: HEAD_SHA,
     adjustedChangedLines: 1001,
-    changedFiles: 1,
-    excludedTotals: "none",
-    areas: ["src"],
     changedPaths: ["pricing.py"],
+    excludedPaths: [],
+    excludedLines: 0,
     rules: ["adjusted-lines>1000"],
   },
   push: {

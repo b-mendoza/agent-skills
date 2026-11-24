@@ -21,7 +21,7 @@ USAGE = __doc__
 ENVELOPES = {
     "repo-state-inspector": ("REPO_STATE", "PASS BLOCKED ERROR", "Execution mode support|Current branch|Head branch|Head source|Target branch|Target branch candidate|PR state|Remotes|Head remote|Base remote|Topology|Topology candidates|Platform|Platform adapter needed|Uncommitted work|Reason|Decision needed"),
     "preflight-validator": ("PREFLIGHT", "PASS PUSH_REQUIRED PUSH_REJECTED PR_EXISTS AUTH BASE_BRANCH_MISSING HEAD_BRANCH_UNPUSHED BLOCKED ERROR", "Platform|Head remote|Base remote|Base branch|Head branch|Head remote state|Head source|Local head state|Base SHA|Head SHA|Existing PR|Push attempted|Push command|Push rejection reason|Approval record|Reason|Decision needed"),
-    "diff-analyzer": ("DIFF_ANALYSIS", "PASS LARGE_PR_CONFIRMATION_REQUIRED STALE_PINS EMPTY_DIFF ERROR", "Range|Compared Base SHA|Compared Head SHA|Pinned SHA match|Shortstat|Adjusted changed lines|Changed files|Excluded generated/vendored/lock totals|Scope gate rule fired|Scope approval|Changed paths|Grouped areas|Diff summary|Behavior before|Behavior after|Retained behavior|Type candidates|Scope candidates|Tests|Risk notes|Reason|Decision needed"),
+    "diff-analyzer": ("DIFF_ANALYSIS", "PASS LARGE_PR_CONFIRMATION_REQUIRED STALE_PINS EMPTY_DIFF ERROR", "Range|Compared Base SHA|Compared Head SHA|Pinned SHA match|Shortstat|Adjusted changed lines|Changed files|Excluded generated/vendored/lock totals|Scope gate rule fired|Scope approval|Scope values|Changed paths|Grouped areas|Diff summary|Behavior before|Behavior after|Retained behavior|Type candidates|Scope candidates|Tests|Risk notes|Reason|Decision needed"),
     "pr-drafter": ("PR_DRAFT", "PASS NEEDS_CHOICE ERROR", "Title|Title source|Body source|Template path|Type choice|Scope choice|Traceability notes|Body|Reason|Decision needed"),
     "review-metadata-suggester": ("REVIEW_METADATA", "PASS NEEDS_REVIEWER INVALID_LABELS INVALID_ASSIGNEES AUTH ERROR", "Reviewers|Reviewer source|Normalized reviewers|Solo repository condition|CODEOWNERS source|CODEOWNERS matches|Labels|Label source|Invalid labels|Suggested valid labels|Assignees|Invalid assignees|Reason|Decision needed"),
     "pr-submitter": ("PR_SUBMIT", "PASS CREATED_WITH_DRIFT HEAD_MOVED CREATE_UNCERTAIN BLOCKED CREATE_ERROR AUTH ERROR", "Approval record|Frozen head SHA|Remote head SHA before create|Existing PR race check|Create attempted|Create retry used|URL|Base returned|Head ref returned|Head SHA returned|Title returned|State returned|Reviewers returned|Labels returned|Assignees returned|Body first line returned|Body line count returned|Approved body digest|Returned body digest|Verification|Mismatched fields|Uncertain check commands|Reason|Decision needed"),
@@ -37,12 +37,14 @@ def sha(text):
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
+SCOPE_OBSERVED = "baseSha headSha changedPaths excludedPaths adjustedChangedLines excludedLines"
 SCHEMAS = {
     "push": "headRemote headBranch action",
-    "scope": "baseSha headSha adjustedChangedLines changedFiles excludedTotals areas rules changedPaths",
+    "scope": SCOPE_OBSERVED + " rules",
     "preview": "baseRemote targetBranch headRemote headBranch baseSha headSha title body reviewers labels assignees state effectiveState",
 }
-LISTS = {"areas", "rules", "changedPaths", "reviewers", "labels", "assignees"}
+OBSERVED = {"scope": SCOPE_OBSERVED}
+LISTS = {"excludedPaths", "rules", "changedPaths", "reviewers", "labels", "assignees"}
 
 
 def exact_keys(obj, fields, name):
@@ -63,7 +65,7 @@ def normalized_fields(values, schema):
     for key, value in values.items():
         if key in LISTS:
             result[key] = string_list(key, value)
-        elif key in ("adjustedChangedLines", "changedFiles"):
+        elif key in ("adjustedChangedLines", "excludedLines"):
             require(type(value) is int and value >= 0, "invalid " + key)
         else:
             require(isinstance(value, str) and value, key + " must be a string and not empty")
@@ -74,9 +76,21 @@ def normalized_fields(values, schema):
     return result
 
 
+def validate_scope(values):
+    paths = values["changedPaths"]
+    require(set(values["excludedPaths"]) <= set(paths), "excludedPaths outside changedPaths")
+    rules = set(values["rules"])
+    measured = {"adjusted-lines>1000": values["adjustedChangedLines"] > 1000, "changed-files>40": len(paths) > 40}
+    require(rules and rules <= {*measured, "unrelated-areas>=3"}, "invalid scope rules")
+    for rule, fired in measured.items():
+        require((rule in rules) == fired, "inconsistent rule " + rule)
+
+
 def canonical(kind, values):
     v = normalized_fields(values, SCHEMAS[kind])
-    if kind == "push":
+    if kind == "scope":
+        validate_scope(v)
+    elif kind == "push":
         require(v["action"] == "git push {headRemote} {headBranch}".format(**v), "push action differs from target")
     return v
 
@@ -88,7 +102,7 @@ def digests(kind, values):
 
 
 def verify(kind, payload):
-    exact_keys(payload, "values approval", "verify")
+    exact_keys(payload, "values approval" + (" observed" if kind in OBSERVED else ""), "verify")
     record = payload["approval"]
     exact_keys(record, "kind valuesDigest bodyDigest wording action", "approval")
     require(record["kind"] == kind, "approval kind mismatch")
@@ -96,6 +110,12 @@ def verify(kind, payload):
     require(not re.fullmatch(r"(?:approved\s+)?[0-9a-f]{64}", record["wording"].strip(), re.I), "digest is not approval wording")
     expected = digests(kind, payload["values"])
     require(all(record[key] == expected[key] for key in ("valuesDigest", "bodyDigest")), "approval digest mismatch")
+    if kind in OBSERVED:
+        fields = OBSERVED[kind]
+        observed = normalized_fields(payload["observed"], fields)
+        approved = normalized_fields({k: payload["values"][k] for k in fields.split()}, fields)
+        for key in approved:
+            require(observed[key] == approved[key], "observed differs: " + key)
 
 
 def count(field, v):
@@ -110,6 +130,10 @@ def full_sha(field, v):
 def equal_body_digests(v):
     digest = v["Approved body digest"]
     require(re.fullmatch(r"[0-9a-f]{64}", digest) and digest == v["Returned body digest"], "expected equal SHA-256 body digests")
+
+
+def comma_list(value):
+    return [] if value == "none" else string_list("comma list", [item.strip() for item in value.split(",")])
 
 
 def approved(v):
@@ -127,11 +151,34 @@ def preflight_envelope(status, v):
 
 
 def analyzer_envelope(status, v):
-    for field in ("Adjusted changed lines", "Changed files"):
-        count(field, v)
+    lines, files = count("Adjusted changed lines", v), count("Changed files", v)
+    rules = comma_list(v["Scope gate rule fired"])
+    approval = v["Scope approval"]
+    if rules:
+        require(len(v["Scope values"].splitlines()) == 1, "Scope values must be one JSON line")
+        scope = canonical("scope", json.loads(v["Scope values"], object_pairs_hook=unique_object))
+        require(scope["rules"] == rules, "Scope values rules differ")
+        require(scope["adjustedChangedLines"] == lines and len(scope["changedPaths"]) == files, "Scope values counts differ")
+        totals = v["Excluded generated/vendored/lock totals"]
+        excluded = (0, 0)
+        if totals != "none":
+            match = re.fullmatch(r"([0-9]+) files?, ([0-9]+) lines?", totals)
+            require(match, "invalid excluded totals")
+            excluded = tuple(map(int, match.groups()))
+        require(excluded == (len(scope["excludedPaths"]), scope["excludedLines"]), "Scope values excluded totals differ")
+        require(scope["baseSha"] == v["Compared Base SHA"] and scope["headSha"] == v["Compared Head SHA"], "Scope values pins differ")
+        if status == "PASS":
+            require(approval == "valid", "fired rule requires valid approval")
+        elif status == "LARGE_PR_CONFIRMATION_REQUIRED":
+            require(approval in ("missing", "digest-mismatch"), "confirmation requires a missing or stale record")
+    else:
+        require(v["Scope values"] == "n/a", "Scope values require a fired rule")
+        require(status != "LARGE_PR_CONFIRMATION_REQUIRED", "confirmation requires a fired rule")
+        if status == "PASS":
+            require(lines <= 1000 and files <= 40, "scope threshold exceeded without a fired rule")
+            require(approval == "n/a", "no fired rule requires approval n/a")
     if status == "PASS":
         require(v["Pinned SHA match"] == "yes", "PASS requires matching pins")
-        require(v["Scope approval"] in ("valid", "n/a"), "PASS requires valid scope approval or n/a")
 
 
 def submit_envelope(status, v):

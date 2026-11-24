@@ -48,13 +48,13 @@ When attached, an omitted head or the checked-out branch itself selects that bra
 | `GatePush`                 | `TerminalHeadUnpushed`     | push declined                                                                      |
 | `GatePushRejected`         | `RunPreflight`             | user confirms manual resolution                                                    |
 | `GatePushRejected`         | `TerminalHeadUnpushed`     | stop                                                                               |
-| `AnalyzeDiff`              | `DraftPr`                  | `DIFF_ANALYSIS: PASS`                                                              |
-| `AnalyzeDiff`              | `GateScope`                | `LARGE_PR_CONFIRMATION_REQUIRED` and scope cycles &lt; 3                           |
+| `AnalyzeDiff`              | `DraftPr`                  | `DIFF_ANALYSIS: PASS`: pins match, and either no rule fired or `verify scope` passed with fresh observations |
+| `AnalyzeDiff`              | `GateScope`                | `LARGE_PR_CONFIRMATION_REQUIRED`: rule fired with missing or stale approval; scope cycles &lt; 3                           |
 | `AnalyzeDiff`              | `TerminalEmptyDiff`        | `EMPTY_DIFF`                                                                       |
 | `AnalyzeDiff`              | `RunPreflight`             | `STALE_PINS`; discard scope and preview approval                                   |
 | `AnalyzeDiff`              | `TerminalBlocked`          | `ERROR`                                                                            |
 | `AnalyzeDiff`              | `FinalDecision`            | scope cycles ≥ 3                                                                   |
-| `GateScope`                | `AnalyzeDiff`              | current scope approved; record pinned SHA/evidence digest and redispatch     |
+| `GateScope`                | `AnalyzeDiff`              | current scope approved; redispatch with the verbatim `Scope values` and record to verify fresh pins, paths and counts     |
 | `GateScope`                | `TerminalAwaitingUser`     | question pending; the proposal has no editable part, so a change request is answered with the available choices and asked again                                                                   |
 | `GateScope`                | `TerminalCancelled`        | scope declined                                                                     |
 | `DraftPr`                  | `SuggestMetadata`          | `PR_DRAFT: PASS`                                                                   |

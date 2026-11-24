@@ -10,6 +10,8 @@ For `TerminalAwaitingUser`, leave the exact proposal and its approval question v
 
 Before showing a push or scope proposal, save `$RUN_DIR/<kind>-values.json` and run `python3 -I "$SKILL_DIR/scripts/validate-output.py" digest <kind> < "$RUN_DIR/<kind>-values.json" | tee "$RUN_DIR/pending.json"` with `<kind>` replaced by `push` or `scope`. Let the JSON appear unchanged in tool output: do not capture it in a variable, redirect it away, or replace it with an exit code. Never copy a digest into a reply to the user. Stop unless the digest succeeds and the receipt is saved.
 
+For `GateScope`, copy the analyzer’s one-line `Scope values` into `$RUN_DIR/scope-values.json` verbatim. Show the pinned SHAs, changed paths, excluded paths, adjusted and excluded line counts, and fired rules. Grouped areas explain the decision but are not digest fields. Ask whether to continue with this scope; approval does not authorize a push or create.
+
 ## Preview Template
 
 Show this block exactly before asking approval to create:
@@ -35,7 +37,7 @@ Description:
 
 The source note reports how the local copy relates to the selected remote head, including when it is behind, absent, or unknown. Do not imply uncommitted files or unpushed commits are part of the PR.
 
-End with a prose question such as “Do you approve creating this PR exactly as shown?” Do not perform an action after asking. A change to any bound value invalidates consent and routes to the earliest affected phase. Use [approval-protocol.md](./approval-protocol.md) for the consent rules: the orchestrator recomputes the digest, and the receiving specialist verifies its own record.
+End with a prose question such as “Do you approve creating this PR exactly as shown?” Do not perform an action after asking. A change to any bound value invalidates consent and routes to the earliest affected phase. Use [approval-protocol.md](./approval-protocol.md) for the consent rules: the orchestrator recomputes the digest, and the receiving specialist verifies its own record with fresh observations where required.
 
 ## Approval Record
 

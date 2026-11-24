@@ -38,6 +38,7 @@ function sample(
     "PR state": "draft",
     "Head source": "checkout",
     "Local head state": "unknown",
+    "Excluded generated/vendored/lock totals": "none",
     Topology: "ambiguous",
     Platform: "github",
     "Platform adapter needed": "no",
@@ -113,8 +114,27 @@ describe("pr-creator consumer envelope validation", () => {
   const SHA_LENGTH = 40;
   const DIGEST_LENGTH = 64;
   const sha = "a".repeat(SHA_LENGTH);
+  const next = "b".repeat(SHA_LENGTH);
   const digest = "d".repeat(DIGEST_LENGTH);
   const url = "https://host/o/r/request";
+  const scope = {
+    baseSha: sha,
+    headSha: next,
+    changedPaths: ["a"],
+    excludedPaths: [],
+    adjustedChangedLines: 1200,
+    excludedLines: 0,
+    rules: ["adjusted-lines>1000"],
+  };
+  const fired = {
+    "Pinned SHA match": "yes",
+    "Compared Base SHA": sha,
+    "Compared Head SHA": next,
+    "Adjusted changed lines": "1200",
+    "Changed files": "1",
+    "Scope values": JSON.stringify(scope),
+    "Scope gate rule fired": "adjusted-lines>1000",
+  };
   const missing = { "Approval record": "missing" };
   const hashes = {
     "Approved body digest": digest,
@@ -132,6 +152,11 @@ describe("pr-creator consumer envelope validation", () => {
   const commands =
     "\ngh pr list --repo o/r --head feat --base main\ngh pr view https://github.com/o/r/pull/7";
   const checks = { "Uncertain check commands": commands };
+  const stale = {
+    ...fired,
+    "Scope approval": "digest-mismatch",
+    "Pinned SHA match": "no",
+  };
   const { preflight, analyzer, submit } = specialists;
   const shortSha = { "Head SHA": "short" };
   const remoteHead = { "Head source": "remote" };
@@ -140,11 +165,20 @@ describe("pr-creator consumer envelope validation", () => {
   const cases: Array<[string, string, Fields, Fields[]]> = [
     ["repo-state-inspector", "ERROR", {}, [{ Topology: "telepathic" }]],
     [submit, "CREATE_UNCERTAIN", checks, []],
-    [analyzer, "STALE_PINS", { "Scope approval": "digest-mismatch" }, [injected]],
+    [analyzer, "STALE_PINS", stale, [injected]],
     [preflight, "PUSH_REQUIRED", {}, [remoteHead]],
     [preflight, "PASS", { "Base SHA": sha, "Head SHA": sha, "Push attempted": "yes" },
       [missing, shortSha, { "Base SHA": "unavailable" }]],
-    [analyzer, "PASS", { "Pinned SHA match": "yes" }, [{ "Pinned SHA match": "no" }, { "Scope approval": "missing" }]],
+    [analyzer, "PASS", { "Pinned SHA match": "yes" }, [{ "Adjusted changed lines": "5000" },
+      { "Changed files": "41" }, { "Scope approval": "valid" }, { "Scope values": JSON.stringify(scope) },
+      { "Pinned SHA match": "no" }]],
+    [analyzer, "PASS", { ...fired, "Scope approval": "valid" }, [{ "Scope approval": "n/a" },
+      { "Scope values": "n/a" }, { "Changed files": "2" }, { "Adjusted changed lines": "1201" },
+      { "Scope gate rule fired": "unrelated-areas>=3" }, { "Compared Head SHA": sha },
+      { "Excluded generated/vendored/lock totals": "1 file, 2 lines" }]],
+    [analyzer, "LARGE_PR_CONFIRMATION_REQUIRED", { ...fired, "Scope approval": "missing" },
+      [{ "Scope approval": "valid" }, { "Scope approval": "n/a" },
+      { "Scope gate rule fired": "none", "Scope values": "n/a" }]],
     [submit, "PASS", { ...exact, "Create attempted": "yes" }, [missing, { URL: "unavailable" },
       { Verification: "fail" }, { "Mismatched fields": "body" }, { "Returned body digest": "mismatch" }]],
     [submit, "CREATED_WITH_DRIFT", { ...exact, Verification: "fail", "Mismatched fields": "body" },

@@ -36,14 +36,16 @@ const preview = {
   targetBranch: "main",
   effectiveState: "draft",
 };
-const scope = {
+const scopeObserved = {
   ...pins,
   adjustedChangedLines: 1001,
-  changedFiles: 1,
-  excludedTotals: "none",
-  areas: ["src"],
-  rules: ["adjusted-lines>1000"],
-  changedPaths: ["src/cart.py"],
+  excludedLines: 0,
+  excludedPaths: [],
+  changedPaths: ["src/cart.py", "README"],
+};
+const scope = {
+  ...scopeObserved,
+  rules: ["adjusted-lines>1000", "unrelated-areas>=3"],
 };
 function hash(text: string) {
   return createHash("sha256").update(text).digest("hex");
@@ -55,8 +57,13 @@ function run(mode: string, kind: string, input: unknown) {
     encoding: "utf8",
   });
 }
-function verify(kind: string, values: unknown, approval: unknown) {
-  return run("verify", kind, { values, approval });
+function verify(
+  kind: string,
+  values: unknown,
+  approval: unknown,
+  observed?: unknown,
+) {
+  return run("verify", kind, { values, approval, observed });
 }
 function digest(kind: string, values: unknown) {
   const result = run("digest", kind, values);
@@ -120,23 +127,22 @@ describe("pr-creator shipped approval validator", () => {
     }
   });
   it("accepts current scope but rejects stale SHA, changed evidence and booleans", () => {
-    const approved = approval("scope", scope);
-    expect(
-      run("verify", "scope", { values: scope, approval: approved }).status,
-    ).toBe(VALID);
+    const bound = {
+      observed: scopeObserved,
+      approval: approval("scope", scope),
+    };
+    expect(run("verify", "scope", { ...bound, values: scope }).status).toBe(
+      VALID,
+    );
     for (const values of [
       { ...scope, headSha: "c".repeat(SHA_LENGTH) },
       { ...scope, baseSha: "d".repeat(SHA_LENGTH) },
       { ...scope, adjustedChangedLines: 1002 },
       { ...scope, rules: ["changed-files>40"] },
     ]) {
-      expect(
-        run("verify", "scope", { values, approval: approved }).status,
-      ).toBe(INVALID);
+      expect(run("verify", "scope", { ...bound, values }).status).toBe(INVALID);
     }
-    expect(
-      run("verify", "scope", { values: scope, approval: true }).status,
-    ).toBe(INVALID);
+    expect(verify("scope", scope, true).status).toBe(INVALID);
   });
   it("rejects missing fields, extra fields, duplicate sets and invalid states", () => {
     for (const values of [
@@ -155,6 +161,28 @@ describe("pr-creator shipped approval validator", () => {
       { ...approval("preview", preview), action: "" },
     ]) {
       expect(verify("preview", preview, record).status).toBe(INVALID);
+    }
+  });
+  it("binds scope evidence but not a second judgment", () => {
+    const values = {
+      ...scope,
+      adjustedChangedLines: 10,
+      rules: ["unrelated-areas>=3"],
+    };
+    const record = approval("scope", values);
+    const observed = { ...scopeObserved, adjustedChangedLines: 10 };
+    expect(verify("scope", values, record, observed).status).toBe(VALID);
+    expect(
+      verify("scope", values, record, { ...observed, excludedLines: 1 }).stderr,
+    ).toContain("excludedLines");
+    expect(
+      digest("scope", {
+        ...scope,
+        changedPaths: [...scope.changedPaths].reverse(),
+      }),
+    ).toEqual(digest("scope", scope));
+    for (const key of ["changedFiles", "areas", "excludedTotals"]) {
+      expect(status("scope", { ...scope, [key]: "legacy" })).toBe(INVALID);
     }
   });
   it("rejects records issued for another kind or presented as approval tokens", () => {
@@ -178,6 +206,11 @@ describe("pr-creator shipped approval validator", () => {
     expect(
       verify("push", values, { ...receipt, action, wording: "yes" }).status,
     ).toBe(VALID);
+  });
+  it("requires fresh observations rather than verifying only the digest", () => {
+    expect(verify("scope", scope, approval("scope", scope)).status).toBe(
+      INVALID,
+    );
   });
   it("declares usage and rejects unsupported modes", () => {
     const help = run("-h", "", {});

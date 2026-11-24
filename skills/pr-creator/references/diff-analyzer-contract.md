@@ -11,9 +11,10 @@ Pinned SHA match: <yes | no>
 Shortstat: <files changed, insertions, deletions>
 Adjusted changed lines: <number>
 Changed files: <number>
-Excluded generated/vendored/lock totals: <files and lines | none>
-Scope gate rule fired: <none | adjusted-lines>1000 | changed-files>40 | unrelated-areas>=3>
+Excluded generated/vendored/lock totals: <N files, M lines | none>
+Scope gate rule fired: <none | comma list of adjusted-lines>1000, changed-files>40, unrelated-areas>=3>
 Scope approval: <valid | missing | digest-mismatch | n/a>
+Scope values: <canonical JSON | n/a>
 Changed paths:
 - <path>
 Grouped areas:
@@ -36,4 +37,4 @@ Reason: <one line>
 Decision needed: <none | approve large/mixed PR | next action>
 ```
 
-Use `STALE_PINS` when compared SHAs do not match preflight pins. Use `LARGE_PR_CONFIRMATION_REQUIRED` only when a measurable rule fired and approval is not present.
+`PASS` requires matching pins and either no fired rule (at most 1000 adjusted lines and 40 files, approval `n/a`) or valid approval for the fired rules. `LARGE_PR_CONFIRMATION_REQUIRED` means a rule fired with a missing or stale record. Fired rules require canonical scope values with matching pins, rules and counts; otherwise scope values are `n/a`. `STALE_PINS`, `EMPTY_DIFF`, and `ERROR` mean the pins moved, the range was empty, or analysis failed.
