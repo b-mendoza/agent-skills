@@ -1,12 +1,12 @@
 # scope-run-files-to-the-run
 
-📝 Write handoff files under a proven-ignored `.handoffs/<skill>/<run-id>/` when state must survive compaction, a later step, or a script; reply inline otherwise and delete only what this run created.
+📝 Reply inline unless a payload exceeds the inline budget, must survive a turn, or needs to be read by a later step or script. Write needed files under a fresh, proven-ignored `.handoffs/<skill>/<run-id>/`. Keep every file the run writes there and name the directory in the final reply.
 
 🔒 This rule is `mandatory`: a miss is a material gap unless the rule allows an exception and the change's report or handoff, outside the skill package, states the rule and reason.
 
-A subagent result travels inline as a bounded structured reply (a status, paths, a concise summary) unless the payload exceeds the prompt or reply budget, must survive the turn because a later step, session, or repair cycle reads it, or is consumed by a script. Only then does it become a file, and the file's role, not its name or format, decides its lifecycle. Handoff files exist so that when the orchestrator's or a subagent's context is compacted, decisions, paths, and evidence are re-read from disk instead of being summarised away. A dispatch payload (instructions and reports exchanged with a subagent) lives only through its dispatch. Resume state lives only while the stated persistence need exists, and is created only when the runtime's native session retention does not already cover that need. A deliverable (source, tests, docs, a requested plan or report) is kept under the user's contract. Secrets, tokens, raw logs, full diffs, and copied third-party payloads are never-write, in any of these: store a path, digest, or redacted fact instead.
+A subagent result travels inline as a bounded structured reply (a status, paths, a concise summary) when it fits and no later step or script needs the file. Handoff files let the orchestrator or a subagent recover exact decisions, paths, and evidence after context compaction. Use a dispatch payload only for its dispatch. Create resume state only for a stated persistence need that the runtime's native session retention does not cover. Keeping a payload or resume file does not authorize its later use. A deliverable (source, tests, docs, a requested plan or report) is kept under the user's contract. Secrets, tokens, raw logs, full diffs, and copied third-party payloads are never-write, in any of these: store a path, digest, or redacted fact instead.
 
-Dispatch payloads and resume state live under one run directory, `.handoffs/<skill>/<run-id>/`, with `run-id` derived once at intake and every created file recorded. Before the first write, `git check-ignore --quiet -- "<path>"` must exit zero; otherwise move the file to an already-ignored location or reclassify it as a deliverable. An intended ignore rule that was not observed is not an ignore rule. A run may list sibling `<run-id>` names to spot stale work but never reads or deletes their contents; cleanup runs only from a terminal status and deletes only the recorded paths, so a shared `rm -rf .handoffs/<skill>/` can no longer destroy a parallel run. Retaining payloads for debugging is an explicit per-run opt-in that names the files and the cleanup condition.
+Derive the run ID once at intake. If the directory exists, choose a new ID. Before the first write, require `git check-ignore --quiet -- "<path>"` to exit zero; otherwise use an already-ignored location or reclassify the file as a deliverable. Record each created path to track ownership and audit writes. A run may list sibling run names to avoid collisions; their contents are outside its read and write scope. At every terminal, compare the worktree with the intake baseline and report changes outside the declared envelope. Leave the run's payloads, scratch files, receipts, reports, and other run files in place. If the run stopped before creating any files, say so without creating a file just to report a path.
 
 Being a deliverable makes a file eligible for version control and nothing more: staging, committing, and pushing each need their own user and repository authority, and no lifecycle rule performs them. Which paths a run may write at all is owned by [declare-mutation-limits](./declare-mutation-limits.md); the keys inside a payload are owned by [declare-input-output-contracts](./declare-input-output-contracts.md).
 
@@ -31,9 +31,10 @@ plan is a temporary artifact, so keep it there too. When finished, run
    `$HANDOFF_DIR/task-planner-report.yaml`.
 6. Deliverable: `docs/PROJ-123-tasks.md`. Kept for the user; eligible for
    version control; this skill never stages, commits, or pushes it.
-7. On a terminal status, delete only the recorded `$HANDOFF_DIR` files. Sibling
-   `.handoffs/ticket-planner/<other-run>/` directories may be listed, never read
-   or removed. Debug retention: only when the user names the files to keep.
+7. Compare the terminal worktree with the baseline and report changes outside
+   the declared envelope. Leave `$HANDOFF_DIR/task-planner-report.yaml` and
+   every other file this run wrote under `$HANDOFF_DIR` in place. Give the user
+   the resolved run directory and the separate plan path.
 ```
 
 ## Related rules
