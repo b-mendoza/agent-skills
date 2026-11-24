@@ -2,6 +2,7 @@
 """Validate PR envelopes and canonical approval digests (Python 3 stdlib only).
 
 Usage: python3 -I validate-output.py <digest|verify> <kind>       (JSON on stdin)
+       python3 -I validate-output.py title                        (JSON on stdin)
        python3 -I validate-output.py envelope <specialist>        (block on stdin)
        python3 -I validate-output.py body                         (exact bytes on stdin)
        python3 -I validate-output.py -h
@@ -129,6 +130,66 @@ def verify(kind, payload):
         approved = normalized_fields({k: payload["values"][k] for k in fields.split()}, fields)
         for key in approved:
             require(observed[key] == approved[key], "observed differs: " + key)
+
+
+TYPE = r"[A-Za-z][A-Za-z0-9-]*"
+HEADER = re.compile(rf"(?P<type>{TYPE})(?:\((?P<scope>[^()\s][^()]*?)\))?!?: (?P<subject>\S.*)")
+MINOR_WORDS = set("a an and as at but by for in nor of on or the to vs via with".split())
+CLAUSES = {"type": rf"{TYPE}(?:\|{TYPE})*", "scope": "required|forbidden|optional",
+           "ticket": r"(?:\?|[^\s@;:\[\]()]+)@(?:start|after-colon|end)",
+           "case": "title|sentence|lower|any", "max": "[0-9]+"}
+
+
+def validate_title(payload):
+    exact_keys(payload, "convention title", "title input")
+    convention, title = payload["convention"], payload["title"]
+    require(isinstance(convention, str) and isinstance(title, str), "convention and title must be strings")
+    require(title and title == title.strip() and len(title.splitlines()) == 1, "title must be one nonempty trimmed line")
+    require(len(title) <= 255, "title exceeds 255 characters")
+    if convention == "override":
+        return
+    clauses = {}
+    for clause in convention.split(";") if convention else ():
+        name, _, value = clause.strip().partition("=")
+        require(name in CLAUSES and name not in clauses and re.fullmatch(CLAUSES[name], value), "invalid clause: " + clause)
+        clauses[name] = value
+    findings = []
+    if "max" in clauses:
+        limit = int(clauses["max"])
+        require(10 <= limit <= 255, "max must be 10..255")
+        if len(title) > limit:
+            findings.append("title exceeds max")
+    if "ticket" in clauses:
+        key, placement = clauses["ticket"].split("@")
+        if key == "?" or title.count(key) != 1:
+            findings.append("ticket key missing" if key == "?" or key not in title else "ticket key repeated")
+        elif placement == "start" and title.startswith(key + " "):
+            title = title[len(key) + 1:]
+        elif placement == "end" and title.endswith(" (" + key + ")") and title[:-len(key)-3] == title[:-len(key)-3].rstrip():
+            title = title[:-len(key)-3]
+        elif placement == "after-colon" and (m := HEADER.fullmatch(title)) and m["subject"].startswith(key + " "):
+            title = title[:m.start("subject")] + m["subject"][len(key)+1:]
+        else:
+            raise ValueError("incorrect ticket placement")
+    match = HEADER.fullmatch(title)
+    if not match:
+        findings.append("expected conventional commit title")
+    else:
+        if "type" in clauses and match["type"] not in clauses["type"].split("|"):
+            findings.append("invalid type")
+        scope = clauses.get("scope")
+        if (scope == "required" and not match["scope"]) or (scope == "forbidden" and match["scope"]):
+            findings.append("invalid scope")
+        subject, case = match["subject"], clauses.get("case")
+        words = subject.split()
+        if case == "title" and not all(word[0].isupper() or re.search(r"[\d_./`]", word) or
+                                       (0 < i < len(words)-1 and word in MINOR_WORDS) for i, word in enumerate(words)):
+            findings.append("expected title case")
+        if case == "sentence" and not subject[0].isupper():
+            findings.append("expected sentence case")
+        if case == "lower" and subject != subject.lower():
+            findings.append("expected lower case")
+    require(not findings, "; ".join(findings))
 
 
 def count(field, v):
@@ -281,7 +342,7 @@ def main():
         print(USAGE)
         return 0
     modes = {"digest": SCHEMAS, "verify": SCHEMAS, "envelope": ENVELOPES}
-    valid = (len(args) == 1 and args[0] == "body") or (len(args) == 2 and args[1] in modes.get(args[0], ()))
+    valid = (len(args) == 1 and args[0] in ("body", "title")) or (len(args) == 2 and args[1] in modes.get(args[0], ()))
     if not valid:
         print(USAGE, file=sys.stderr)
         return 2
@@ -297,7 +358,10 @@ def main():
             if args[0] == "digest":
                 print(json.dumps({"kind": args[1], **digests(args[1], payload)}, sort_keys=True))
             else:
-                verify(args[1], payload)
+                if args[0] == "title":
+                    validate_title(payload)
+                else:
+                    verify(args[1], payload)
                 print("valid")
         return 0
     except (ValueError, TypeError, UnicodeError) as error:

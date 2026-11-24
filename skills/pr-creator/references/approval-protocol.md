@@ -11,9 +11,10 @@ Use `python3 -I "${SKILL_DIR}/scripts/validate-output.py"` in both runtimes. The
 | `digest <kind>` | The exact values object | JSON with `kind`, `valuesDigest` and `bodyDigest`. Keep digests in tool output, never in a reply. |
 | `verify <kind>` | `{ "values": <values>, "approval": <record> }`, plus `observed` for `scope` only | `valid` |
 | `envelope <specialist>` | The complete specialist block | `valid` |
+| `title` | `{ "convention": "<clauses, empty string, or override>", "title": "<title>" }` | `valid`; see [title grammar](./drafting-inputs.md#title-constraint) |
 | `body` | Exact UTF-8 body bytes | SHA-256 of those bytes; keep it in tool output, never in a reply |
 
-Exit 1 means invalid input; exit 2 means invalid invocation. An invalid envelope permits one redispatch with findings (`validation`), then `TerminalBlocked`. A passing structural check never establishes user consent.
+Exit 1 means invalid input (for `title`, findings are on stderr); exit 2 means invalid invocation. An invalid envelope permits one redispatch with findings (`validation`), then `TerminalBlocked`. A passing structural check never establishes user consent.
 
 ## Kinds and exact values
 

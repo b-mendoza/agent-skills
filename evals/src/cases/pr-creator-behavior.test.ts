@@ -305,12 +305,14 @@ describe("pr-creator structural versus semantic checks", () => {
   it.each([
     "feat: TASK-42 Use Uppercase Checkpoint Answers",
     "feat: TASK-42 Simplify Unit Price",
+    "feat: TASK-42 Update v2.0 via Cache",
   ])("checks title structure, leaving grounding to the judge: %s", (title) => {
     expect(() =>
       checkTemplate(preparedObservation(`Title: ${title}`)),
     ).not.toThrow();
   });
   it.each([
+    "feat: TASK-42 Update via",
     "Feat: TASK-42 Update Answers",
     "feat(scope): TASK-42 Update Answers",
     "feat: Update TASK-42 Answers",

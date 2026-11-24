@@ -7,6 +7,7 @@ import {
   gate,
   observation,
   preview,
+  shell,
 } from "#/cases/pr-creator-scenario-test-support.ts";
 import { HEAD_LOG } from "#/fixtures/fixtures.ts";
 
@@ -29,6 +30,23 @@ describe("preview gates", () => {
         "conditional-yes-is-revise",
         observation([first, final]),
         observation([first, first]),
+      ),
+    ).not.toThrow();
+  });
+  it("requires missing-ticket evidence from the drafter", () => {
+    const good = observation([]);
+    expect(
+      acceptsOnly(
+        "title-missing-ticket-asks",
+        {
+          ...good,
+          toolCalls: [
+            shell(
+              "PR_DRAFT: NEEDS_CHOICE\nDecision needed: provide ticket key",
+            ),
+          ],
+        },
+        { ...good, toolCalls: [shell("PASS")] },
       ),
     ).not.toThrow();
   });

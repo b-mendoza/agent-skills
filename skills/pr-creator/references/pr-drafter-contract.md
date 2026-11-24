@@ -15,7 +15,7 @@ Traceability notes:
 Body:
 <markdown body>
 Reason: <one line>
-Decision needed: <none | choose type | choose scope | choose type and scope | choose template | clarify title convention | next action>
+Decision needed: <none | choose type | choose scope | choose type and scope | choose template | clarify title convention | provide ticket key | next action>
 ```
 
-Use `NEEDS_CHOICE` for a material title constraint or ambiguous template selection. Use `ERROR` when required diff facts are missing or contradictory.
+`NEEDS_CHOICE` identifies an unresolved type, scope, template, ticket key or convention. Use `ERROR` when required diff facts are missing or contradictory.

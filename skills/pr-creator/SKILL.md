@@ -24,7 +24,7 @@ Portable target: OpenCode and Claude Code. Plain Markdown, minimal frontmatter, 
 | `LABELS_OVERRIDE`       | No          | `documentation,enhancement`                               |
 | `ASSIGNEES`             | No          | `alice,bob`, `none`, omitted means empty                  |
 | `TEMPLATE_PATH`         | No          | `.github/PULL_REQUEST_TEMPLATE.md`                        |
-| `TITLE_CONVENTION`      | No          | `feat; TASK-42 after colon; no scope; title-case subject` |
+| `TITLE_CONVENTION` | No | Semicolon-separated `type`, `scope`, `ticket`, `case`, `max` clauses; normalize free text to clauses. Ticket placement is required: `ticket=<KEY>@<start\|after-colon\|end>`. |
 | `VERIFICATION_EVIDENCE` | No          | Command, outcome, source locator, checked revision        |
 
 Default `PR_STATE` to `draft`. Ask for invalid `PR_STATE`. Ask for `TARGET_BRANCH` only after `InspectRepo` supplies a candidate; never auto-apply. Strip one leading `@` from reviewers; `/` or team slug → team; `none` is explicit zero reviewers.

@@ -8,6 +8,7 @@ import { describe, expect, it } from "vitest";
 const path = "../../../skills/pr-creator/scripts/validate-output.py";
 const script = fileURLToPath(new URL(path, import.meta.url));
 const SHA_LENGTH = 40;
+const MAX_TITLE_LENGTH = 255;
 const VALID = 0;
 const INVALID = 1;
 const USAGE_ERROR = 2;
@@ -231,6 +232,21 @@ describe("pr-creator shipped approval validator", () => {
       expect(status("push", { ...push, extras: bad })).toBe(INVALID);
     }
   });
+  it.each([
+    ["case=title", "feat: Wire up_api to the Panel", VALID],
+    ["case=title", "feat: Wire the", INVALID],
+    ["ticket=?@start", "feat: Fix", INVALID],
+    ["ticket=T-1@start", "T-1 feat(ui)!: Fix", VALID],
+    ["ticket=T-1@start", "[T-1] feat: Fix", INVALID],
+    ["ticket=T-1@after-colon", "feat: T-1 Fix", VALID],
+    ["ticket=T-1@after-colon", "feat:  T-1 Fix", INVALID],
+    ["ticket=T-1@end", "feat: Fix (T-1)", VALID],
+    ["ticket=T-1@end", "feat: T-1 Fix", INVALID],
+    ["max=10", "feat: longer", INVALID],
+    ["override", `${"x".repeat(MAX_TITLE_LENGTH)}!`, INVALID],
+  ] as const)("checks %s against %s", (convention, title, status) => {
+    expect(run("title", "", { convention, title }).status).toBe(status);
+  });
   it("rejects a push approval naming a different command", () => {
     const values = { ...push, extras: [] };
     const record = { ...approval("push", values), action: "git push --force" };
@@ -240,6 +256,17 @@ describe("pr-creator shipped approval validator", () => {
   it("requires fresh observations rather than verifying only the digest", () => {
     expect(verify("scope", scope, approval("scope", scope)).status).toBe(
       INVALID,
+    );
+  });
+  it.each([
+    [
+      "type=feat; ticket=TASK-42@end; case=lower",
+      "feat: TASK-42 simplify unit price",
+    ],
+    ["ticket=TASK-42@start", "[TASK-42] feat: simplify unit price"],
+  ])("reports only the misplaced key for %s", (convention, title) => {
+    expect(run("title", "", { convention, title }).stderr.trim()).toBe(
+      "invalid: incorrect ticket placement",
     );
   });
   it("declares usage and rejects unsupported modes", () => {

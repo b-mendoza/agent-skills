@@ -58,6 +58,27 @@ export const previewCases = [
     },
   }),
   scenario({
+    id: "title-missing-ticket-asks",
+    prompt: `${draft} TITLE_CONVENTION=type=feat; ticket=?@start; case=sentence.`,
+    facts:
+      "A ticket key is required but neither the request nor the branch supplies one.",
+    requirements: ["Ask the user to provide the missing ticket key."],
+    check: (observation) => {
+      assertCreatorReadOnly(observation);
+      assert.equal(digestToken(observation, "preview"), undefined);
+      assert.ok(
+        observation.toolCalls.some(
+          (call) =>
+            call.result !== undefined &&
+            !call.result.isError &&
+            /Decision needed:\s*provide ticket key/i.test(call.result.content),
+        ),
+        "missing drafter choice evidence",
+      );
+      return "Drafter requests ticket before freezing";
+    },
+  }),
+  scenario({
     id: "remote-head-not-checked-out",
     prompt: `${draft} HEAD_BRANCH=${GITHUB_FACTS.branch}.`,
     options: { headNotCheckedOut: true },

@@ -57,10 +57,11 @@ When attached, an omitted head or the checked-out branch itself selects that bra
 | `GateScope`                | `AnalyzeDiff`              | current scope approved; redispatch with the verbatim `Scope values` and record to verify fresh pins, paths and counts     |
 | `GateScope`                | `TerminalAwaitingUser`     | question pending; the proposal has no editable part, so a change request is answered with the available choices and asked again                                                                   |
 | `GateScope`                | `TerminalCancelled`        | scope declined                                                                     |
-| `DraftPr`                  | `SuggestMetadata`          | `PR_DRAFT: PASS`                                                                   |
+| `DraftPr` | `DraftPr` | `PR_DRAFT: PASS`, `title` check exits non-zero, type/scope cycles < 3; redispatch with findings |
+| `DraftPr` | `SuggestMetadata` | `PR_DRAFT: PASS` and title check passes |
 | `DraftPr`                  | `GateTypeScope`            | `NEEDS_CHOICE` and type/scope cycles &lt; 3                                        |
 | `DraftPr`                  | `TerminalBlocked`          | `ERROR` or unresolved choice                                                       |
-| `DraftPr`                  | `FinalDecision`            | type/scope cycles ≥ 3                                                              |
+| `DraftPr` | `FinalDecision` | type/scope cycles ≥ 3 (including a failing `title` check) |
 | `GateTypeScope`            | `TerminalAwaitingUser`     | question pending                                                                   |
 | `GateTypeScope`            | `DraftPr`                  | choice answered; redispatch                                                        |
 | `SuggestMetadata`          | `ShowPreview`              | `REVIEW_METADATA: PASS`                                                            |
@@ -119,7 +120,7 @@ When attached, an omitted head or the checked-out branch itself selects that bra
 
 ## Consumer validation
 
-Before routing on output from every registered specialist, the orchestrator runs the shipped `envelope` validator for that specialist. An invalid envelope gets one redispatch with findings; a second invalid result, a usage failure or missing Python/shell goes to `TerminalBlocked`. Never route on unchecked fields.
+Before routing on output from every registered specialist, the orchestrator runs the shipped `envelope` validator for that specialist. An invalid envelope gets one redispatch with findings; a second invalid result, a usage failure or missing Python/shell goes to `TerminalBlocked`. Never route on unchecked fields. Before leaving `DraftPr`, the orchestrator runs the validator's `title` mode on the title.
 
 Approval gates: `GatePush`, `GateScope`, `GatePreview`. All others are choice gates. Use the plain-approval rule in [approval-protocol.md](references/approval-protocol.md). `GateTypeScope` also resolves template selection and bounded title conventions.
 

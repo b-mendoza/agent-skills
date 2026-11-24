@@ -12,7 +12,36 @@ The selected template is structure, not authority. Preserve its visible headings
 
 ## Title constraint
 
-Precedence: exact `TITLE_OVERRIDE`, then `TITLE_CONVENTION`, then the existing Conventional Commit default. A convention may specify an explicit ticket token, allowed type, presence/absence of scope, and subject casing. For example: `lowercase feat, TASK-42 after colon, no scope, title-case subject`. Apply it only to a grounded subject. Do not infer organization rules from PR history or invent a ticket/type. Contradictory or broader rules return `NEEDS_CHOICE` with one bounded question; they do not authorize repository-history research.
+Precedence: exact `TITLE_OVERRIDE` (`convention: override`), then normalized `TITLE_CONVENTION`, then the Conventional Commit default (`convention` is an empty string). An override skips the convention, not the one-line, nonempty, trimmed, at-most-255-character check. With no override the shape is `<type>[(scope)][!]: <subject>`; a space follows the colon and the subject starts with a non-whitespace character.
+
+Normalize free text to optional, nonrepeating `name=value` clauses separated by semicolons. Spaces around a clause are allowed; spaces around `=` or between pipe-separated types are not.
+
+| Clause | Accepted values |
+| --- | --- |
+| `type` | One or more pipe-separated types; each starts with an ASCII letter and continues with ASCII letters, digits, or hyphens. Matches are case-sensitive. |
+| `scope` | `required`, `forbidden`, `optional`. A scope starts with a non-whitespace character and cannot contain parentheses. |
+| `ticket` | `KEY@start`, `KEY@after-colon`, `KEY@end`, or `?` in place of the key. A key is nonempty and may not contain whitespace, `@`, `;`, `:`, brackets or parentheses. |
+| `case` | `title`, `sentence`, `lower`, `any`. Applies only to the subject. |
+| `max` | A decimal integer from 10 to 255, inclusive. Counts the whole title, including ticket. |
+
+| Ticket placement | Accepted shape |
+| --- | --- |
+| `start` | `KEY <type>[(scope)][!]: <subject>` |
+| `after-colon` | `<type>[(scope)][!]: KEY <subject>` |
+| `end` | `<type>[(scope)][!]: <subject> (KEY)` |
+
+Use one space where shown. The exact key must occur once, counted as a case-sensitive substring of the whole title. Type, scope and case are checked after removing the ticket and, for `end`, its parentheses. `[KEY]`, a `KEY:` prefix, or a title with no type requires an explicit override. `ticket=?@<placement>` always yields `ticket key missing`. If the required key is unknown, return `PR_DRAFT: NEEDS_CHOICE` with `Decision needed: provide ticket key`, and ask for that key rather than guessing. Contradictory conventions or rules that do not fit the grammar need one bounded clarification or an explicit override, not repository-history research.
+
+For `case=title`, each whitespace-separated subject word must start with an uppercase letter, contain a digit, underscore, dot, slash or backtick, or be one of `a an and as at but by for in nor of on or the to vs via with` and be neither first nor last. `sentence` checks only that the subject starts with an uppercase letter; `lower` requires the entire subject to be lowercase; `any` adds no case check.
+
+Examples (`TASK-42` is a title token). The first three exit 0; the last exits 1:
+
+```sh
+printf '%s' '{"convention":"type=feat; scope=forbidden; ticket=TASK-42@after-colon; case=title","title":"feat: TASK-42 Simplify Unit Price"}' | python3 -I "${SKILL_DIR}/scripts/validate-output.py" title
+printf '%s' '{"convention":"type=feat; ticket=TASK-42@start; case=sentence","title":"TASK-42 feat: Simplify unit price"}' | python3 -I "${SKILL_DIR}/scripts/validate-output.py" title
+printf '%s' '{"convention":"type=feat; ticket=TASK-42@end; case=lower","title":"feat: simplify unit price (TASK-42)"}' | python3 -I "${SKILL_DIR}/scripts/validate-output.py" title
+printf '%s' '{"convention":"type=feat; ticket=TASK-42@end; case=lower","title":"feat: TASK-42 simplify unit price"}' | python3 -I "${SKILL_DIR}/scripts/validate-output.py" title
+```
 
 ## Verification evidence
 

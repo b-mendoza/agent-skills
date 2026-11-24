@@ -15,6 +15,7 @@ import {
   approvalKinds,
   assertPreparedDigest,
   firstReceiptIndex,
+  runValidator,
 } from "#/cases/pr-creator-digest.ts";
 import { GITHUB_FACTS } from "#/cases/pr-creator-fixtures.ts";
 import {
@@ -327,31 +328,21 @@ export function checkCreated(observation: Observation, drift: boolean): string {
     : "One exact approved create with matching machine readback";
 }
 
-function assertTitleStructure(reply: string): void {
-  const subject = /^Title:\s+feat: TASK-42 (?<subject>[^\r\n]+)$/m.exec(
+function assertTitleStructure(reply: string, convention: string): void {
+  const title = /^Title:[\t ]+(?<title>\S[^\r\n]*)$/m.exec(
     normalizeReplyText(reply),
-  )?.groups?.["subject"];
-  assert.ok(
-    subject !== undefined,
-    "title must have lowercase feat, immediate ticket and no scope",
-  );
-  assert.match(subject, /^[A-Z]/);
-  assert.ok(
-    subject
-      .split(" ")
-      .every((word) =>
-        /^(?:[A-Z][A-Za-z0-9'-]*|a|an|and|as|at|by|for|in|of|on|or|the|to|with)$/.test(
-          word,
-        ),
-      ),
-    "subject must be title-cased",
-  );
+  )?.groups?.["title"];
+  assert.ok(title !== undefined, "preview title missing");
+  runValidator(["title"], { convention, title });
 }
 
 export function checkTemplate(observation: Observation): string {
   assertCreatorReadOnly(observation);
   assertPreparedDigest(observation);
-  assertTitleStructure(observation.finalText);
+  assertTitleStructure(
+    observation.finalText,
+    "type=feat; scope=forbidden; ticket=TASK-42@after-colon; case=title",
+  );
   return "Prepared preview digest and requested title structure; no writes";
 }
 
