@@ -5,7 +5,7 @@ This table is the only normative list of states, transitions, guards and termina
 Guard terms:
 
 - **Issue step needed:** `CLOSES_ISSUES` or `RELATED_ISSUES` names at least one issue, or discovery is on and `Issue mentions` is not `none`. Discovery is on by default; `ISSUE_DISCOVERY=off` or setting both issue lists to `none` turns it off.
-- **Offer:** the flag for this run's one rebase offer: `open` initially, then `declined` or `done`.
+- **Offer:** the flag for this run's one rebase-or-publish offer: `open` initially, then `declined` or `done`.
 - **Offer source**, **Source behind base**: preflight's fields.
 
 ## Transitions
@@ -36,8 +36,9 @@ Guard terms:
 | `GatePlatformTooling`      | `AdaptPlatform`            | tooling answered                                                                   |
 | `GateStateFallback`        | `TerminalCancelled`        | user stops                                                                         |
 | `GateStateFallback`        | `RunPreflight`             | proceed as `ready`                                                                 |
-| `RunPreflight` | `GateRebase` | `PASS` or `PR_EXISTS`; `Offer source` is `published`; `Source behind base` > 0; `REBASE` is not `never`; offer `open`; rebase cycles < 2 |
-| `RunPreflight` | `ContinueRequest` | `PASS` or `PR_EXISTS` otherwise, including `Offer source: none` (a series over 200 commits, a mirror remote or `push.recurseSubmodules=only`); if the base is ahead of the source or no offer was made, report that and why |
+| `RunPreflight` | `GateRebase` | `PASS` or `PR_EXISTS`; `Offer source` is `published` or `local`; `Source behind base` > 0; `REBASE` is not `never`; offer `open`; rebase cycles < 2 |
+| `RunPreflight` | `GateForcePush` | `PASS` or `PR_EXISTS`; `Offer source: local`; `Source behind base` = 0; offer `open`; rebase cycles < 2 |
+| `RunPreflight` | `ContinueRequest` | `PASS` or `PR_EXISTS` otherwise, including `Offer source: none` (a published-only commit, a series over 200 commits, a mirror remote or `push.recurseSubmodules=only`); if the base is ahead of the source or no offer was made, report that and why |
 | `RunPreflight`             | `GatePush`                 | `PUSH_REQUIRED` for a checkout head and push cycles &lt; 3                                             |
 | `RunPreflight`             | `GatePushRejected`         | `PUSH_REJECTED`                                                                    |
 | `RunPreflight`             | `TerminalAuth`             | `AUTH`                                                                             |
@@ -60,6 +61,7 @@ Guard terms:
 | `GateForcePush` | `TerminalAwaitingUser` | question pending |
 | `GateForcePush` | `RunForcePush` | approved; `force-push` record written |
 | `GateForcePush` | `GateRebaseResult` | declined or change requested, after a rebase this run produced; nothing pushed |
+| `GateForcePush` | `ContinueRequest` | declined or change requested, direct publish of the local branch; offer `declined`; nothing pushed |
 | `GateForcePush` | `TerminalCancelled` | user stops the run |
 | `GateRebaseResult` | `TerminalAwaitingUser` | question pending; any answer other than the two choices or a stop is answered with the choices and asked again |
 | `GateRebaseResult` | `SettleRebase` | `preserve` or `discard` chosen |
@@ -173,7 +175,7 @@ Independent counters (max 3 non-`PASS` redispatches per gate, then `FinalDecisio
 - `validation`: 1; `TerminalBlocked`. Applies to every registered specialist.
 - `approval-reask[gate]`: 1; `TerminalAwaitingUser`.
 - `review`: 2; `ReviewResults` to `ShowPreview` with findings disclosed, or `FinalDecision` when no digest can be computed.
-- `rebase`: 2 stale leases; over the cap, no further offer.
+- `rebase`: 2 stale leases, whichever source; over the cap, no further offer.
 
 ## Terminal decisions
 

@@ -15,9 +15,9 @@ Perform one action per dispatch. A rebase approval never authorizes a push.
 | `HEAD_REMOTE`, `HEAD_BRANCH` | Named head remote and short branch name |
 | `BASE_REMOTE`, `TARGET_BRANCH` | Named base remote and short target branch name |
 | `BASE_SHA`, `OLD_HEAD_SHA` | Full pinned base and published head commit IDs |
-| `SOURCE_SHA` | Published commit the rebase replays; use the recorded source when settling that rebase |
-| `NEW_HEAD_SHA` | Full result of this run's rebase |
-| `SOURCE` | Push only: `rebase` |
+| `SOURCE_SHA` | Commit the rebase replays; use the recorded source when settling that rebase |
+| `NEW_HEAD_SHA` | Full result of this run's rebase, or the local tip for direct publish |
+| `SOURCE` | Push only: `rebase` or `local-branch` |
 | `APPROVAL_RECORD`, values file path | For rebase or push: this run's matching record and `RUN_DIR/<kind>-values.json` |
 | `CONTRACT_PATH` | Resolved `references/branch-rebaser-contract.md` |
 | `SKILL_DIR`, `RUN_DIR`, `MUTATION_LIMITS` | Absolute package root, recorded run directory and unchanged write limits |
@@ -36,7 +36,7 @@ Before any rebase or push write, construct the values from the actual arguments.
 
 ### Rebase
 
-1. Re-read the selected remote refs and require both pins. Require `SOURCE_SHA` to equal the published pin. Require a fresh worktree path and unused run refs (an existing backup is acceptable only at the same old tip). Count `git rev-list --count <base_sha>..<source_sha>`. Run:
+1. Re-read the selected remote refs and require both pins. If `SOURCE_SHA` differs from the published tip, require it to be the diverged named local tip and repeat the series check below, including disclosure limits. Require a fresh worktree path and unused run refs (an existing backup is acceptable only at the same old tip). Count `git rev-list --count <base_sha>..<source_sha>`. Run:
 
    ```sh
    git worktree add --detach "$RUN_DIR/rebase" <source_sha>
@@ -48,15 +48,17 @@ Before any rebase or push write, construct the values from the actual arguments.
 
 ### Push
 
-Require that the new tip contains the pinned base and has commits ahead. For `SOURCE=rebase`, require this run's rebased ref at `NEW_HEAD_SHA` and backup at `OLD_HEAD_SHA`.
+Require that the new tip contains the pinned base and has commits ahead. For `SOURCE=rebase`, require this run's rebased ref at `NEW_HEAD_SHA` and backup at `OLD_HEAD_SHA`. For `SOURCE=local-branch`, run no rebase command. Immediately before writing, require the named local tip still equals `NEW_HEAD_SHA`, diverges from `OLD_HEAD_SHA`, and passes this read-only series check:
 
-Check the remote head against `OLD_HEAD_SHA`: a moved or deleted head is `LEASE_REJECTED`, even if already at the new tip. Immediately before sending, repeat the settings check and require exact equality with approved `extras`; any difference means `BLOCKED`, nothing pushed. Run exactly once:
+- Take `mbP` and `mbL` as the respective merge-bases of the published and local tips with `BASE_SHA`. Count each range; block if either exceeds 200. Run `git range-diff --no-color --no-patch <mbP>..<published> <mbL>..<local>`. Read each sign: `=` same, `!` differing pair, `>` local-only, `<` published-only. Require no `<`, no undisclosed differing pair or local-only commit, and complete, verifiable output. Never publish a truncated series disclosure.
+
+For either source, check the remote head against `OLD_HEAD_SHA`: a moved or deleted head is `LEASE_REJECTED`, even if already at the new tip. For direct publish create this run's backup ref create-only at that published tip; no rebased ref is needed. Immediately before sending, repeat the settings check and require exact equality with approved `extras`; any difference means `BLOCKED`, nothing pushed. Run exactly once:
 
 ```sh
 git push --force-with-lease=refs/heads/<head_branch>:<old_head_sha> <head_remote> <new_head_sha>:refs/heads/<head_branch>
 ```
 
-Never retry or change the lease. A stale lease or an already-up-to-date no-op is `LEASE_REJECTED`; another definite rejection is `PUSH_REJECTED`. On a definite stale lease with no publication, remove this attempt's refs in one `git update-ref --stdin` transaction with expected SHAs. Report `Backup ref: n/a` and say nothing was published by this attempt. Failed cleanup, partial or uncertain publication, or failed readback is `ERROR`, not a claim that nothing changed. Require success and `git ls-remote <head_remote> refs/heads/<head_branch>` returning exactly `NEW_HEAD_SHA` for that ref before `PUSHED`. Then delete this run's rebased ref, if it exists, with its expected SHA: the published branch now holds those commits. Keep the backup. Only the branch is read back; extras were sent under the listed settings and not verified one by one.
+Never retry or change the lease. A stale lease or an already-up-to-date no-op is `LEASE_REJECTED`; another definite rejection is `PUSH_REJECTED`. On a definite stale lease with no publication, remove this attempt's refs in one `git update-ref --stdin` transaction with expected SHAs (direct publish: only its backup, if created). Report `Backup ref: n/a` and say nothing was published by this attempt. Failed cleanup, partial or uncertain publication, or failed readback is `ERROR`, not a claim that nothing changed. Require success and `git ls-remote <head_remote> refs/heads/<head_branch>` returning exactly `NEW_HEAD_SHA` for that ref before `PUSHED`. Then delete this run's rebased ref, if it exists, with its expected SHA: the published branch now holds those commits. Keep the backup. Only the branch is read back; extras were sent under the listed settings and not verified one by one.
 
 ### Keep or discard
 
@@ -73,7 +75,7 @@ For `keep` after `preserve`, let `<b>` be only `HEAD_BRANCH` and `<new>` this ru
 
 Compare `HEAD`, the branch ref, all other local refs, porcelain status and diff digest before and after. Only the intended branch may move or appear, at `<new>`; only a reset may move this checkout's `HEAD`. Status and diff digest must match, including on abort. If verification fails return `ERROR`, keep the refs and do not undo the change. On success remove the backup with its expected old SHA; when the branch holds the result also remove the rebased ref with its expected new SHA in the same transaction. Report `KEPT`: `Local branch` moved, created or unchanged; `Kept ref` the local head ref or the kept-aside rebased ref; `Uncommitted changes preserved` yes or n/a as verified.
 
-For `discard`, delete **both** refs in one `git update-ref --stdin` transaction: `delete refs/pr-creator/<run-id>/rebased <new_head_sha>` and `delete refs/pr-creator/backup/<run-id> <old_head_sha>`. Require success, both refs absent and checkout unchanged before `DISCARDED` with `Kept ref: n/a`. Never retry a failed transaction without expected values. For either choice report what actually differs from the published head; if a kept local branch diverges, explain that `git pull` would merge the histories under merge behavior. Nothing was published.
+For `discard`, delete **both** refs in one `git update-ref --stdin` transaction: `delete refs/pr-creator/<run-id>/rebased <new_head_sha>` and `delete refs/pr-creator/backup/<run-id> <old_head_sha>`. Require success, both refs absent and checkout unchanged before `DISCARDED` with `Kept ref: n/a`. Never retry a failed transaction without expected values. For either choice report what actually differs from the published head; if a kept local branch diverges, explain that `git pull` would merge the histories under merge behavior and a later run can offer publication. Nothing was published.
 
 ## Output Format
 

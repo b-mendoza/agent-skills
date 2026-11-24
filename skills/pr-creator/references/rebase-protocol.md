@@ -1,15 +1,29 @@
-# Rebase a published head
+# Rebase or publish a rewritten head
 
 Current-state reference. Update when source selection, the rebase or lease push, or local settlement changes.
 
 ## Select the source and make one offer
 
-Use fresh preflight pins and start from the published tip. Show `Local head state` as a fact. Withhold a published-source replay over 200 commits. Set `Offer source: none` and give the reason. When preflight continues with `PASS` or `PR_EXISTS` and no offer, use the published tip for `Source SHA` and its count for `Source behind base`.
+Use fresh preflight pins. Start from the published tip unless a local `<head_branch>` exists and has diverged from it. A diverged local branch can be the source even when it is not checked out. Show `Local head state` as a fact.
+
+For diverged tips, preflight compares each branch's series against its own merge-base with the pinned base. Run `git range-diff --no-color --no-patch <mbP>..<published> <mbL>..<local>`, where `<mbP>` is the published tip's merge-base with the base and `<mbL>` is the local tip's merge-base with the base. Read the sign on each row:
+
+| Sign | Meaning |
+| --- | --- |
+| `=` | Identical pair. |
+| `!` | Differing pair. Keep both SHAs and the subject. |
+| `>` | Local-only commit. Keep its SHA and subject. |
+| `<` | Published-only commit. Keep its SHA and subject. |
+
+Any `<` means `Offer source: none`. Name the published-only commits. For a checked-out head with no open PR, preflight returns `HEAD_BRANCH_UNPUSHED` and the run stops. For a named branch not checked out, or with an open PR, report the withheld offer and continue from the published head. Count each range before comparing. If either exceeds 200 commits, withhold the offer. Also withhold a published-source replay over 200 commits. Use the [preflight contract](./preflight-validator-contract.md) limit of 20 rows per list; name any omissions and withhold a local offer if it would hide differences. For these limits use `Offer source: none` and give the reason. When preflight can continue with `PASS` or `PR_EXISTS` and no offer, use the published tip for `Source SHA` and its count for `Source behind base`. Pairing is git's heuristic. A `!` row calls for review, not an assertion that the two commits do the same thing.
+
+If every row is `=` and `<mbL>` is a strict ancestor of `<mbP>`, the local tip is an older copy of the same series. Set `Offer source: published` and leave the three commit lists empty. Explain the local state and give the `git reset --keep` hint below. Otherwise, with no `<`, use the local tip and keep the differing pairs and local-only commits for the force-push proposal.
 
 After `PREFLIGHT: PASS` or `PR_EXISTS`, if the offer is open and fewer than two stale leases have occurred:
 
-- If `Offer source` is `published` and `Source behind base` is greater than zero, offer `GateRebase` unless `REBASE=never`. The count is `git rev-list --count <source_sha>..<base_sha>`.
-- Otherwise continue from the published head. Report why a base that is ahead of the source did not lead to a proposal.
+- If `Offer source` is `published` or `local` and `Source behind base` is greater than zero, offer `GateRebase` unless `REBASE=never`. The count is `git rev-list --count <source_sha>..<base_sha>`.
+- If `Offer source` is `local` and `Source behind base` is zero, go directly to `GateForcePush`. This publishes without rebasing, so `REBASE=never` does not prevent the offer.
+- Otherwise continue from the published head. Report why a base that is ahead of the source or a local branch that was not offered did not lead to a proposal.
 
 Remember a decline or a completed offer. Only a stale lease reopens the offer with fresh pins. At two stale leases, make no further offer.
 
@@ -22,7 +36,7 @@ Before showing this block, save `$RUN_DIR/rebase-values.json` and run `python3 -
 ```text
 Published head: <head_remote>/<head_branch> at <old_head_sha>
 Base: <base_remote>/<target_branch> at <base_sha>
-Source to replay: published tip at <source_sha>
+Source to replay: <published tip | local branch tip> at <source_sha>
 Source behind base: <count> commits
 Local head state: <preflight fact>
 Repository hooks run. Your checkout and local branches stay as they are.
@@ -45,7 +59,7 @@ Only a clean rebase with verified ancestry, counts, both run refs, a removed wor
 
 ## GateForcePush
 
-Use the template below for this run's rebase result. An existing open PR gets the URL line exactly as shown. Fill the [push settings block](./execution-contracts.md#push-proposals-and-reports) from `REBASED`. Start it with "Under your git settings this command also sends:", list one line per setting with its effect, and end it with "The individual refs are not listed." With no settings use "This command publishes only this branch."
+Use the template below for either source. Include the differing pairs and local-only commit lists whenever the commits come from the local branch, including after rebasing a local source. Show `none` for an empty list. Use the rebase detail lines only for this run's rebase result. For direct publication, say that the new tip is the local branch tip, which already contains the pinned base, and no rebase runs. The backup line describes the ref that will be recorded before the direct push, not a ref already created. An existing open PR gets the URL line exactly as shown. Fill the [push settings block](./execution-contracts.md#push-proposals-and-reports) from `REBASED` for a rebase result or from preflight for direct publication. Start it with "Under your git settings this command also sends:", list one line per setting with its effect, and end it with "The individual refs are not listed." With no settings use "This command publishes only this branch."
 
 Before showing this block, save `$RUN_DIR/force-push-values.json` and run `python3 -I "$SKILL_DIR/scripts/validate-output.py" digest <kind> < "$RUN_DIR/<kind>-values.json" | tee "$RUN_DIR/pending.json"` with `<kind>` replaced by `force-push`. Let the JSON appear unchanged in tool output: do not capture it in a variable, redirect it away, or replace it with an exit code. Never copy a digest into a reply to the user. Stop unless the digest succeeds and the receipt is saved.
 
@@ -55,10 +69,11 @@ Old tip: <old_head_sha>
 New tip: <new_head_sha>
 Pinned base: <base_remote>/<target_branch> at <base_sha>
 Local head state: <preflight fact>
-Source: this run's rebase result
-Commits ahead of base: <before> before, <after> after
-Patches changed per git range-diff: <number, including additions and removals>
-Git re-creates commits with the local committer identity. Existing signatures do not carry over.
+<source: this run's rebase result or the local branch tip, without a rebase>
+<local source: full differing pairs and local-only commits with subjects>
+<rebase only: Commits ahead of base: <before> before, <after> after>
+<rebase only: Patches changed per git range-diff: <number, including additions and removals>>
+<rebase only: Git re-creates commits with the local committer identity. Existing signatures do not carry over.>
 Repository hooks run during the push.
 The open PR <URL> will show the rewritten commits.
 Command: git push --force-with-lease=refs/heads/<head_branch>:<old_head_sha> <head_remote> <new_head_sha>:refs/heads/<head_branch>
@@ -69,11 +84,11 @@ Restore command (yours to run, never the skill's): git push --force-with-lease=r
 Approve this exact command? If you decline or request a change, nothing is pushed.
 ```
 
-Only `branch-rebaser` may execute a force form. Preflight carries none. The only form the skill may execute is the **Command** above, after verifying a separate `force-push` record for those SHAs. The lease is the published tip the user saw. With `source: rebase`, the new tip must be this run's approved rebase result on the pinned base. The restore command is for the user only. `--force`, an unpinned `--force-with-lease`, `+refspec`, and branch deletion are forbidden.
+Only `branch-rebaser` may execute a force form. Preflight carries none. The only form the skill may execute is the **Command** above, after verifying a separate `force-push` record for those SHAs. The lease is the published tip the user saw. With `source: rebase`, the new tip must be this run's approved rebase result on the pinned base. With `source: local-branch`, it must still be the exact local branch tip and contain the pinned base. Before a direct push, the rebaser repeats the series check and requires no `<` row and no undisclosed differing pair or local-only commit. Both sources require a counterpart for every published commit when the commits come from the local branch. The restore command is for the user only. `--force`, an unpinned `--force-with-lease`, `+refspec`, and branch deletion are forbidden.
 
-Re-read the settings before pushing and block if they differ. Do not retry a push or alter a lease. On `LEASE_REJECTED`, remove the attempt's recorded refs with their expected values: the rebased ref, if present, at the new SHA and the backup, if present, at the old SHA. Delete both together in one `git update-ref --stdin` transaction when both exist. If deletion fails, stop with `ERROR`. Otherwise report `Backup ref: n/a` and say in `Reason` that nothing was published by this attempt; return to preflight for fresh pins. Other definite rejections stop the run. An uncertain outcome or failed readback is an error; do not claim nothing changed.
+For direct publication the rebaser records the backup at the published tip before pushing. In either case re-read the settings before pushing and block if they differ. Do not retry a push or alter a lease. On `LEASE_REJECTED`, remove the attempt's recorded refs with their expected values: the rebased ref, if present, at the new SHA and the backup, if present, at the old SHA. Delete both together in one `git update-ref --stdin` transaction when both exist. If deletion fails, stop with `ERROR`. Otherwise report `Backup ref: n/a` and say in `Reason` that nothing was published by this attempt; return to preflight for fresh pins. Other definite rejections stop the run. An uncertain outcome or failed readback is an error; do not claim nothing changed.
 
-A pending question waits; an explicit stop cancels. After a rebase this run produced, a decline or change request goes to `GateRebaseResult` instead.
+A pending question waits; an explicit stop cancels. Declining or requesting a change after a direct publish proposal does not move the local branch, leaves nothing to settle, and continues through `ContinueRequest` from the published head. After a rebase this run produced, a decline or change request goes to `GateRebaseResult` instead.
 
 ## GateRebaseResult and settlement
 
@@ -98,4 +113,4 @@ After either verified result, mark the offer declined and continue through `Cont
 
 Re-pin in preflight; report a base that moved again rather than offering another rebase. In the final report show the original SHA, the retained `refs/pr-creator/backup/<run-id>` and the expanded user-run restore command above. Include: "The backup exists only on this machine." After a push with extras, use the [settings report](./execution-contracts.md#push-proposals-and-reports).
 
-The push did not move the local branch. After a verified push, show the expanded `git reset --keep <new_head_sha>` only as a user-run hint with `<head_branch>` checked out at `<old_head_sha>`, after saving local work and confirming they want the published history. If the local tip differs, preserve its commits first; do not recommend a blind reset. The skill runs neither recovery command.
+The push did not move the local branch. After a verified push, show the expanded `git reset --keep <new_head_sha>` only as a user-run hint with `<head_branch>` checked out at `<old_head_sha>`, after saving local work and confirming they want the published history. If the local tip differs, preserve its commits first; do not recommend a blind reset. For an older copy verified by the series tie-break, the equivalent hint uses the pinned published SHA and requires the checked-out branch still to be at the compared local tip, with local work saved. The skill runs neither recovery command.

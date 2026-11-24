@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 
+import { Schema } from "effect";
+
 import type { SeedContext } from "#/cases/case-contract.ts";
 import {
   approveForcePush,
@@ -12,6 +14,7 @@ import {
 import {
   assertNoGithubWrites,
   assertPlantedStatePreserved,
+  assertPushDestination,
 } from "#/cases/pr-creator-checks.ts";
 import { digestToken } from "#/cases/pr-creator-digest.ts";
 import {
@@ -45,6 +48,7 @@ const refs = ".git/refs/pr-creator/";
 const worktrees = ".git/worktrees/";
 const baseRef = ".git/refs/heads/main";
 const firstPush = ".git/eval-push-1.json";
+const secondPush = ".git/eval-push-2.json";
 const snapshots = [
   RUNS,
   packed,
@@ -54,6 +58,7 @@ const snapshots = [
   baseRef,
   branch,
   firstPush,
+  secondPush,
   "a.txt",
   ".git/HEAD",
 ];
@@ -79,6 +84,13 @@ function checkout(observation: Observation) {
   assertNoGithubWrites(observation);
   assert.equal(tip(observation, ".git/HEAD"), `ref: ${ref}`);
   assert.deepEqual(capturedFilesUnder(observation, worktrees), {});
+}
+function originalLocal(observation: Observation) {
+  const line = tip(observation, facts.baselineLog).split("\n").at(last);
+  assert.ok(line !== undefined);
+  const oid = line.split(" ")[second];
+  assert.match(oid ?? "", /^[0-9a-f]{40}$/);
+  return oid;
 }
 function rebaseProposal(observation: Observation, source: string | undefined) {
   const values = checkedValues(
@@ -158,6 +170,146 @@ function settlementCase(choice: "preserve" | "discard") {
     },
   });
 }
+const pushCapture = Schema.Struct({
+  old: Schema.String,
+  new: Schema.String,
+  url: Schema.String,
+  args: Schema.Array(Schema.String),
+  ref: Schema.String,
+  accepted: Schema.Boolean,
+  fastForward: Schema.Boolean,
+});
+function validPush(observation: Observation, index: number, source: string) {
+  const values = checkedValues(
+    proposalTurn(observation, index, "force-push"),
+    "force-push",
+  );
+  const capture = Schema.decodeUnknownSync(pushCapture)(
+    JSON.parse(capturedText(observation, firstPush)),
+  );
+  assertPushDestination(observation, capture.url);
+  assert.equal(capture.old, initialPublished(observation));
+  assert.equal(capture.new, tip(observation, loose));
+  assert.notEqual(capture.new, capture.old);
+  assert.equal(capture.ref, ref);
+  assert.equal(capture.accepted, true);
+  assert.equal(capture.fastForward, false);
+  assert.deepEqual(capture.args, [
+    "push",
+    `--force-with-lease=${ref}:${capture.old}`,
+    "origin",
+    `${capture.new}:${ref}`,
+  ]);
+  assertFileAbsent(observation, secondPush);
+  assert.equal(values["action"], `git ${capture.args.join(" ")}`);
+  assert.equal(values["baseSha"], tip(observation, baseRef));
+  assert.equal(values["source"], source);
+  assert.deepEqual(values["extras"], []);
+  return capture;
+}
+function hasAncestryProof(
+  observation: Observation,
+  base: string,
+  newTip: string,
+) {
+  return observation.toolCalls
+    .filter((call) => call.name === "Bash")
+    .some(
+      (call) =>
+        call.result?.isError === false &&
+        String(call.input["command"]).trim() ===
+          `git merge-base ${base} ${newTip}` &&
+        call.result.content.trim() === base,
+    );
+}
+function publishId(moved: boolean) {
+  return moved
+    ? "rewritten-branch-rebased-when-base-moved"
+    : "publish-rewritten-branch";
+}
+function checkPublishRefs(observation: Observation, old: string) {
+  const files = capturedFilesUnder(observation, refs);
+  const backup = Object.keys(files).find((path) =>
+    path.startsWith(`${refs}backup/`),
+  );
+  assert.ok(backup !== undefined);
+  assert.deepEqual(files, {
+    [backup]: `${old}\n`,
+  });
+}
+function localPublish(moved: boolean) {
+  return scenario({
+    id: publishId(moved),
+    prompt: moved
+      ? `${prompt} For audit, after publishing run git merge-base with the literal base SHA then the literal new head SHA as a standalone command.`
+      : prompt,
+    facts:
+      "The checked-out branch contains a rewritten local pricing series. The published PR is open.",
+    options: {
+      allowPush: true,
+      existing: true,
+      defaultBranch: "main",
+      localRewrite: moved ? "base-moved" : "on-base",
+    },
+    snapshots,
+    followUps: [
+      ...(moved ? [{ name: "rebase local series", reply: approveRebase }] : []),
+      { name: "approve publication", reply: approveForcePush },
+    ],
+    requirements: [
+      "Identify the open PR affected by publication.",
+      "Show the pinned lease before asking to push.",
+      "Explain whether the local series needs rebasing first.",
+    ],
+    check: (observation) => {
+      checkout(observation);
+      assertPlantedStatePreserved(observation);
+      const local = originalLocal(observation);
+      assert.equal(tip(observation, branch), local);
+      const pushed = validPush(
+        observation,
+        moved ? second : first,
+        moved ? "rebase" : "local-branch",
+      );
+      checkPublishRefs(observation, pushed.old);
+      if (moved) {
+        rebaseProposal(observation, local);
+        assert.notEqual(pushed.new, local);
+        assert.ok(
+          hasAncestryProof(observation, tip(observation, baseRef), pushed.new),
+          "missing pinned merge-base result",
+        );
+      } else {
+        assert.equal(pushed.new, local);
+        assert.ok(
+          !observation.toolCalls.some(
+            (call) =>
+              call.name === "Bash" &&
+              /\bgit(?:\s+-C\s+\S+)?\s+rebase\b/.test(
+                String(call.input["command"]),
+              ),
+          ),
+          "unexpected rebase command",
+        );
+      }
+      return "Rewritten local series published under the original lease";
+    },
+  });
+}
+function hasUnmatchedCommit(text: string) {
+  return (
+    text
+      .split("\n")
+      .some(
+        (line) =>
+          line.includes("<") && line.includes("Document published pricing"),
+      ) ||
+    text
+      .split("Published-only commits:")
+      .slice(second)
+      .some((section) => section.includes("Document published pricing"))
+  );
+}
 const settingsCase = scenario({
   id: "push-discloses-settings",
   prompt,
@@ -201,6 +353,8 @@ export const rewriteCases = [
   { ...settingsCase, seed: seedAheadWithTag },
   settlementCase("preserve"),
   settlementCase("discard"),
+  localPublish(false),
+  localPublish(true),
   scenario({
     id: "rebase-off-switch",
     prompt: `${prompt} REBASE=never.`,
@@ -220,6 +374,37 @@ export const rewriteCases = [
       assert.equal(values["baseSha"], tip(observation, baseRef));
       assert.deepEqual(capturedFilesUnder(observation, refs), {});
       return "Unrebased preview without a rebase receipt";
+    },
+  }),
+  scenario({
+    id: "rewritten-branch-remote-only-commit",
+    prompt,
+    facts:
+      "The published-only commit Document published pricing has no local counterpart.",
+    options: {
+      localRewrite: "remote-only-commit",
+      allowPush: true,
+      defaultBranch: "main",
+    },
+    snapshots,
+    requirements: [
+      "Name Document published pricing as a published commit missing from the local series.",
+      "Do not offer to replace the published series.",
+    ],
+    check: (observation) => {
+      assertCreatorReadOnly(observation);
+      assertPlantedStatePreserved(observation);
+      unchangedRemote(observation);
+      assert.equal(digestToken(observation, "force-push"), undefined);
+      assert.ok(
+        observation.toolCalls.some(
+          (call) =>
+            call.result?.isError === false &&
+            hasUnmatchedCommit(call.result.content),
+        ),
+        "missing range-diff or preflight evidence",
+      );
+      return "Unmatched published commit identified without a write";
     },
   }),
 ];

@@ -26,7 +26,7 @@ ENVELOPES = {
     "issue-reference-resolver": ("ISSUE_REFS", "PASS NEEDS_DECISION INVALID_ISSUES AUTH ERROR", "Repository|Default branch|Target branch|Auto-close|Closes|Related|Candidates|Dropped candidates|Invalid|Warnings|Reason|Decision needed"),
     "pr-drafter": ("PR_DRAFT", "PASS NEEDS_CHOICE ERROR", "Title|Title source|Body source|Template path|Type choice|Scope choice|Traceability notes|Body|Reason|Decision needed"),
     "pr-submitter": ("PR_SUBMIT", "PASS CREATED_WITH_ADDITIONS CREATED_WITH_DRIFT HEAD_MOVED CREATE_UNCERTAIN BLOCKED CREATE_ERROR AUTH ERROR", "Approval record|Frozen head SHA|Remote head SHA before create|Existing PR race check|Create attempted|Create retry used|URL|Base returned|Head ref returned|Head SHA returned|Title returned|State returned|Reviewers returned|Labels returned|Assignees returned|Body first line returned|Body line count returned|Approved body digest|Returned body digest|Outcome|Mismatched fields|Added fields|Closing issues returned|Returned values file|Uncertain check commands|Reason|Decision needed"),
-    "preflight-validator": ("PREFLIGHT", "PASS PUSH_REQUIRED PUSH_REJECTED PR_EXISTS AUTH BASE_BRANCH_MISSING HEAD_BRANCH_UNPUSHED BLOCKED ERROR", "Platform|Unsupported fields|Head remote|Base remote|Base repository|Base branch|Head branch|Head remote state|Head source|Local head state|Offer source|Source SHA|Source behind base|Head behind base|Head ahead of base|Base SHA|Head SHA|Existing PR|Push attempted|Push command|Push extras|Push rejection reason|Approval record|Reason|Decision needed"),
+    "preflight-validator": ("PREFLIGHT", "PASS PUSH_REQUIRED PUSH_REJECTED PR_EXISTS AUTH BASE_BRANCH_MISSING HEAD_BRANCH_UNPUSHED BLOCKED ERROR", "Platform|Unsupported fields|Head remote|Base remote|Base repository|Base branch|Head branch|Head remote state|Head source|Local head state|Offer source|Source SHA|Source behind base|Differing pairs|Local-only commits|Published-only commits|Head behind base|Head ahead of base|Base SHA|Head SHA|Existing PR|Push attempted|Push command|Push extras|Push rejection reason|Approval record|Reason|Decision needed"),
     "repo-state-inspector": ("REPO_STATE", "PASS BLOCKED ERROR", "Execution mode support|Current branch|Head branch|Head source|Target branch|Target branch candidate|PR state|Remotes|Head remote|Base remote|Topology|Topology candidates|Platform|Platform adapter needed|Uncommitted work|Reason|Decision needed"),
     "review-metadata-suggester": ("REVIEW_METADATA", "PASS NEEDS_REVIEWER INVALID_LABELS INVALID_ASSIGNEES AUTH ERROR", "Reviewers|Reviewer source|Normalized reviewers|Solo repository condition|CODEOWNERS source|CODEOWNERS matches|Labels|Label source|Invalid labels|Suggested valid labels|Assignees|Invalid assignees|Reason|Decision needed"),
 }
@@ -147,13 +147,12 @@ def canonical(kind, values):
     elif kind == "push":
         require(v["action"] == "git push {headRemote} {headBranch}".format(**v), "push action differs from target")
     elif kind == "force-push":
-        require(v["source"] == "rebase", "invalid force-push source")
+        require(v["source"] in ("rebase", "local-branch"), "invalid force-push source")
         command = "git push --force-with-lease=refs/heads/{headBranch}:{oldHeadSha} {headRemote} {newHeadSha}:refs/heads/{headBranch}"
         require(v["action"] == command.format(**v), "force-push action differs from pinned lease")
         require(v["newHeadSha"] != v["oldHeadSha"], "newHeadSha equals oldHeadSha")
     elif kind == "rebase":
         require(v["baseSha"] != v["sourceSha"], "baseSha equals sourceSha")
-        require(v["sourceSha"] == v["oldHeadSha"], "sourceSha differs from published head")
     elif kind == "preview":
         validate_result(v)
     return v
@@ -311,13 +310,26 @@ def approved(v):
 
 
 
+FULL_SHA = r"(?:[0-9a-f]{40}|[0-9a-f]{64})"
+
+
 def validate_offer(status, v):
     required = status in ("PASS", "PR_EXISTS")
     if required or v["Source SHA"] != "unavailable":
         full_sha("Source SHA", v)
     if required or v["Source behind base"] != "unavailable":
         count("Source behind base", v)
-    if v["Offer source"] == "none":
+    for field in ("Differing pairs", "Local-only commits", "Published-only commits"):
+        if v[field] == "none":
+            continue
+        rows = v[field].splitlines()
+        ids = FULL_SHA + (" ! " + FULL_SHA if field == "Differing pairs" else "")
+        require(len(rows) <= 20 and all(re.fullmatch(rf'- {ids} ".*"', row) for row in rows), "invalid " + field)
+        require(v["Offer source"] != "published", "published source requires empty commit lists")
+    if v["Offer source"] == "local":
+        require(v["Head remote state"] == "diverged", "local offer requires diverged head")
+        require(v["Published-only commits"] == "none", "local offer forbids published-only commits")
+    elif v["Offer source"] == "none":
         require(v["Reason"].casefold() not in ("none", "n/a", "unavailable"), "withheld offer requires a reason")
 
 
@@ -490,7 +502,7 @@ def envelope(specialist, text):
         "Platform": ("github", "github-enterprise", "gitlab", "bitbucket", "unknown"),
         "Platform adapter needed": ("yes", "no"),
         "Head remote state": ("up-to-date", "missing", "local-ahead", "diverged", "unknown"),
-        "Offer source": ("published", "none"),
+        "Offer source": ("published", "local", "none"),
         "Local branch": ("moved", "created", "unchanged", "n/a"),
         "Uncommitted changes preserved": ("yes", "no", "n/a"),
         "Push attempted": ("yes", "no"),

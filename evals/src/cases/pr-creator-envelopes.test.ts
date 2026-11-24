@@ -60,6 +60,9 @@ function sample(
     "Offer source": "published",
     "Source SHA": "unavailable",
     "Source behind base": "unavailable",
+    "Differing pairs": "none",
+    "Local-only commits": "none",
+    "Published-only commits": "none",
     "Approval record": "valid",
     "Pinned SHA match": "no",
     "Adjusted changed lines": "0",
@@ -198,6 +201,22 @@ describe("pr-creator consumer envelope validation", () => {
     { "Source SHA": "unavailable" },
     { "Source behind base": "unavailable" },
   ];
+  const pair = `- ${sha} ! ${next} "subject"`;
+  const commit = `- ${sha} "subject"`;
+  const rows = (row: string, length: number) =>
+    Array.from({ length }, () => row).join("\n");
+  const local = {
+    "Head remote state": "diverged",
+    "Offer source": "local",
+    "Differing pairs": pair,
+    "Local-only commits": commit,
+  };
+  const none = {
+    ...local,
+    "Offer source": "none",
+    "Published-only commits": commit,
+    Reason: "A published commit has no local counterpart.",
+  };
   const extras = {
     "Push extras": "push.followTags=true; push.pushOption=notify",
   };
@@ -224,11 +243,28 @@ describe("pr-creator consumer envelope validation", () => {
     { "Approval record": "valid" },
     { "Backup ref": "refs/pr-creator/backup/run" },
   ];
+  const listFields = [
+    "Differing pairs",
+    "Local-only commits",
+    "Published-only commits",
+  ];
+  const listLimit = 20;
+  const oversizedList = 21;
   // prettier-ignore
   const cases: Array<[string, string, Fields, Fields[]]> = [
-    [preflight, "ERROR", extras, [...badExtras, { "Offer source": "other" }, { "Source SHA": "short" }, { "Source behind base": "-1" }]],
+    [preflight, "ERROR", { ...local, ...extras }, [{ "Head remote state": "unknown" },
+      { "Published-only commits": commit }, { "Differing pairs": commit }, { "Local-only commits": pair },
+      { "Offer source": "other" }, { "Source SHA": "short" }, { "Source behind base": "-1" },
+      ...badExtras]],
+    [preflight, "ERROR", none, [{ "Published-only commits": pair }]],
     [preflight, "PR_EXISTS", { ...existing, "Head remote state": "up-to-date", "Offer source": "none", Reason: "Mirror remote" },
       [{ Reason: "n/a" }, { Reason: "none" }]],
+    [preflight, "ERROR", {}, [{ "Differing pairs": pair }, { "Local-only commits": commit },
+      { "Published-only commits": commit }]],
+    ...listFields.map((field): [string, string, Fields, Fields[]] => {
+      const row = field === "Differing pairs" ? pair : commit;
+      return [preflight, "ERROR", { ...none, [field]: rows(row, listLimit) }, [{ [field]: rows(row, oversizedList) }]];
+    }),
     [rebaser, "KEPT", { ...kept, ...extras }, [...badSettle, ...badExtras, { Action: "discard" },
       { "Local branch": "n/a" }, { "Kept ref": "refs/heads/../x" }, { "Kept ref": aside["Kept ref"] },
       { "Uncommitted changes preserved": "no" }]],
@@ -248,7 +284,7 @@ describe("pr-creator consumer envelope validation", () => {
     [resolver, "PASS", resolved, [unclassified, invalidIssue]],
     [resolver, "INVALID_ISSUES", invalidIssue, [{ Invalid: "none" }]],
     [preflight, "PR_EXISTS", existing, [noPr, unavailableRepo, ...unavailable]],
-    [preflight, "PASS", { ...source, "Base SHA": next, "Head SHA": sha, "Existing PR": "none", "Head behind base": "0", "Head ahead of base": "3", "Unsupported fields": "labels, closes, assignees", "Push attempted": "yes" },
+    [preflight, "PASS", { ...source, "Base SHA": sha, "Head SHA": next, "Existing PR": "none", "Head behind base": "0", "Head ahead of base": "3", "Unsupported fields": "labels, closes, assignees", "Push attempted": "yes" },
       [missing, ...unavailable, unavailableRepo, shortSha, { "Base SHA": "unavailable" },
       existing, { "Head behind base": "one" }, { "Head ahead of base": "-1" },
       { "Unsupported fields": "reviewers" }]],

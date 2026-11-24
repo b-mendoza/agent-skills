@@ -245,7 +245,7 @@ describe("pr-creator shipped approval validator", () => {
   it.each([
     ["push", { ...branch, headSha: head, extras: [], action: pushCommand }, { action: "git push" }],
     ["force-push", force, { action: "git push --force" }],
-    ["rebase", { ...branch, baseRemote: "upstream", targetBranch: "main", baseSha: base, oldHeadSha: head, sourceSha: head }, { sourceSha: base }],
+    ["rebase", { ...branch, baseRemote: "upstream", targetBranch: "main", baseSha: base, oldHeadSha: base, sourceSha: head }, { sourceSha: base }],
   ] as const)("binds the %s values", (kind, values, invalid) => {
     digest(kind, values);
     expect(status(kind, { ...values, ...invalid })).toBe(INVALID);
@@ -277,6 +277,7 @@ describe("pr-creator shipped approval validator", () => {
         expect(status(kind, { ...values, extras: bad })).toBe(INVALID);
       }
     }
+    digest("force-push", { ...force, source: "local-branch" });
     for (const change of [{ source: "other" }, { source: undefined }]) {
       expect(status("force-push", { ...force, ...change })).toBe(INVALID);
     }
