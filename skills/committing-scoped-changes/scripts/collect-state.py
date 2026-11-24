@@ -346,6 +346,11 @@ def main():
     if len(sys.argv) < 3 or sys.argv[1] not in ("group", "preserve", "blobs"):
         raise ValueError("usage: python3 -I collect-state.py group|preserve|blobs PATH...")
     mode, supplied = sys.argv[1], sys.argv[2:]
+    base, tokens = None, {}
+    if mode == "group":
+        supplied, base, tokens = group_args(supplied)
+    if mode == "hunks" and len(supplied) != 1:
+        raise ValueError(USAGE)
     if len(set(supplied)) != len(supplied):
         raise ValueError("duplicate paths")
     for path in supplied:
@@ -378,6 +383,14 @@ def main():
     records = [b"scoped-state-v1", mode.encode(), filemode]
     blob_lines = []
     for path in paths:
+        if path in tokens:
+            if path not in head_paths:
+                raise ValueError("split path absent in HEAD (new or renamed): " + path)
+            split = HunkFile(base, path)
+            token = tokens[path]
+            records.append(frame([os.fsencode(path), split.base_oid, os.fsencode(token.text),
+                                  split.raw, blob_oid(split.selected(token))]))
+            continue
         file_mode, content = worktree(path, filemode == b"true")
         if mode == "blobs":
             if file_mode == b"000000":
