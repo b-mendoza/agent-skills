@@ -1,12 +1,24 @@
 #!/usr/bin/env python3
-"""Read-only Git state collector. Usage: python3 -I collect-state.py group|preserve|blobs PATH...
+"""Read-only Git state collector. Run from repository root without concurrent writers.
 
-Pass each literal repository-relative file as a separate quoted argument, from
-repository root. Whitespace paths cannot be represented by the plan envelope.
-Outputs one SHA-1 Git blob digest (group/preserve), or mode/OID/path lines
-(blobs, with 000000 - for a deletion). Exit 0 on success, 2 on any failure;
-failures print only a diagnostic to stderr, never a partial result to stdout.
-Requires Python 3 and Git, a SHA-1 repository with HEAD, and no concurrent writers.
+Resolve-scope lists changed paths in byte order, one per line. Selectors are
+case-exact literal files or directory prefixes ending in /, without whitespace
+or glob characters. Exit 3 for an unmatched selector, a partially selected
+rename, or a selected path containing whitespace. An empty selection succeeds.
+Hunks lists numbered zero-context changes from HEAD, showing the first signed
+changed line. Group optionally takes --hunks BASE TOKEN...; BASE is a full
+commit ID, TOKEN is PATH#NEW[+PRIOR], and each list is strictly ascending,
+positive, comma-separated and disjoint. Hunk records bind BASE's blob, token,
+raw worktree bytes and selected blob, not the moving index or HEAD.
+Only unchanged-mode tracked regular text files without clean conversion qualify.
+All modes exit 0 on success and 2 for usage or read failures. Failures print
+only a diagnostic to stderr, never a partial result to stdout.
+
+Group and preserve require a SHA-1 repository with HEAD. Pass each
+literal repository-relative file as a separate quoted argument. Whitespace
+paths cannot be represented by the plan envelope. Each outputs one SHA-1 Git blob digest.
+Preserve batches Git inventories and hashes the raw bytes of every protected
+regular file, even when Git reports no change. Only exact group paths are excluded.
 Gitlinks use their own HEAD, or the index OID when uninitialized; missing paths
 are deletions. An initialized gitlink without a resolvable HEAD is an error.
 """
@@ -342,9 +354,11 @@ def resolve_scope(arguments):
 
 def main():
     if sys.argv[1:] in (["-h"], ["--help"]):
-        return __doc__ + "\n"
-    if len(sys.argv) < 3 or sys.argv[1] not in ("group", "preserve", "blobs"):
-        raise ValueError("usage: python3 -I collect-state.py group|preserve|blobs PATH...")
+        return USAGE + "\n\n" + __doc__ + "\n"
+    if sys.argv[1:2] == ["resolve-scope"]:
+        return resolve_scope(sys.argv[2:])
+    if len(sys.argv) < 3 or sys.argv[1] not in ("group", "preserve", "hunks"):
+        raise ValueError(USAGE)
     mode, supplied = sys.argv[1], sys.argv[2:]
     base, tokens = None, {}
     if mode == "group":
@@ -381,7 +395,6 @@ def main():
         raise ValueError("unknown or ignored path in group")
     paths = sorted(supplied, key=os.fsencode)
     records = [b"scoped-state-v1", mode.encode(), filemode]
-    blob_lines = []
     for path in paths:
         if path in tokens:
             if path not in head_paths:
@@ -392,29 +405,13 @@ def main():
                                   split.raw, blob_oid(split.selected(token))]))
             continue
         file_mode, content = worktree(path, filemode == b"true")
-        if mode == "blobs":
-            if file_mode == b"000000":
-                oid = b"-"
-            elif file_mode == b"160000":
-                oid = content
-            elif file_mode == b"120000":
-                oid = git("hash-object", "--stdin", data=content).strip()
-            else:
-                oid = git("hash-object", "--path=" + path, "--stdin", data=content).strip()
-            blob_lines.append(os.fsdecode(file_mode + b" " + oid) + " " + path)
-        else:
-            records.append(frame([
-                os.fsencode(path), file_mode, content,
-                git("ls-files", "--stage", "-z", "--", path),
-                git("status", "--porcelain=v1", "-z", "--untracked-files=all", "--", path),
-                git("diff", "--no-ext-diff", "--no-textconv", "--no-renames", "--binary", "HEAD", "--", path),
-            ]))
-    if mode == "blobs":
-        return "\n".join(blob_lines) + "\n"
-    payload = frame(records)
-    # Compute only after every read and Git call succeeded.
-    oid = hashlib.sha1(b"blob " + str(len(payload)).encode() + b"\0" + payload).hexdigest()
-    return oid + "\n"
+        records.append(frame([
+            os.fsencode(path), file_mode, content,
+            git("ls-files", "--stage", "-z", "--", path),
+            git("status", "--porcelain=v1", "-z", "--untracked-files=all", "--", path),
+            git("diff", "--no-ext-diff", "--no-textconv", "--no-renames", "--binary", "HEAD", "--", path),
+        ]))
+    return blob_digest(records)
 
 
 if __name__ == "__main__":
@@ -422,6 +419,9 @@ if __name__ == "__main__":
     try:
         output = main()
     except (OSError, ValueError) as error:
-        print("collect-state: " + str(error), file=sys.stderr)
-        sys.exit(2)
-    sys.stdout.write(output)
+        print("collect-state: " + " ".join(str(error).splitlines()), file=sys.stderr)
+        sys.exit(3 if isinstance(error, SelectionError) else 2)
+    if isinstance(output, bytes):
+        sys.stdout.buffer.write(output)
+    else:
+        sys.stdout.write(output)

@@ -18,11 +18,11 @@ const VALIDATOR = fileURLToPath(
 );
 const SUCCESS = 0;
 const HEADER_LINES = 1;
-const TRAILER_LINES = 2;
-const GROUP_LINES = 6;
+const TRAILER_LINES = 3;
+const GROUP_LINES = 7;
 const MESSAGE_OFFSET = 1;
 const PATHS_OFFSET = 2;
-const VERIFICATION_OFFSET = 4;
+const VERIFICATION_OFFSET = 5;
 
 const ENVELOPE_HEADER = "COMMIT_PLAN: PASS\n";
 const NOT_FOUND = -1;

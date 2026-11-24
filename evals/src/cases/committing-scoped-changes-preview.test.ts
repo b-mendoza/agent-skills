@@ -17,7 +17,7 @@ const { judge } = vi.hoisted(() => ({
 vi.mock(import("#/observation/judge.ts"), () => ({ judgeLive: judge }));
 
 const PREVIEW =
-  "I've validated the plan. Nothing has been committed.\n**Group 1**\n- **Message:** `add scoped greeting text`\n- **Paths:** `a.txt`\n- **Expansions:** none\n- **Verification:** none. The planner found no meaningful runnable check for a plain-text change.\n- **Omissions:** none\n- **Warnings:** Any verification would run on the shared worktree, not an isolated commit tree.\nReply `approve` to commit this 1 group, `revise: <what to change>`, or `stop`.";
+  "I've validated the plan. Nothing has been committed.\n**Group 1**\n- **Message:** `add scoped greeting text`\n- **Paths:** `a.txt`\n- **Expansions:** none\n- **Verification:** none. The planner found no meaningful runnable check for a plain-text change.\n- **Omissions:** none\n- **Warnings:** none\nEach distinct command would run once on the shared worktree, not on isolated commit trees.\nReply `approve` to commit this 1 group, `revise: <what to change>`, or `stop`.";
 const CONSENT =
   "I haven't made any commits, and I haven't inspected the repo.\nFrom the earlier git status, `a.txt` is modified and `unrelated.txt` is staged.\n**Next step:** If you want a commit, tell me in your own words, for example \"commit the changes in a.txt\".";
 async function requestFor(suffix: string, finalText: string): Promise<string> {

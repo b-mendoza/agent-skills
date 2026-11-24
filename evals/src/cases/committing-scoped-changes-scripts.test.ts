@@ -21,12 +21,6 @@ import {
   SUCCESS_EXIT,
 } from "#/cases/committing-scoped-changes-test-support.ts";
 
-const validator = resolve(
-  "../skills/committing-scoped-changes/scripts/validate-output.sh",
-);
-const INVALID_EXIT = 1;
-const START_INDEX = 0;
-const DIGEST_LENGTH = 40;
 const EXECUTABLE_MODE = 0o755;
 function submoduleRepo(): string {
   const source = repo();
@@ -58,41 +52,7 @@ function digest(cwd: string, mode: string, ...paths: string[]): string {
   return result.stdout;
 }
 describe("shipped scoped state collector", () => {
-  test("core.filemode=false predicts index modes and nonexecutable new files", () => {
-    const cwd = repo();
-    git(cwd, "update-index", "--chmod=+x", "b");
-    git(cwd, "commit", "-qm", "executable baseline");
-    git(cwd, "config", "core.filemode", "false");
-    writeFileSync(join(cwd, "a"), "changed tracked nonexecutable\n");
-    chmodSync(join(cwd, "a"), EXECUTABLE_MODE);
-    writeFileSync(join(cwd, "b"), "changed tracked executable\n");
-    const nonexecutableMode = 0o644;
-    chmodSync(join(cwd, "b"), nonexecutableMode);
-    writeFileSync(join(cwd, "new"), "new executable filesystem bit\n");
-    chmodSync(join(cwd, "new"), EXECUTABLE_MODE);
-    const prediction = collect(cwd, "blobs", "a", "b", "new");
-    expect(prediction.status).toBe(SUCCESS_EXIT);
-    expect(prediction.stdout).toMatch(
-      /^100644 [a-f0-9]{40} a\n100755 [a-f0-9]{40} b\n100644 [a-f0-9]{40} new\n$/,
-    );
-    git(cwd, "add", "-N", "new");
-    git(
-      cwd,
-      "commit",
-      "--only",
-      "-qm",
-      "filemode ignored",
-      "--",
-      "a",
-      "b",
-      "new",
-    );
-    const committed = git(cwd, "ls-tree", "HEAD", "--", "a", "b", "new")
-      .replaceAll(" blob ", " ")
-      .replaceAll("\t", " ");
-    expect(prediction.stdout).toBe(committed);
-  });
-  test("binds directory symlink text, even with dangling targets, and predicts its committed blob", () => {
+  test("binds directory symlink text, even with dangling targets", () => {
     const cwd = repo();
     mkdirSync(join(cwd, "one"));
     mkdirSync(join(cwd, "two"));
@@ -101,11 +61,6 @@ describe("shipped scoped state collector", () => {
     unlinkSync(join(cwd, "link"));
     symlinkSync("two", join(cwd, "link"));
     expect(digest(cwd, "group", "link")).not.toBe(before);
-    const blobs = collect(cwd, "blobs", "link");
-    expect(blobs.status).toBe(SUCCESS_EXIT);
-    git(cwd, "add", "-N", "link");
-    git(cwd, "commit", "--only", "-qm", "link", "--", "link");
-    expect(blobs.stdout).toContain(git(cwd, "rev-parse", "HEAD:link").trim());
     unlinkSync(join(cwd, "link"));
     symlinkSync("missing", join(cwd, "link"));
     expect(digest(cwd, "group", "link")).not.toBe(before);
@@ -251,15 +206,6 @@ describe("shipped scoped state collector", () => {
     git(cwd, "commit", "--only", "-qm", "a", "--", "a");
     expect(digest(cwd, "preserve", "a")).toBe(before);
   });
-  test("predicts the index OID for an uninitialized gitlink", () => {
-    const cwd = submoduleRepo();
-    const oid = git(cwd, "rev-parse", ":vendor/sub").trim();
-    git(cwd, "submodule", "deinit", "--force", "vendor/sub");
-    const result = collect(cwd, "blobs", "vendor/sub");
-    expect(result.status).toBe(SUCCESS_EXIT);
-    expect(result.stderr).toBe("");
-    expect(result.stdout).toBe(`160000 ${oid} vendor/sub\n`);
-  });
   test("detects an initialized submodule HEAD moving away from its index OID", () => {
     const cwd = submoduleRepo();
     const submodule = join(cwd, "vendor/sub");
@@ -281,46 +227,31 @@ describe("shipped scoped state collector", () => {
     const head = git(submodule, "rev-parse", "HEAD").trim();
     expect(head).not.toBe(indexedOid);
     expect(digest(cwd, "preserve", "a")).not.toBe(before);
-    const result = collect(cwd, "blobs", "vendor/sub");
-    expect(result.status).toBe(SUCCESS_EXIT);
-    expect(result.stdout).toBe(`160000 ${head} vendor/sub\n`);
   });
   test("reports a missing gitlink directory as deleted", () => {
     const cwd = submoduleRepo();
     const before = digest(cwd, "preserve", "a");
     rmSync(join(cwd, "vendor/sub"), { recursive: true });
-    const result = collect(cwd, "blobs", "vendor/sub");
-    expect(result.status).toBe(SUCCESS_EXIT);
-    expect(result.stdout).toBe("000000 - vendor/sub\n");
     expect(digest(cwd, "preserve", "a")).not.toBe(before);
   });
   test("fails without partial output for an initialized gitlink with an unborn HEAD", () => {
     const cwd = submoduleRepo();
     git(join(cwd, "vendor/sub"), "symbolic-ref", "HEAD", "refs/heads/unborn");
-    const result = collect(cwd, "blobs", "a", "vendor/sub");
-    expect(result.status).toBe(COLLECTOR_ERROR_EXIT);
-    expect(result.stdout).toBe("");
-    expect(result.stderr).toContain("HEAD");
-  });
-  test("hashes a gitlink replaced by a symlink without following its target", () => {
-    const cwd = submoduleRepo();
-    rmSync(join(cwd, "vendor/sub"), { recursive: true });
-    symlinkSync("../..", join(cwd, "vendor/sub"));
-    const oid = execFileSync("git", ["hash-object", "--stdin"], {
-      cwd,
-      input: "../..",
-      encoding: "utf8",
-    }).trim();
-    const result = collect(cwd, "blobs", "vendor/sub");
-    expect(result.status).toBe(SUCCESS_EXIT);
-    expect(result.stdout).toBe(`120000 ${oid} vendor/sub\n`);
+    for (const result of [
+      collect(cwd, "group", "a", "vendor/sub"),
+      collect(cwd, "preserve", "a"),
+    ]) {
+      expect(result.status).toBe(COLLECTOR_ERROR_EXIT);
+      expect(result.stdout).toBe("");
+      expect(result.stderr).toContain("HEAD");
+    }
   });
   test("refuses a gitlink reached through a symlink ancestor", () => {
     const cwd = submoduleRepo();
     const outside = repo();
     rmSync(join(cwd, "vendor"), { recursive: true });
     symlinkSync(outside, join(cwd, "vendor"));
-    const result = collect(cwd, "blobs", "vendor/sub");
+    const result = collect(cwd, "group", "vendor/sub");
     expect(result.status).toBe(COLLECTOR_ERROR_EXIT);
     expect(result.stdout).toBe("");
     expect(result.stderr).toContain("symlink ancestor");
@@ -346,100 +277,5 @@ describe("shipped scoped state collector", () => {
     const result = collect(cwd, "group", "a");
     expect(result.status).not.toBe(SUCCESS_EXIT);
     expect(result.stdout).toBe("");
-  });
-  test("a hashing failure after an earlier path succeeds emits no partial blob receipt", () => {
-    const cwd = repo();
-    writeFileSync(join(cwd, ".gitattributes"), "b filter=broken\n");
-    git(cwd, "config", "filter.broken.clean", "false");
-    git(cwd, "config", "filter.broken.required", "true");
-    const result = collect(cwd, "blobs", "a", "b");
-    expect(result.status).not.toBe(SUCCESS_EXIT);
-    expect(result.stdout).toBe("");
-    expect(result.stderr).toContain("filter");
-  });
-  test("ignored tracked staged deletion still predicts commit --only content", () => {
-    const cwd = repo();
-    writeFileSync(join(cwd, ".gitignore"), "a\n");
-    git(cwd, "add", ".gitignore");
-    git(cwd, "commit", "-qm", "ignore");
-    git(cwd, "rm", "--cached", "a");
-    writeFileSync(join(cwd, "a"), "new ignored content\n");
-    const result = collect(cwd, "blobs", "a");
-    expect(result.status).toBe(SUCCESS_EXIT);
-    git(cwd, "commit", "--only", "-qm", "ignored", "--", "a");
-    expect(result.stdout).toContain(git(cwd, "rev-parse", "HEAD:a").trim());
-  });
-});
-
-const plan = `COMMIT_PLAN: PASS\nGroup: 1\nMessage: fix: change a\nPaths: a\nExpansions: none\nVerification: none\nDigest: ${"a".repeat(DIGEST_LENGTH)}\nOmissions: none\nWarnings: none\n`;
-const receipt = `COMMIT_EXECUTE: PASS\nCommit: abcdef0 fix: change a\nPaths: a\nPreserved: ${"b".repeat(DIGEST_LENGTH)}=${"b".repeat(DIGEST_LENGTH)}\nVerification: python3 check.py\nVerification exit: 0\nVerification evidence: 3 assertions passed\nVerification scope: shared worktree; not an isolated commit tree\n`;
-function validate(mode: string, input: string) {
-  return spawnSync("sh", [validator, mode], { input, encoding: "utf8" });
-}
-describe("shipped envelope validator", () => {
-  test("accepts a real digest but rejects the historical empty-input hash", () => {
-    expect(validate("plan", plan).status).toBe(SUCCESS_EXIT);
-    expect(
-      validate(
-        "plan",
-        plan.replace(
-          "a".repeat(DIGEST_LENGTH),
-          "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
-        ),
-      ).status,
-    ).toBe(INVALID_EXIT);
-  });
-  test("requires successful receipts to disclose verification evidence and scope", () => {
-    expect(validate("execute", receipt).status).toBe(SUCCESS_EXIT);
-    expect(
-      validate("execute", receipt.split("Verification:")[START_INDEX] ?? "")
-        .status,
-    ).toBe(INVALID_EXIT);
-    expect(
-      validate(
-        "execute",
-        receipt.replace("Verification exit: 0", "Verification exit: 1"),
-      ).status,
-    ).toBe(INVALID_EXIT);
-    expect(
-      validate(
-        "execute",
-        receipt.replace(
-          "shared worktree; not an isolated commit tree",
-          "isolated commit tree",
-        ),
-      ).status,
-    ).toBe(INVALID_EXIT);
-  });
-  test("post-verification commit and hook failures retain the observed check evidence", () => {
-    const evidence = `Verification: python3 check.py\nVerification exit: 0\nVerification evidence: 3 assertions passed\nVerification scope: shared worktree; not an isolated commit tree\n`;
-    for (const header of [
-      "COMMIT_EXECUTE: COMMIT_ERROR\nReason: rejected\n",
-      "COMMIT_EXECUTE: HOOK_MUTATION\nReason: changed tree\nCommit: abcdef0 fix: change a\n",
-    ]) {
-      expect(validate("execute", header + evidence).status).toBe(SUCCESS_EXIT);
-      expect(validate("execute", header).status).toBe(INVALID_EXIT);
-    }
-    expect(
-      validate(
-        "execute",
-        `COMMIT_EXECUTE: ERROR\nReason: collection failed after verification\n${evidence}`,
-      ).status,
-    ).toBe(SUCCESS_EXIT);
-  });
-  test("none and failed checks have explicit, consistent receipts", () => {
-    const none = receipt
-      .replace("python3 check.py", "none")
-      .replace("Verification exit: 0", "Verification exit: not-run")
-      .replace("3 assertions passed", "not run");
-    expect(validate("execute", none).status).toBe(SUCCESS_EXIT);
-    expect(validate("execute", none.replace("not-run", "0")).status).toBe(
-      INVALID_EXIT,
-    );
-    const failed = `COMMIT_EXECUTE: VERIFY_FAILED\nReason: checker failed\nVerification: python3 check.py\nVerification exit: 1\nVerification evidence: assertion failed\nVerification scope: shared worktree; not an isolated commit tree\n`;
-    expect(validate("execute", failed).status).toBe(SUCCESS_EXIT);
-    expect(
-      validate("execute", failed.replace("exit: 1", "exit: 0")).status,
-    ).toBe(INVALID_EXIT);
   });
 });

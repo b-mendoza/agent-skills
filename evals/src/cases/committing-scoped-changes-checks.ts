@@ -207,7 +207,11 @@ export function checkKnownFailurePlan(observation: Observation): string {
   const plan = capturedPlanGroups(observation);
   if (plan !== undefined) {
     assert.ok(
-      plan.every((group) => group.verification === "sh check.sh format"),
+      plan.every(
+        (group) =>
+          group.verification === "sh check.sh format" ||
+          /^same as group [1-9]\d*$/.test(group.verification),
+      ),
       "known-failing behavior command in validated plan",
     );
   }

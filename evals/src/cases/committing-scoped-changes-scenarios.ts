@@ -25,7 +25,7 @@ const defaults = {
   budgetUsd: 3,
   snapshotPaths: EVIDENCE_PATHS,
   prompt: () =>
-    `Use committing-scoped-changes. Please commit only ${COMMIT_SCOPE.join(", ")}. Leave unrelated staged work untouched. Show the exact plan before executing. Use a separate numbered Group heading for each group, with labeled Message:, Paths:, and Verification: lines; Verification must name its exact command or none.`,
+    `Use committing-scoped-changes. Please commit only ${COMMIT_SCOPE.join(", ")}. Leave unrelated staged work untouched. Show the exact plan before executing. Use a separate numbered Group heading for each group, with labeled Message:, Paths:, and Verification: lines; Verification must name its exact command, an earlier group that runs it, or none.`,
   followUps: [{ name: "approve exact commit plan", reply: approveCommitPlan }],
   judge: judgeExecution,
 } as const;
