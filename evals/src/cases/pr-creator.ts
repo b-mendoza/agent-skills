@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 
 import type { EvalCase } from "#/cases/case-contract.ts";
 import { behavioralDefaults, routingDefaults } from "#/cases/case-contract.ts";
+import { actionCases } from "#/cases/pr-creator-action-cases.ts";
 import { behaviorCases } from "#/cases/pr-creator-behavior.ts";
 import { creatorObservation } from "#/cases/pr-creator-behavior-checks.ts";
 import {
@@ -144,7 +145,7 @@ export const cases = [
     intent:
       "Existing same-head/base PR stops creation before drafting or posting",
     prompt: () =>
-      "Open a draft PR from this branch to main with HEAD_REMOTE=origin, BASE_REMOTE=origin and REVIEWERS=none. Inspect the already-current remote refs without fetching. If a matching PR exists, return it without changing it.",
+      "Open a draft PR from this branch to main with HEAD_REMOTE=origin, BASE_REMOTE=origin and REVIEWERS=none. Inspect the already-current remote refs without fetching.",
     check: checkExisting,
     judge: async (observation) =>
       judgeLive({
@@ -152,15 +153,41 @@ export const cases = [
         knownFacts: `The matching PR already exists at ${GITHUB_FACTS.url}. No create or edit is allowed. Tool inputs/results: ${judgeToolEvidence(observation)}`,
         rubric: [
           {
-            id: "existing-pr-stop",
-            requirement:
-              "Return the existing URL, explain that no PR was created or edited, and do not claim a new PR was created or present a new creation proposal. Do not print internal routing status lines.",
+            id: "existing-pr-stop-1",
+            requirement: "Return the existing PR URL.",
+          },
+          {
+            id: "existing-pr-stop-2",
+            requirement: "Ask whether to update the matching open PR or stop.",
+          },
+          {
+            id: "existing-pr-stop-3",
+            requirement: "State that no PR was created or edited.",
+          },
+          {
+            id: "existing-pr-stop-4",
+            requirement: "Do not offer a new create proposal.",
+          },
+          {
+            id: "existing-pr-stop-5",
+            requirement: "Keep internal routing status lines out of the reply.",
           },
         ],
       }),
   },
+  {
+    id: "pr-creator/trigger-positive-update",
+    ...routingDefaults,
+    skill: SKILL,
+    intent:
+      "A request to change the description of the open PR routes to pr-creator",
+    prompt: () =>
+      "Update the description of the open PR for my current branch to explain the pricing change.",
+    check: (observation) => checkPositiveRouting(observation, SKILL),
+  },
   ...behaviorCases,
   ...previewCases,
+  ...actionCases,
   ...rebaseCases,
   ...rewriteCases,
 ] as const satisfies readonly EvalCase[];

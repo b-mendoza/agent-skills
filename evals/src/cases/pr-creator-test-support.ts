@@ -22,6 +22,19 @@ const branch = {
   headRemote: preview.headRemote,
   headBranch: preview.headBranch,
 };
+const issue = { repository: preview.repository, number: 17 };
+const result = {
+  title: preview.title,
+  body: preview.body,
+  state: preview.state,
+  reviewers: preview.reviewers,
+  labels: preview.labels,
+  assignees: preview.assignees,
+  closes: [],
+  related: [],
+  autoClose: "none",
+  unsupported: [],
+};
 const values = {
   preview,
   scope: {
@@ -55,6 +68,19 @@ const values = {
     source: "rebase",
     extras: [],
     action: `git push --force-with-lease=refs/heads/${branch.headBranch}:${HEAD_SHA} origin ${BASE_SHA}:refs/heads/${branch.headBranch}`,
+  },
+  update: {
+    ...issue,
+    ...result,
+    headRef: branch.headBranch,
+    baseRef: "main",
+    headSha: HEAD_SHA,
+    baselineBodyDigest: runValidator(["body"], "Previous body"),
+    baselineTitle: "Previous title",
+    baselineState: "draft",
+    baselineAssignees: [],
+    baselineReviewers: [],
+    baselineLabels: [],
   },
 };
 

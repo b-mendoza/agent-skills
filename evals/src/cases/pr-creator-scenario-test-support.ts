@@ -42,6 +42,29 @@ export const force = {
   newHeadSha: rebased,
   action: `git push --force-with-lease=${ref}:${head} origin ${rebased}:${ref}`,
 };
+export const sampleUpdate = {
+  repository: facts.repository,
+  number: 17,
+  baseRef: "main",
+  headRef: facts.branch,
+  headSha: head,
+  baselineTitle: facts.title,
+  baselineBodyDigest: runValidator(["body"], "Previous body"),
+  baselineState: "draft",
+  baselineReviewers: [],
+  baselineLabels: [],
+  baselineAssignees: [],
+  title: facts.title,
+  body: "Describe cart rounding.",
+  state: "draft",
+  reviewers: [],
+  labels: [],
+  assignees: [],
+  closes: [],
+  related: [],
+  autoClose: "none",
+  unsupported: [],
+};
 export function shell(content: string): ToolCall {
   return {
     name: "Bash",

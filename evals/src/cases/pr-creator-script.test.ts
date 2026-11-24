@@ -63,6 +63,18 @@ const returned = {
   ...metadata,
   closes: [],
 };
+const updateObserved = {
+  repository,
+  number: 12,
+  ...refs,
+  baselineTitle: "old title",
+  baselineBodyDigest: hash(body),
+  baselineState: "draft",
+  baselineReviewers: metadata.reviewers,
+  baselineLabels: metadata.labels,
+  baselineAssignees: metadata.assignees,
+};
+const update = { ...updateObserved, ...result };
 function hash(text: string) {
   return createHash("sha256").update(text).digest("hex");
 }
@@ -208,6 +220,7 @@ describe("pr-creator shipped approval validator", () => {
       { ...record, kind: "scope" },
       { ...record, kind: undefined },
       { ...record, wording: record.valuesDigest },
+      { ...record, kind: "update" },
       { ...record, wording: `APPROVED ${record.valuesDigest}` },
     ]) {
       expect(verify("preview", preview, invalid).status).toBe(INVALID);
@@ -282,6 +295,19 @@ describe("pr-creator shipped approval validator", () => {
       expect(status("force-push", { ...force, ...change })).toBe(INVALID);
     }
   });
+  it("requires an add-only update against an unchanged baseline", () => {
+    const record = approval("update", update);
+    expect(verify("update", update, record, updateObserved).status).toBe(VALID);
+    expect(
+      verify("update", update, record, {
+        ...updateObserved,
+        baselineTitle: "moved",
+      }).stderr,
+    ).toContain("baselineTitle");
+    for (const change of [{ labels: [] }, { title: update.baselineTitle }]) {
+      expect(status("update", { ...update, ...change })).toBe(INVALID);
+    }
+  });
   it("binds closing references and platform capability", () => {
     const values = {
       ...preview,
@@ -354,10 +380,22 @@ describe("pr-creator shipped approval validator", () => {
     };
     expect(verify("force-push", force, record).status).toBe(INVALID);
   });
+  it("compares the resulting update, not its baseline", () => {
+    const result = run("compare", "update", { values: update, returned });
+    expect(result.status).toBe(VALID);
+    const fields = { title: "exact", state: "exact" };
+    expect(JSON.parse(result.stdout)).toMatchObject({
+      outcome: "exact",
+      fields,
+    });
+  });
   it("requires fresh observations rather than verifying only the digest", () => {
-    expect(verify("scope", scope, approval("scope", scope)).status).toBe(
-      INVALID,
-    );
+    for (const [kind, values] of [
+      ["scope", scope],
+      ["update", update],
+    ] as const) {
+      expect(verify(kind, values, approval(kind, values)).status).toBe(INVALID);
+    }
   });
   it("recognizes a closing keyword followed by the GitLab issue noun", () => {
     expect(
@@ -379,7 +417,7 @@ describe("pr-creator shipped approval validator", () => {
     const help = run("-h", "", {});
     expect(help.status).toBe(VALID);
     expect(help.stdout).toContain(
-      "Kinds: push, scope, rebase, force-push, preview.",
+      "Kinds: push, scope, rebase, force-push, preview, update.",
     );
     expect(run("unknown", "preview", preview).status).toBe(USAGE_ERROR);
   });

@@ -106,6 +106,7 @@ export const approveScope = approvalReply("scope");
 export const approvePush = approvalReply("push");
 export const approveRebase = approvalReply("rebase");
 export const approveForcePush = approvalReply("force-push");
+export const approveUpdate = approvalReply("update");
 
 function asksRebaseChoice(text: string): boolean {
   const reply = normalizeReplyText(text).trim();

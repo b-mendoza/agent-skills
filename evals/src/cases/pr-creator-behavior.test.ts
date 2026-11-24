@@ -6,6 +6,7 @@ import {
   approvePush,
   approveRebase,
   approveScope,
+  approveUpdate,
   checkCreated,
   checkTemplate,
   checkUnknownVerification,
@@ -67,6 +68,7 @@ describe("pr-creator machine approval boundaries", () => {
     ["push", approvePush],
     ["rebase", approveRebase],
     ["force-push", approveForcePush],
+    ["update", approveUpdate],
   ] as const)(
     "answers the prepared %s gate with only a plain affirmative",
     (kind, approve) => {

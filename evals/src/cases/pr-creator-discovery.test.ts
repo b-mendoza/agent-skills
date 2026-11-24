@@ -2,16 +2,19 @@ import { execFileSync, spawnSync } from "node:child_process";
 
 import { expect, it } from "vitest";
 
+import { READBACK_CAPTURE } from "#/cases/pr-creator-behavior-checks.ts";
 import {
   GITHUB_FACTS as facts,
   seedGithubFixture,
 } from "#/cases/pr-creator-fixtures.ts";
 import {
   acceptsOnly,
+  extraWrite,
   finished,
   gate,
   observation,
   preview,
+  sampleUpdate,
 } from "#/cases/pr-creator-scenario-test-support.ts";
 import { makeFixture } from "#/fixtures/fixtures.ts";
 
@@ -147,5 +150,35 @@ it("suppresses lookups even though the published head contains mentions", () => 
       observation(gates),
       observation(gates, {}, endpoints),
     ),
+  ).not.toThrow();
+});
+it("adds and verifies only the approved reviewer", () => {
+  const edit = [
+    "pr",
+    "edit",
+    "17",
+    "-R",
+    facts.repository,
+    "--add-reviewer",
+    reviewer,
+  ];
+  const pr = {
+    title: facts.title,
+    body: "Simplify unit_price while preserving the empty-cart zero contract.",
+    isDraft: true,
+    reviewRequests: [{ login: reviewer }],
+    labels: [],
+    assignees: [],
+  };
+  const good = observation(
+    [gate("update", { ...sampleUpdate, reviewers: [reviewer] }), finished],
+    {
+      ".git/eval-pr-edit-1.json": JSON.stringify({ args: edit, pr }),
+      [READBACK_CAPTURE]: JSON.stringify(pr),
+    },
+    [collaboratorCheck(reviewer), edit, ["pr", "view", "17"]],
+  );
+  expect(
+    acceptsOnly("existing-pr-update-adds-reviewers", good, extraWrite(good)),
   ).not.toThrow();
 });

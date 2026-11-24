@@ -3,12 +3,12 @@
 
 Usage: python3 -I validate-output.py <digest|verify> <kind>       (JSON on stdin)
        python3 -I validate-output.py title                        (JSON on stdin)
-       python3 -I validate-output.py compare preview              (JSON on stdin)
+       python3 -I validate-output.py compare <preview|update>     (JSON on stdin)
        python3 -I validate-output.py envelope <specialist>        (block on stdin)
        python3 -I validate-output.py body                         (exact bytes on stdin)
        python3 -I validate-output.py -h
 Input always arrives on stdin, from a pipe or a quoted heredoc. Never stage a file to feed it.
-Kinds: push, scope, rebase, force-push, preview.
+Kinds: push, scope, rebase, force-push, preview, update.
 Environment variables: none. Side effects: none; stdin in, stdout/stderr out, no files.
 Exit 0: valid/result; 1: invalid input (repair or new approval); 2: usage error.
 Smoke: printf '{}' | python3 -I validate-output.py digest preview # exit 1
@@ -26,6 +26,7 @@ ENVELOPES = {
     "issue-reference-resolver": ("ISSUE_REFS", "PASS NEEDS_DECISION INVALID_ISSUES AUTH ERROR", "Repository|Default branch|Target branch|Auto-close|Closes|Related|Candidates|Dropped candidates|Invalid|Warnings|Reason|Decision needed"),
     "pr-drafter": ("PR_DRAFT", "PASS NEEDS_CHOICE ERROR", "Title|Title source|Body source|Template path|Type choice|Scope choice|Traceability notes|Body|Reason|Decision needed"),
     "pr-submitter": ("PR_SUBMIT", "PASS CREATED_WITH_ADDITIONS CREATED_WITH_DRIFT HEAD_MOVED CREATE_UNCERTAIN BLOCKED CREATE_ERROR AUTH ERROR", "Approval record|Frozen head SHA|Remote head SHA before create|Existing PR race check|Create attempted|Create retry used|URL|Base returned|Head ref returned|Head SHA returned|Title returned|State returned|Reviewers returned|Labels returned|Assignees returned|Body first line returned|Body line count returned|Approved body digest|Returned body digest|Outcome|Mismatched fields|Added fields|Closing issues returned|Returned values file|Uncertain check commands|Reason|Decision needed"),
+    "pr-updater": ("PR_UPDATE", "BASELINE UPDATED UPDATED_WITH_ADDITIONS PARTIAL PR_CHANGED BLOCKED AUTH ERROR", "Action|Approval record|Repository|Number|URL|PR state|Base ref|Head ref|Head SHA|Title|State|Reviewers|Labels|Assignees|Body digest|Body file|Closing issues|Outcome|Applied fields|Not applied fields|Mismatched fields|Added fields|Returned values file|Reason|Decision needed"),
     "preflight-validator": ("PREFLIGHT", "PASS PUSH_REQUIRED PUSH_REJECTED PR_EXISTS AUTH BASE_BRANCH_MISSING HEAD_BRANCH_UNPUSHED BLOCKED ERROR", "Platform|Unsupported fields|Head remote|Base remote|Base repository|Base branch|Head branch|Head remote state|Head source|Local head state|Offer source|Source SHA|Source behind base|Differing pairs|Local-only commits|Published-only commits|Head behind base|Head ahead of base|Base SHA|Head SHA|Existing PR|Push attempted|Push command|Push extras|Push rejection reason|Approval record|Reason|Decision needed"),
     "repo-state-inspector": ("REPO_STATE", "PASS BLOCKED ERROR", "Execution mode support|Current branch|Head branch|Head source|Target branch|Target branch candidate|PR state|Remotes|Head remote|Base remote|Topology|Topology candidates|Platform|Platform adapter needed|Uncommitted work|Reason|Decision needed"),
     "review-metadata-suggester": ("REVIEW_METADATA", "PASS NEEDS_REVIEWER INVALID_LABELS INVALID_ASSIGNEES AUTH ERROR", "Reviewers|Reviewer source|Normalized reviewers|Solo repository condition|CODEOWNERS source|CODEOWNERS matches|Labels|Label source|Invalid labels|Suggested valid labels|Assignees|Invalid assignees|Reason|Decision needed"),
@@ -42,6 +43,8 @@ def sha(text):
 
 
 SCOPE_OBSERVED = "baseSha headSha changedPaths excludedPaths adjustedChangedLines excludedLines"
+UPDATE_OBSERVED = ("repository number baseRef headRef headSha baselineTitle baselineBodyDigest "
+                   "baselineState baselineReviewers baselineLabels baselineAssignees")
 RESULT = "title body state reviewers labels assignees closes related autoClose unsupported"
 SCHEMAS = {
     "push": "headRemote headBranch headSha extras action",
@@ -49,9 +52,12 @@ SCHEMAS = {
     "rebase": "baseRemote targetBranch baseSha headRemote headBranch oldHeadSha sourceSha",
     "force-push": "headRemote headBranch baseSha oldHeadSha newHeadSha source extras action",
     "preview": "repository baseRemote targetBranch headRemote headBranch baseSha headSha effectiveState " + RESULT,
+    "update": UPDATE_OBSERVED + " " + RESULT,
 }
-OBSERVED = {"scope": SCOPE_OBSERVED}
-LISTS = {"excludedPaths", "rules", "changedPaths", "reviewers", "labels", "assignees", "closes", "related", "unsupported"}
+OBSERVED = {"scope": SCOPE_OBSERVED, "update": UPDATE_OBSERVED}
+METADATA = ("reviewers", "labels", "assignees")
+LISTS = {*METADATA, "baselineReviewers", "baselineLabels", "baselineAssignees", "closes", "related",
+         "unsupported", "rules", "changedPaths", "excludedPaths"}
 REPO = r"[\w.-]+(?:/[\w.-]+)+"
 NUMBER = r"[1-9][0-9]*"
 REF = rf"(?:https?://[^/\s]+/{REPO}/(?:-/)?issues/{NUMBER}|(?:{REPO})?#{NUMBER})(?![\w-])"
@@ -77,7 +83,7 @@ def validate_extra(item):
     require(re.fullmatch(r"[A-Za-z0-9-]+\.(?:[^=\r\n]+\.)?[A-Za-z][A-Za-z0-9-]*=[^\r\n]*", item), "expected one git setting as key=value")
 
 
-def normalized_fields(values, schema):
+def normalized_fields(kind, values, schema):
     exact_keys(values, schema, "values")
     result = dict(values)
     for key, value in values.items():
@@ -88,15 +94,17 @@ def normalized_fields(values, schema):
             result[key] = sorted(value)
         elif key in LISTS:
             result[key] = string_list(key, value)
-        elif key in ("adjustedChangedLines", "excludedLines"):
-            require(type(value) is int and value >= 0, "invalid " + key)
+        elif key in ("number", "adjustedChangedLines", "excludedLines"):
+            require(type(value) is int and value >= int(key == "number"), "invalid " + key)
         else:
-            require(isinstance(value, str) and value, key + " must be a string and not empty")
+            require(isinstance(value, str) and (value or (kind == "update" and key == "body")), key + " must be a string and not empty")
             if key.endswith("Sha"):
                 require(re.fullmatch(r"[a-f0-9]{40}|[a-f0-9]{64}", value), key + " must be a full lowercase SHA")
+            elif key == "baselineBodyDigest":
+                require(re.fullmatch(r"[a-f0-9]{64}", value), "invalid baselineBodyDigest")
             elif key == "repository":
                 require(re.fullmatch(REPO, value), "invalid repository")
-            elif key in ("state", "effectiveState"):
+            elif key in ("state", "effectiveState", "baselineState"):
                 require(value in ("draft", "ready"), "invalid " + key)
     return result
 
@@ -122,26 +130,27 @@ def references(text, repository):
     return refs
 
 
-def validate_result(v):
+def validate_result(v, check_body):
     closes, related = set(v["closes"]), set(v["related"])
     require(all(re.fullmatch(REPO + "#" + NUMBER, ref) for ref in closes | related), "noncanonical issue reference")
     require(not closes & related, "closes and related overlap")
     unsupported = set(v["unsupported"])
     require(unsupported <= {"closes", "assignees", "labels"}, "invalid unsupported field")
     for field in unsupported - {"closes"}:
-        require(not v[field], field + " is unsupported")
+        require(not v[field] and not v.get("baseline" + field.title()), field + " is unsupported")
     mode = v["autoClose"]
     require(mode in (("yes", "no", "unverifiable") if closes else ("none",)), "autoClose inconsistent with closes")
     require(not closes or (mode == "unverifiable") == ("closes" in unsupported), "autoClose inconsistent with unsupported")
-    attached = set()
-    for match in REF_LIST.finditer(v["body"]):
-        attached.update(references(match["refs"], v["repository"]))
-    require(attached == closes, "body closing references differ from closes")
-    require(related <= references(v["body"], v["repository"]), "body missing related reference")
+    if check_body:
+        attached = set()
+        for match in REF_LIST.finditer(v["body"]):
+            attached.update(references(match["refs"], v["repository"]))
+        require(attached == closes, "body closing references differ from closes")
+        require(related <= references(v["body"], v["repository"]), "body missing related reference")
 
 
 def canonical(kind, values):
-    v = normalized_fields(values, SCHEMAS[kind])
+    v = normalized_fields(kind, values, SCHEMAS[kind])
     if kind == "scope":
         validate_scope(v)
     elif kind == "push":
@@ -154,14 +163,20 @@ def canonical(kind, values):
     elif kind == "rebase":
         require(v["baseSha"] != v["sourceSha"], "baseSha equals sourceSha")
     elif kind == "preview":
-        validate_result(v)
+        validate_result(v, True)
+    elif kind == "update":
+        changed_body = sha(v["body"]) != v["baselineBodyDigest"]
+        validate_result(v, changed_body)
+        for key in METADATA:
+            require(set(v["baseline" + key.title()]) <= set(v[key]), key + " must be add-only")
+        require(changed_body or any(v[key] != v["baseline" + key.title()] for key in ("title", "state", *METADATA)), "empty update delta")
     return v
 
 
 def digests(kind, values):
     values = canonical(kind, values)
     serialized = json.dumps(values, sort_keys=True, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
-    return {"valuesDigest": sha(serialized), "bodyDigest": sha(values["body"]) if kind == "preview" else "n/a"}
+    return {"valuesDigest": sha(serialized), "bodyDigest": sha(values["body"]) if "body" in values else "n/a"}
 
 
 def verify(kind, payload):
@@ -177,8 +192,8 @@ def verify(kind, payload):
         require(record["action"] == payload["values"]["action"], "approval action differs from push command")
     if kind in OBSERVED:
         fields = OBSERVED[kind]
-        observed = normalized_fields(payload["observed"], fields)
-        approved = normalized_fields({k: payload["values"][k] for k in fields.split()}, fields)
+        observed = normalized_fields(kind, payload["observed"], fields)
+        approved = normalized_fields(kind, {k: payload["values"][k] for k in fields.split()}, fields)
         for key in approved:
             require(observed[key] == approved[key], "observed differs: " + key)
 
@@ -249,7 +264,8 @@ def compare(kind, payload):
     returned = payload["returned"]
     exact_keys(returned, "baseRef headRef headSha title body state reviewers labels assignees closes", "returned")
     expected = dict(v)
-    expected.update(baseRef=v["targetBranch"], headRef=v["headBranch"], state=v["effectiveState"])
+    if kind == "preview":
+        expected.update(baseRef=v["targetBranch"], headRef=v["headBranch"], state=v["effectiveState"])
     if v["autoClose"] != "yes":
         expected["closes"] = []
     fields, extras = {}, {}
@@ -307,7 +323,6 @@ def comma_list(value):
 
 def approved(v):
     require(v["Approval record"] == "valid", "expected Approval record: valid")
-
 
 
 FULL_SHA = r"(?:[0-9a-f]{40}|[0-9a-f]{64})"
@@ -465,6 +480,16 @@ def rebase_envelope(status, v):
         require(re.fullmatch(r"refs/pr-creator/backup/[^\s/]+(?:/[^\s/]+)*", v["Backup ref"]) and ".." not in v["Backup ref"], "invalid Backup ref")
 
 
+def update_envelope(status, v):
+    if status in ("UPDATED", "UPDATED_WITH_ADDITIONS", "PARTIAL", "PR_CHANGED"):
+        approved(v)
+    require(v["Action"] in ("read", "apply"), "invalid update Action")
+    if status == "BASELINE":
+        require(v["Action"] == "read" and v["PR state"] == "open", "BASELINE requires a read of an open PR")
+    elif status == "PR_CHANGED":
+        require(v["Applied fields"] == "none", "PR_CHANGED forbids applied fields")
+
+
 def resolver_envelope(status, v):
     if status == "PASS":
         require(v["Candidates"] == v["Invalid"] == "none", "PASS requires Candidates: none and Invalid: none")
@@ -493,7 +518,7 @@ def envelope(specialist, text):
     for index, header in enumerate(headers[1:], 2):
         end = headers[index].start() if index < len(headers) else len(text)
         value = text[header.end():end].strip()
-        require(value, header[1] + " must not be empty")
+        require(value or (header[1] == "Body" and values["Body source"] in ("edited", "unchanged")), header[1] + " must not be empty")
         values[header[1]] = value
     status = lines[0].split(": ")[1]
     enums = {
@@ -510,8 +535,8 @@ def envelope(specialist, text):
         "Approval record": ("valid", "missing", "digest-mismatch", "n/a"),
         "Pinned SHA match": ("yes", "no"),
         "Scope approval": ("valid", "missing", "digest-mismatch", "n/a"),
-        "Title source": ("override", "generated"),
-        "Body source": ("override", "template", "generated"),
+        "Title source": ("override", "generated", "unchanged"),
+        "Body source": ("override", "template", "generated", "edited", "unchanged"),
         "Head source": ("checkout", "remote"),
         "Auto-close": ("yes", "no", "unverifiable", "none"),
         "Outcome": ("exact", "additions", "drift", "n/a"),
@@ -532,7 +557,7 @@ def envelope(specialist, text):
         require(values["PR state"] in ("draft", "ready") or values["PR state"].startswith("invalid: "), "invalid PR state")
     checks = {"issue-reference-resolver": resolver_envelope, "preflight-validator": preflight_envelope, "diff-analyzer": analyzer_envelope,
               "review-metadata-suggester": metadata_envelope, "pr-submitter": submit_envelope,
-              "branch-rebaser": rebase_envelope}
+              "branch-rebaser": rebase_envelope, "pr-updater": update_envelope}
     if specialist in checks:
         checks[specialist](status, values)
     print("valid")
@@ -551,7 +576,7 @@ def main():
     if args in (["-h"], ["--help"]):
         print(USAGE)
         return 0
-    modes = {"digest": SCHEMAS, "verify": SCHEMAS, "envelope": ENVELOPES, "compare": ("preview",)}
+    modes = {"digest": SCHEMAS, "verify": SCHEMAS, "envelope": ENVELOPES, "compare": ("preview", "update")}
     valid = (len(args) == 1 and args[0] in ("body", "title")) or (len(args) == 2 and args[1] in modes.get(args[0], ()))
     if not valid:
         print(USAGE, file=sys.stderr)

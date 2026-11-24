@@ -4,7 +4,7 @@ Current-state reference. Update when source selection, the rebase or lease push,
 
 ## Select the source and make one offer
 
-Use fresh preflight pins. Start from the published tip unless a local `<head_branch>` exists and has diverged from it. A diverged local branch can be the source even when it is not checked out. Show `Local head state` as a fact.
+On both the create and existing-PR paths, use fresh preflight pins. An existing PR with `EXISTING_PR=stop`, or an existing-PR action request with no open PR, stops before the offer. Start from the published tip unless a local `<head_branch>` exists and has diverged from it. A diverged local branch can be the source even when it is not checked out. Show `Local head state` as a fact.
 
 For diverged tips, preflight compares each branch's series against its own merge-base with the pinned base. Run `git range-diff --no-color --no-patch <mbP>..<published> <mbL>..<local>`, where `<mbP>` is the published tip's merge-base with the base and `<mbL>` is the local tip's merge-base with the base. Read the sign on each row:
 

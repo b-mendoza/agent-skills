@@ -19,6 +19,7 @@ import {
   rebase,
   rebased,
   ref,
+  sampleUpdate,
   shell,
 } from "#/cases/pr-creator-scenario-test-support.ts";
 import { createdObservation } from "#/cases/pr-creator-test-support.ts";
@@ -248,6 +249,51 @@ describe("rebase proposal boundaries", () => {
             args: ["push", "--force"],
           }),
         }),
+      ),
+    ).not.toThrow();
+  });
+});
+describe("existing PR actions", () => {
+  it("requires a fresh baseline without a write", () => {
+    const title = `${facts.title} (edited externally)`;
+    const good = observation(
+      [
+        gate("update", sampleUpdate),
+        gate("update", { ...sampleUpdate, title, baselineTitle: title }),
+      ],
+      {
+        [READBACK_CAPTURE]: JSON.stringify({
+          title,
+          body: "old",
+          isDraft: true,
+        }),
+        ".git/eval-pr-edit-1.json": null,
+        ".git/eval-pr-ready-1.json": null,
+      },
+    );
+    expect(
+      acceptsOnly("existing-pr-changed-after-preview", good, extraWrite(good)),
+    ).not.toThrow();
+  });
+  it("requires readback after the failed state change", () => {
+    const title = "fix: remove redundant guard";
+    const pr = { title, body: "old", isDraft: true };
+    const edit = ["pr", "edit", "17", "-R", facts.repository, "--title", title];
+    const ready = ["pr", "ready", "17", "-R", facts.repository];
+    const gates = [
+      gate("update", { ...sampleUpdate, title, state: "ready" }),
+      finished,
+    ];
+    const captures = {
+      [READBACK_CAPTURE]: JSON.stringify(pr),
+      ".git/eval-pr-edit-1.json": JSON.stringify({ args: edit, pr }),
+      ".git/eval-pr-ready-1.json": null,
+    };
+    expect(
+      acceptsOnly(
+        "existing-pr-partial-write",
+        observation(gates, captures, [edit, ready, ["pr", "view", "17"]]),
+        observation(gates, captures, [edit, ready]),
       ),
     ).not.toThrow();
   });

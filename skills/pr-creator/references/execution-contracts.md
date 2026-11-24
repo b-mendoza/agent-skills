@@ -4,17 +4,17 @@ Current-state reference. Update when user-facing outputs, approval handling, or 
 
 ## Stop or suspension reply
 
-Explain the outcome in plain prose: what stopped progress, the evidence, what changed or did not, and one safe next action. Do not print routing statuses. `TerminalBlocked` means a real precondition or execution path is unavailable. For an existing PR, return its URL and say no PR was created or edited.
+Explain the outcome in plain prose: what stopped progress, the evidence, what changed or did not, and one safe next action. Do not print routing statuses. `TerminalBlocked` means a real precondition or execution path is unavailable. `TerminalPrExists` returns the URL, says no PR was created or edited, and notes that the user can request an update.
 
 For `TerminalAwaitingUser`, leave the exact proposal and its approval question visible if waiting for approval, or the pending question if waiting for a choice. Say what has not been done and stop the turn. Use the template below for a create proposal; for another approval, show the complete artifact for that action.
-
-Before showing a scope proposal, save `$RUN_DIR/<kind>-values.json` and run `python3 -I "$SKILL_DIR/scripts/validate-output.py" digest <kind> < "$RUN_DIR/<kind>-values.json" | tee "$RUN_DIR/pending.json"` with `<kind>` replaced by `scope`. Let the JSON appear unchanged in tool output: do not capture it in a variable, redirect it away, or replace it with an exit code. Never copy a digest into a reply to the user. Stop unless the digest succeeds and the receipt is saved.
 
 For `GateScope`, copy the analyzer’s one-line `Scope values` into `$RUN_DIR/scope-values.json` verbatim. Show the pinned SHAs, changed paths, excluded paths, adjusted and excluded line counts, and fired rules. Grouped areas explain the decision but are not digest fields. Ask whether to continue with this scope; approval does not authorize a push or create.
 
 For `TerminalRebaseStopped`, explain why the rebase, the publish or its push stopped, what did and did not change, and the next action. Include conflict paths or rejection evidence when available. Say that no PR was created or edited and whether the checkout and published branch stayed unchanged. Offer a rerun that declines the offer to use the published head, or the fix for the precondition that stopped the run. If a backup ref was retained, name it and say: "The backup exists only on this machine."
 
 After a force-push decline and `preserve`, name the local branch moved or created, or name the ref kept aside and say the branch did not move. If the branch moved or was created, say that the local branch and the published branch now differ on purpose and not to run `git pull` on that branch. A merge-style pull would merge the two histories. If the result was kept aside, say the rebased result differs from the published branch and describe the actual state of the unmoved branch. In either case, say that the PR shows the old commits and that a later run offers publication if the rewritten result is the eligible local branch tip. Carry these facts into the reply, the preview note if shown, and the final report. After `discard`, say that the temporary result and backup were removed, the branch and checkout did not move, and the PR uses the published commits. Do not say the branches now match unless they do.
+
+For `TerminalActionsDone`, report the verified PR update from `actions.json`. For `TerminalActionsPartial`, report the failure and its evidence. If the run stopped before a write, say the update was not attempted and why. For a partial PR update, show fields applied and not applied. Distinguish an uncertain write from a verified failure. Do not retry. Give a safe manual check or say that a rerun can read a fresh baseline for the remainder.
 
 ## Push proposals and reports
 
@@ -74,7 +74,7 @@ Unresolved review findings:
 <findings | none>
 ```
 
-The source note reports how the local copy relates to the selected remote head, including when it is behind, absent, or unknown. After settling a declined rebase push, use the published pins and include the applicable `preserve` or `discard` note above. Do not imply uncommitted files or unpushed commits are part of the PR. For `Closes`, give the expectation from `autoClose`: automatic on merge, no automatic close, or none. If `closes` is in `unsupported`, show the refs or `none` followed by “not verifiable on <platform>.” Show unresolved findings above the question, outside the exact description.
+The source note reports how the local copy relates to the selected remote head, including when it is behind, absent, or unknown. After settling a declined rebase push, use the published pins and include the applicable `preserve` or `discard` note above. Do not imply uncommitted files or unpushed commits are part of the PR. For `Closes`, give the expectation from `autoClose`: automatic on merge, no automatic close, or none. If `closes` is in `unsupported`, show the refs or `none` followed by “not verifiable on <platform>.” Show unresolved findings above the question in either create or update mode, outside the exact description.
 
 End with a prose question such as “Do you approve creating this PR exactly as shown?” Do not perform an action after asking. A change to any bound value invalidates consent and routes to the earliest affected phase. Use [approval-protocol.md](./approval-protocol.md) for the consent rules: the orchestrator recomputes the digest, and the receiving specialist verifies its own record with fresh observations where required.
 
@@ -113,12 +113,13 @@ Maintain independent counters. Count the relevant recovery or repair cycle, not 
 | Counter | Cap | At the limit |
 | --- | --- | --- |
 | `push`, `scope`, `type/scope`, `reviewer`, `label`, `assignee` | 3 each | `FinalDecision`: ask for exact recovery values or stop. |
-| `preview-edit` | 3 | `FinalDecision`. |
+| `preview-edit` | 3 per gate (`GatePreview`, `GateUpdate`) | `FinalDecision` for create/update. |
 | `validation` | 1 | `TerminalBlocked` on another invalid envelope; applies to every registered specialist. |
 | `approval-reask[gate]` | 1 | `TerminalAwaitingUser` if still unclear. |
 | `issue-refs` | 3 | `ResolveIssues` routes to `FinalDecision`. |
-| `review` | 2 | Show the create preview with remaining findings disclosed if the digest can be computed; otherwise `FinalDecision`. |
+| `review` | 2 | Show the create or update preview with remaining findings disclosed if the digest can be computed; otherwise `FinalDecision`. |
 | `rebase` | 2 stale leases, for either source | `RunPreflight` makes no further offer, reports why, and routes to `ContinueRequest`. |
+| `update-refresh` | 3 | `ApplyUpdate` routes to `TerminalActionsPartial`. |
 
 Submission has no cycle counter beyond the bounded retry for an unconfirmed create in `pr-submitter`.
 

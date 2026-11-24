@@ -7,7 +7,11 @@ import { chooseRebaseResult } from "#/cases/pr-creator-behavior-checks.ts";
 import { assertPushDestination } from "#/cases/pr-creator-checks.ts";
 import { assertNoWriteCalls } from "#/cases/pr-creator-read-only.ts";
 import { commands } from "#/cases/pr-creator-rewrite-fixture-tests.ts";
-import { RUNS } from "#/cases/pr-creator-scenario.ts";
+import { checkedValues, RUNS } from "#/cases/pr-creator-scenario.ts";
+import {
+  gate,
+  sampleUpdate,
+} from "#/cases/pr-creator-scenario-test-support.ts";
 import { FIXTURE_ROOT_PATH } from "#/cases/shared-checks.ts";
 import {
   createObservation,
@@ -104,6 +108,40 @@ it.each(["preserve", "discard"] as const)(
     ).toEqual({ reply: choice });
   },
 );
+it("verifies cleaned values against the proposal receipt regardless of their writer", () => {
+  const proposal = gate("update", sampleUpdate);
+  const value = JSON.stringify(sampleUpdate);
+  const filename = "update-values.json";
+  for (const writer of [
+    {
+      name: "Write",
+      input: { file_path: `${RUNS}one/${filename}`, content: value },
+    },
+    bash(`cat > $RUN_DIR/${filename} <<'END'\n${value}\nEND`),
+  ]) {
+    const obs = createObservation({
+      toolCalls: [writer, ...proposal.turn.toolCalls],
+      repoFiles: { [RUNS]: "" },
+    });
+    expect(checkedValues(obs, "update")).toEqual(sampleUpdate);
+    expect(() =>
+      checkedValues({ ...obs, toolCalls: [writer] }, "update"),
+    ).toThrow(/receipt/);
+  }
+  const wrong = { ...sampleUpdate, title: "Changed after approval" };
+  expect(() =>
+    checkedValues(
+      createObservation({
+        toolCalls: proposal.turn.toolCalls,
+        repoFiles: {
+          [RUNS]: "",
+          [`.git/eval-frozen/one/${filename}`]: JSON.stringify(wrong),
+        },
+      }),
+      "update",
+    ),
+  ).toThrow(/match/);
+});
 it("keeps issue and PR identity distinct and captures file bytes before terminal cleanup", ({
   onTestFinished,
 }) => {

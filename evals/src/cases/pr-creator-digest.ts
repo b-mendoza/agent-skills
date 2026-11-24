@@ -10,6 +10,7 @@ export const approvalKinds = [
   "preview",
   "push",
   "scope",
+  "update",
   "rebase",
   "force-push",
 ] as const;
@@ -80,7 +81,9 @@ function latestTurn(observation: Observation) {
 
 function digestReceipts(observation: Observation, gate: ApprovalKind) {
   const { toolCalls: calls, finalText: reply } = latestTurn(observation);
-  const expectedBody = gate === "preview" ? HEX_DIGEST : /^n\/a$/;
+  const expectedBody = ["preview", "update"].includes(gate)
+    ? HEX_DIGEST
+    : /^n\/a$/;
   const tokens = calls.flatMap((call, index) =>
     successfulDigestCall(call, gate)
       ? (call.result?.content ?? "")

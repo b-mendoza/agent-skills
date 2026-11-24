@@ -18,6 +18,7 @@ const specialists = {
   submit: "pr-submitter",
   resolver: "issue-reference-resolver",
   rebaser: "branch-rebaser",
+  update: "pr-updater",
 } as const;
 
 function contractBlock(specialist: string): string {
@@ -30,6 +31,10 @@ function contractBlock(specialist: string): string {
   return block;
 }
 type Fields = Record<string, string>;
+const specialistDefaults: Record<string, Fields> = {
+  "pr-updater": { "PR state": "open" },
+  "branch-rebaser": { Action: "rebase" },
+};
 function sample(
   specialist: string,
   status = "ERROR",
@@ -44,11 +49,12 @@ function sample(
     "Issue mentions": "none",
     "Issue mentions omitted": "0",
     "Excluded generated/vendored/lock totals": "none",
+
     "Invalid labels": "none",
     "Invalid assignees": "none",
     "Auto-close": "none",
     URL: "unavailable",
-    Action: "rebase",
+    Action: "read",
     "Worktree removed": "yes",
     "Checkout unchanged": "yes",
     Topology: "ambiguous",
@@ -75,6 +81,7 @@ function sample(
     "Body source": "generated",
     "Create attempted": "no",
     "Create retry used": "no",
+    ...specialistDefaults[specialist],
     ...overrides,
   };
   return contractBlock(specialist)
@@ -184,7 +191,7 @@ describe("pr-creator consumer envelope validation", () => {
     "Scope approval": "digest-mismatch",
     "Pinned SHA match": "no",
   };
-  const { preflight, resolver, analyzer, metadata, submit, rebaser } =
+  const { preflight, resolver, analyzer, metadata, update, submit, rebaser } =
     specialists;
   const badLabel = { "Invalid labels": "missing" };
   const badAssignee = { "Invalid assignees": "bob" };
@@ -303,6 +310,8 @@ describe("pr-creator consumer envelope validation", () => {
       { "Issue mentions omitted": "1" }, { "Issue mentions omitted": "-1" }]],
     [analyzer, "ERROR", { "Issue mentions": mentions, "Issue mentions omitted": "4" },
       [{ "Issue mentions": `${mentions}, #99 (branch)` }]],
+    ["pr-drafter", "NEEDS_CHOICE", { "Body source": "edited", "Decision needed": "provide ticket key" },
+      [{ "Body source": "invented" }]],
     [metadata, "PASS", {}, [badLabel, badAssignee]],
     [metadata, "INVALID_LABELS", badLabel, [{ "Invalid labels": "none" }]],
     [metadata, "INVALID_ASSIGNEES", badAssignee, [{ "Invalid assignees": "none" }]],
@@ -322,7 +331,22 @@ describe("pr-creator consumer envelope validation", () => {
       { "Worktree removed": "no" }, { "Checkout unchanged": "no" }]],
     [rebaser, "PUSHED", { Action: "push", "New head SHA": next, "Remote head after": next, "Backup ref": "refs/pr-creator/backup/run" },
       [{ Action: "rebase" }, { "Remote head after": sha }, { "Backup ref": "refs/heads/run" }]],
+    [update, "BASELINE", {}, [{ Action: "apply" }, { "PR state": "closed" }]],
+    [update, "PR_CHANGED", { Action: "apply", "Applied fields": "none" },
+      [missing, { "Applied fields": "body" }]],
   ];
+  it.each(["edited", "unchanged", "generated", "template", "override"])(
+    "checks empty %s body",
+    (source) => {
+      const input = sample("pr-drafter", "PASS", {
+        "Title source": "unchanged",
+        "Body source": source,
+      }).replace("Body: n/a\n- n/a", "Body:");
+      expect(validate("pr-drafter", input).status).toBe(
+        ["edited", "unchanged"].includes(source) ? VALID : INVALID,
+      );
+    },
+  );
   it.each(cases)(
     "checks %s %s evidence",
     (specialist, status, valid, invalid) => {
