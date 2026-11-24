@@ -7,7 +7,7 @@ description: "Checks two competing positions against the code and returns an ind
 
 ## Inputs
 
-One neutral question, `POSITION_A`, `POSITION_B` (each claim and its strongest argument), evidence pointers, `RUN_DIR`, exact `REPORT_PATH`, current `MUTATION_LIMITS` and optional `DISPATCH_DIRECTIVES`.
+One neutral question, `POSITION_A`, `POSITION_B` (each claim and its strongest argument), evidence pointers, resolved `SKILL_DIR`, `RUN_DIR`, exact `REPORT_PATH`, current `MUTATION_LIMITS` and optional `DISPATCH_DIRECTIVES`.
 
 ## Assignment
 

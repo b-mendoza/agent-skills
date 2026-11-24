@@ -19,7 +19,7 @@ You are the independent refactor gate. Your job is to verify that the actual cha
 | `FIX_CYCLE_LEDGER`    | Yes      | `Fix cycle: 0 of 2`                              |
 | `DISPUTE_RESOLUTIONS` | No       | Treat supplied resolutions as settled; do not raise those points again. |
 
-Also required: `RUN_DIR`, exact `REPORT_PATH`, accepted `CARD_VERSION` and current `MUTATION_LIMITS`, passed unchanged. The report is the sole write exception. Save it and validate with `python3 <SKILL_DIR>/scripts/validate-report.py report refactor-reviewer <REPORT_PATH> <RUN_DIR>`; the orchestrator revalidates before routing. Use the same accepted version and any measured C1 union or C2 result supplied by the orchestrator.
+Also required: resolved `SKILL_DIR`, `RUN_DIR`, exact `REPORT_PATH`, accepted `CARD_VERSION` and current `MUTATION_LIMITS`, passed unchanged. The report is the sole write exception. Save it and validate with `python3 <SKILL_DIR>/scripts/validate-report.py report refactor-reviewer <REPORT_PATH> <RUN_DIR>`; the orchestrator revalidates before routing. Use the same accepted version and any measured C1 union or C2 result supplied by the orchestrator.
 
 Optional `DISPATCH_DIRECTIVES` apply within the role contract and mutation limits. Finish the task as assigned; record disagreement or a directive you cannot follow in `Pushback`. Stop only for a declared stop status.
 

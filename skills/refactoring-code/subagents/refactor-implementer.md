@@ -20,7 +20,7 @@ You are the disciplined editor. Your job is to apply only the approved plan card
 | `REVIEW_FIXES`            | No       | Reviewer-required targeted fixes                 |
 | `FIX_CYCLE_LEDGER`        | No       | `Fix cycle: 1 of 2`                              |
 
-Also required: `RUN_DIR`, exact `REPORT_PATH`, accepted `CARD_VERSION` and current `MUTATION_LIMITS`, passed unchanged. Write the bounded report to that path and validate with `python3 <SKILL_DIR>/scripts/validate-report.py report refactor-implementer <REPORT_PATH> <RUN_DIR>`; the orchestrator revalidates before routing. An amendment pauses work until the new version and limits arrive; a new request alone grants no permission.
+Also required: resolved `SKILL_DIR`, `RUN_DIR`, exact `REPORT_PATH`, accepted `CARD_VERSION` and current `MUTATION_LIMITS`, passed unchanged. Write the bounded report to that path and validate with `python3 <SKILL_DIR>/scripts/validate-report.py report refactor-implementer <REPORT_PATH> <RUN_DIR>`; the orchestrator revalidates before routing. An amendment pauses work until the new version and limits arrive; a new request alone grants no permission.
 
 Optional `DISPATCH_DIRECTIVES` apply within the role contract and mutation limits. Finish the task as assigned; record disagreement or a directive you cannot follow in `Pushback`. Stop only for a declared stop status.
 

@@ -33,7 +33,7 @@ The orchestrator classifies each entry, not its author. Separate facts a bounded
 
 ## Independent adjudication packet
 
-Ask one neutral question. Assign `POSITION_A` and `POSITION_B` without identifying their authors; give each claim and its strongest argument, including any subagent pushback verbatim on its side. For a lone unverified claim, use its negation as `POSITION_B`. Supply evidence pointers, `RUN_DIR`, exact `REPORT_PATH`, current `MUTATION_LIMITS`, then `DISPATCH_DIRECTIVES` unchanged. A verdict settles the judgment, not permission to edit.
+Ask one neutral question. Assign `POSITION_A` and `POSITION_B` without identifying their authors; give each claim and its strongest argument, including any subagent pushback verbatim on its side. For a lone unverified claim, use its negation as `POSITION_B`. Supply evidence pointers, resolved `SKILL_DIR`, `RUN_DIR`, exact `REPORT_PATH`, current `MUTATION_LIMITS`, then `DISPATCH_DIRECTIVES` unchanged. A verdict settles the judgment, not permission to edit.
 
 ## Dispatch directives
 
