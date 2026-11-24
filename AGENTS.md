@@ -70,6 +70,8 @@ When a model does not solve a task, do these steps in order.
 2. Raise the effort level one step. Stop at `high`.
 3. Move to the next model in the table. Start that model at `medium`.
 
+For code work, if step 3 leads to `claude-fable-5-2` and no `claude-fable-5-2` condition is true, run `gpt-6.2-astra` again at `high` effort with the same verification check.
+
 ### `claude-fable-5-2` conditions
 
 For code work, use `claude-fable-5-2` only when one of these conditions is true.
