@@ -15,7 +15,7 @@ const DIGEST_LENGTH = 40;
 const FIRST_CALL = 0;
 const MESSAGE = "update client defaults and exchange guide and policy content";
 const PATHS = "checksums.txt client.js guide.md policy.md";
-const PAYLOAD = `COMMIT_PLAN: PASS\nGroup: 1\nMessage: ${MESSAGE}\nPaths: ${PATHS}\nExpansions: none\nVerification: none\nDigest: ${"a".repeat(DIGEST_LENGTH)}\nOmissions: none\nWarnings: shared worktree\n`;
+const PAYLOAD = `COMMIT_PLAN: PASS\nGroup: 1\nMessage: ${MESSAGE}\nPaths: ${PATHS}\nHunks: none\nExpansions: none\nVerification: none\nDigest: ${"a".repeat(DIGEST_LENGTH)}\nChecks: worktree\nOmissions: none\nWarnings: none\n`;
 function observation(payload = PAYLOAD) {
   return createObservation({
     finalText: `The exact subject is ${MESSAGE}. Files are ${PATHS}. Verification is none.`,
@@ -94,7 +94,7 @@ describe("scoped commit approval machine boundaries", () => {
             name: "Bash",
             input: call?.input ?? {},
             result: {
-              content: "plan: line 7: invalid digest",
+              content: "plan: line 8: invalid digest",
               isError: true,
               truncated: false,
             },
@@ -113,6 +113,18 @@ describe("scoped commit approval machine boundaries", () => {
         createObservation({ finalText: text.replace(MESSAGE, "TBD") }),
       ),
     ).toHaveProperty("gateNotReached");
+  });
+  test("approval accepts reuse of an earlier literal fixture command only", () => {
+    const text = `## Group 1\nMessage: client settings\nPaths: client.js\nVerification: sh check.sh format\n## Group 2\nMessage: documentation and checksums\nPaths: checksums.txt guide.md policy.md\nVerification: same as group 1`;
+    const approve = (finalText: string) =>
+      approveCommitPlan(createObservation({ finalText }));
+    expect(approve(text)).toEqual({ reply: "approve" });
+    expect(
+      approve(text.replace("same as group 1", "same as group 2")),
+    ).toHaveProperty("gateNotReached");
+    expect(approve(text.replace("sh check.sh format", "none"))).toHaveProperty(
+      "gateNotReached",
+    );
   });
   test("known failure remains forbidden at a real validated PASS boundary", () => {
     const base = observation(

@@ -319,43 +319,46 @@ describe("scoped commit scenario assertions", () => {
       ),
     ).toThrow();
   });
-  test("denial check requires a real denied tool result and rejects inline fallback", () => {
-    const denied: ToolCall = {
-      name: "Agent",
-      input: { prompt: "scoped-commit-executor" },
-      result: {
-        content: "Host denied executor",
-        isError: true,
-        truncated: false,
-      },
-    };
-    const result = observed({
-      finalText: "Group 1 dispatch denied. No commits created.",
-      toolCalls: [INVOKE, denied],
-    });
-    expect(() => checkDeniedDispatch(result)).not.toThrow();
-    expect(() =>
-      checkDeniedDispatch({ ...result, toolCalls: [INVOKE] }),
-    ).toThrow();
-    expect(() =>
-      checkDeniedDispatch({
-        ...result,
-        toolCalls: [
-          ...result.toolCalls,
-          {
-            name: "Bash",
-            input: { command: "git commit --only -m fallback -- client.js" },
-          },
-        ],
-      }),
-    ).toThrow();
-    expect(() =>
-      checkDeniedDispatch({
-        ...result,
-        toolCalls: [...result.toolCalls, denied],
-      }),
-    ).toThrow();
-  });
+  test.each(["git commit", "git --literal-pathspecs commit"])(
+    "denial check requires a real denied tool result and rejects %s fallback",
+    (commit) => {
+      const denied: ToolCall = {
+        name: "Agent",
+        input: { prompt: "scoped-commit-executor" },
+        result: {
+          content: "Host denied executor",
+          isError: true,
+          truncated: false,
+        },
+      };
+      const result = observed({
+        finalText: "Group 1 dispatch denied. No commits created.",
+        toolCalls: [INVOKE, denied],
+      });
+      expect(() => checkDeniedDispatch(result)).not.toThrow();
+      expect(() =>
+        checkDeniedDispatch({ ...result, toolCalls: [INVOKE] }),
+      ).toThrow();
+      expect(() =>
+        checkDeniedDispatch({
+          ...result,
+          toolCalls: [
+            ...result.toolCalls,
+            {
+              name: "Bash",
+              input: { command: `${commit} --only -m fallback -- client.js` },
+            },
+          ],
+        }),
+      ).toThrow();
+      expect(() =>
+        checkDeniedDispatch({
+          ...result,
+          toolCalls: [...result.toolCalls, denied],
+        }),
+      ).toThrow();
+    },
+  );
   test("none mechanics require no execution marker and leave reporting to the judge", () => {
     const correct = successful();
     const none = {

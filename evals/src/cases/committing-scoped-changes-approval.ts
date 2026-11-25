@@ -34,18 +34,31 @@ function isPlaceholder(value: string): boolean {
     value,
   );
 }
-function hasVerification(group: PreviewGroup): boolean {
-  const command = group.verification;
-  if (command === undefined) return false;
-  if (command === "none") return true;
+function literalFixtureCommand(command: string): boolean {
   // These fixture repos configure this script, not an arbitrary prose plan.
   return /^sh (?:\.\/)?check\.sh (?:format|behavior)(?:\s*&&\s*sh (?:\.\/)?check\.sh (?:format|behavior))*$/.test(
     command,
   );
 }
-function isCompleteGroup(group: PreviewGroup): boolean {
+function hasVerification(
+  group: PreviewGroup,
+  groups: readonly PreviewGroup[],
+): boolean {
+  const command = group.verification ?? "";
+  if (command === "none" || literalFixtureCommand(command)) return true;
+  return groups.some(
+    (earlier) =>
+      earlier.number < group.number &&
+      command === `same as group ${earlier.number}` &&
+      literalFixtureCommand(earlier.verification ?? ""),
+  );
+}
+function isCompleteGroup(
+  group: PreviewGroup,
+  groups: readonly PreviewGroup[],
+): boolean {
   if (group.message === undefined || isPlaceholder(group.message)) return false;
-  return group.paths !== undefined && hasVerification(group);
+  return group.paths !== undefined && hasVerification(group, groups);
 }
 function parseHeader(line: string): number | undefined {
   const match = /^#{0,6}\s*(?:group|commit)\s+(?<number>\d+)\b/i.exec(line);
@@ -174,7 +187,7 @@ function hasRefusal(lines: readonly string[]): boolean {
 function completeGroups(groups: readonly PreviewGroup[]): boolean {
   const complete = groups.every(
     (group, index) =>
-      group.number === index + FIRST_GROUP && isCompleteGroup(group),
+      group.number === index + FIRST_GROUP && isCompleteGroup(group, groups),
   );
   return groups.length > NO_GROUPS && complete && coversScope(groups);
 }
