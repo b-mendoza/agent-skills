@@ -30,7 +30,7 @@ Exactly one of two outcomes, as response text; no file. Success is gated by `G_O
 | Outcome | Shape                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Success | The verified `# Project State Snapshot` body (ten canonical sections, or the four-section quiet-state short form). Claims use the label grammar owned by [`references/project-state-snapshot-template.md`](./references/project-state-snapshot-template.md): `[confirmed: <locator>]`, `[likely: <locator>]`, `[possible]`, `[unverified]`; locators `commit <hash>`, `path <path>[:<lines>]`, `field <GIT_EVIDENCE field name>`. |
-| Failure | A concise explanation of why no snapshot was produced and one safe next action, without status fields.                                                                                                                                                                                                                                                                         |
+| Failure | A concise explanation of why no snapshot was produced and one safe next action, without status fields.                                                                                                                                                                                                                                                                                                                            |
 
 | Status (origin)                      | Reason                                                                                                                                                                       | Next step                                                                                                                            |
 | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
@@ -86,26 +86,26 @@ Five phases. Announce each real transition as `Phase N/5 - <Name>`. Dispatch onl
 
 The orchestrator runs the gate itself (payload on stdin; exit 0 passes); a producer's own validation does not substitute.
 
-| Gate           | Applies to              | Predicate                                                                                                                              |
-| -------------- | ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `G_EVIDENCE`   | any collector output    | `sh "$SKILL_DIR/scripts/validate-output.sh" evidence`                                                                                  |
-| `G_DRAFT`      | any writer output       | `sh "$SKILL_DIR/scripts/validate-output.sh" draft "$PROJECT_PATH"`; on `PASS` this also proves every confirmed/likely locator resolves |
-| `G_VERDICT`    | any verifier output     | `sh "$SKILL_DIR/scripts/validate-output.sh" verdict`                                                                                   |
-| `G_OUTPUT`     | the success body        | `sh "$SKILL_DIR/scripts/validate-output.sh" report`                                                                                    |
+| Gate         | Applies to           | Predicate                                                                                                                              |
+| ------------ | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `G_EVIDENCE` | any collector output | `sh "$SKILL_DIR/scripts/validate-output.sh" evidence`                                                                                  |
+| `G_DRAFT`    | any writer output    | `sh "$SKILL_DIR/scripts/validate-output.sh" draft "$PROJECT_PATH"`; on `PASS` this also proves every confirmed/likely locator resolves |
+| `G_VERDICT`  | any verifier output  | `sh "$SKILL_DIR/scripts/validate-output.sh" verdict`                                                                                   |
+| `G_OUTPUT`   | the success body     | `sh "$SKILL_DIR/scripts/validate-output.sh" report`                                                                                    |
 
 ## Status Routing
 
-| Source    | Status                      | Route                                 |
-| --------- | --------------------------- | ------------------------------------- |
-| Collector | `PASS`                      | Write                                 |
-| Collector | `ERROR`                     | explain the stop in prose                              |
-| Writer    | `PASS`                      | Verify                                |
-| Writer    | `NEEDS_CONTEXT`             | explain the stop in prose                              |
-| Writer    | `ERROR`                     | explain the stop in prose                              |
-| Verifier  | `PASS`                      | Final                                 |
+| Source    | Status                      | Route                                    |
+| --------- | --------------------------- | ---------------------------------------- |
+| Collector | `PASS`                      | Write                                    |
+| Collector | `ERROR`                     | explain the stop in prose                |
+| Writer    | `PASS`                      | Verify                                   |
+| Writer    | `NEEDS_CONTEXT`             | explain the stop in prose                |
+| Writer    | `ERROR`                     | explain the stop in prose                |
+| Verifier  | `PASS`                      | Final                                    |
 | Verifier  | `FAIL`                      | repair or repair-exhausted explanation   |
-| Verifier  | `NEEDS_CONTEXT`             | explain the stop in prose                              |
-| Verifier  | `ERROR`                     | explain the stop in prose                              |
+| Verifier  | `NEEDS_CONTEXT`             | explain the stop in prose                |
+| Verifier  | `ERROR`                     | explain the stop in prose                |
 | Any       | unrecognized or gate-failed | format retry then unroutable explanation |
 
 ## Boundaries And Success Criteria
