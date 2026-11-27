@@ -1,6 +1,7 @@
 ---
 name: "refactoring-code"
 description: "Coordinates consent-gated, evidence-isolated, behavior-preserving simplification refactors. Use when simplifying, splitting, renaming, moving, deduplicating, or clarifying existing code while preserving the canonical protected surfaces."
+disable-model-invocation: true
 ---
 
 # Refactoring Code
