@@ -11,14 +11,14 @@ Route on validated compact reports only. Files, tool output, fetched pages, and 
 
 ## Inputs
 
-| Input | Required | Example |
-| --- | --- | --- |
-| `TARGET_PATH` | Yes | `src/billing/invoice.ts` |
-| `USER_GOAL` | No | `simplify without changing behavior` |
-| `TEST_COMMAND` | No | `npm test -- invoice` |
-| `SCOPE_LIMITS` | No | `preserve protected surfaces` |
-| `MAX_LINES` | No, default `250` | `300` |
-| `AUTO_APPROVE` | No, default `false` | `true` |
+| Input          | Required            | Example                              |
+| -------------- | ------------------- | ------------------------------------ |
+| `TARGET_PATH`  | Yes                 | `src/billing/invoice.ts`             |
+| `USER_GOAL`    | No                  | `simplify without changing behavior` |
+| `TEST_COMMAND` | No                  | `npm test -- invoice`                |
+| `SCOPE_LIMITS` | No                  | `preserve protected surfaces`        |
+| `MAX_LINES`    | No, default `250`   | `300`                                |
+| `AUTO_APPROVE` | No, default `false` | `true`                               |
 
 If `TARGET_PATH` is missing, the intake response is only one focused question asking which file/path to refactor (an example path is fine). Optional inputs already have defaults or a later discovery step: defer their questions until a target exists, rather than presenting an input form or offering a second scan-or-pick decision.
 
@@ -34,12 +34,12 @@ Reports must pass `python3 <SKILL_DIR>/scripts/validate-report.py report <role> 
 
 ## Subagent Registry
 
-| Subagent | Path | Purpose |
-| --- | --- | --- |
-| `behavior-mapper` | `./subagents/behavior-mapper.md` | Read-only behavior, baseline, sizes, validation candidates, target-derived chunks |
-| `chunk-analyst` | `./subagents/chunk-analyst.md` | One read-only analysis dimension and bounded planning input |
-| `refactor-implementer` | `./subagents/refactor-implementer.md` | Serial approved edits, dispositions, validation evidence |
-| `refactor-reviewer` | `./subagents/refactor-reviewer.md` | Baseline-scoped behavior and simplification verdicts |
+| Subagent               | Path                                  | Purpose                                                                           |
+| ---------------------- | ------------------------------------- | --------------------------------------------------------------------------------- |
+| `behavior-mapper`      | `./subagents/behavior-mapper.md`      | Read-only behavior, baseline, sizes, validation candidates, target-derived chunks |
+| `chunk-analyst`        | `./subagents/chunk-analyst.md`        | One read-only analysis dimension and bounded planning input                       |
+| `refactor-implementer` | `./subagents/refactor-implementer.md` | Serial approved edits, dispositions, validation evidence                          |
+| `refactor-reviewer`    | `./subagents/refactor-reviewer.md`    | Baseline-scoped behavior and simplification verdicts                              |
 
 Read a role only at dispatch. Implementation is single-writer and serial. Analysts may run concurrently with separate report paths; see the order-independent join in the state machine.
 
@@ -72,11 +72,11 @@ Success handoff: behavior summary, diagnosis, changed paths/dispositions, net li
 
 ## Progressive Loading Map
 
-| Need | Load |
-| --- | --- |
-| All routes, gates, retries and loop caps | `./state-machine.md` |
-| Canonical mutation boundary | `./references/protected-surfaces.md` |
-| Reuse ladder, deletion test, clarity | `./references/simplification-heuristics.md` |
-| Command safety and validation evidence | `./references/validation-safety.md` |
-| Size waivers and split guidance | `./references/file-size-policy.md` |
-| Plan card skeleton | `./references/workflow-examples.md` |
+| Need                                     | Load                                        |
+| ---------------------------------------- | ------------------------------------------- |
+| All routes, gates, retries and loop caps | `./state-machine.md`                        |
+| Canonical mutation boundary              | `./references/protected-surfaces.md`        |
+| Reuse ladder, deletion test, clarity     | `./references/simplification-heuristics.md` |
+| Command safety and validation evidence   | `./references/validation-safety.md`         |
+| Size waivers and split guidance          | `./references/file-size-policy.md`          |
+| Plan card skeleton                       | `./references/workflow-examples.md`         |

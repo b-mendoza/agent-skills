@@ -34,16 +34,18 @@ JSON report at `REPORT_PATH` (no code fences):
   "omitted_count": 0,
   "omitted_high_priority": 0,
   "omitted_categories": [],
-  "findings": [{
-    "location": "src/invoice.ts:20",
-    "problem": "Local rounding duplicates the shared helper.",
-    "transformation": "Reuse the shared helper.",
-    "reuse_rung": "reuse-repo",
-    "reuse_evidence": "src/shared/money.ts:roundMoney; rg Math.round src",
-    "net_lines": -5,
-    "confidence": "high",
-    "priority": "high"
-  }],
+  "findings": [
+    {
+      "location": "src/invoice.ts:20",
+      "problem": "Local rounding duplicates the shared helper.",
+      "transformation": "Reuse the shared helper.",
+      "reuse_rung": "reuse-repo",
+      "reuse_evidence": "src/shared/money.ts:roundMoney; rg Math.round src",
+      "net_lines": -5,
+      "confidence": "high",
+      "priority": "high"
+    }
+  ],
   "risks": [],
   "question": null,
   "error": null
