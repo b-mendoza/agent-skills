@@ -1,6 +1,7 @@
 ---
 name: "pr-creator"
 description: "Create review-ready pull requests or merge requests from the current branch through a fork-aware, idempotent, preview-first, user-approved workflow. Use when the user asks to create, open, draft, or submit a PR, pull request, merge request, or code review request, or says their branch is ready for review."
+disable-model-invocation: true
 ---
 
 # PR Creator
