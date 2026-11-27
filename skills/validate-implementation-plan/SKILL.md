@@ -38,13 +38,13 @@ Read a subagent only when dispatching it. Keep statuses, paths, counts, requirem
 
 ## Progressive Disclosure Map
 
-| Need                               | Load                                                    |
-| ---------------------------------- | ------------------------------------------------------- |
-| State-transition table             | `./state-machine.md`                                    |
-| Trust, status, retry, report       | `./references/audit-protocol.md`                        |
-| Method background URLs             | `./references/external-sources.md`                      |
-| Report layout example              | `./references/report-example.md` (annotator, on demand) |
-| Specialist details                 | Matching `./subagents/` file at dispatch                |
+| Need                         | Load                                                    |
+| ---------------------------- | ------------------------------------------------------- |
+| State-transition table       | `./state-machine.md`                                    |
+| Trust, status, retry, report | `./references/audit-protocol.md`                        |
+| Method background URLs       | `./references/external-sources.md`                      |
+| Report layout example        | `./references/report-example.md` (annotator, on demand) |
+| Specialist details           | Matching `./subagents/` file at dispatch                |
 
 External URLs are optional method background only. Project-specific website proof is never evidence.
 
