@@ -1,6 +1,7 @@
 ---
 name: "committing-scoped-changes"
 description: "Creates reviewable atomic git commits from an explicit list of files or folders after the user asks, in words, to commit. Use when the user says commit these files, commit only src/x, split my changes into atomic commits, commit the ticket work, or keep unrelated work out of the commit."
+disable-model-invocation: true
 ---
 
 # Committing Scoped Changes
