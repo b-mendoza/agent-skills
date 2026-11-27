@@ -117,7 +117,7 @@ Run all 20 checks against the original snapshot and Stage 2 plan. Check 3 reads 
 | 17  | No vague definition-of-done items such as `works`, `is complete`, or `functions properly`                                        | WARN     |
 | 18  | Task count is appropriate for scope                                                                                              | WARN     |
 | 19  | No empty or `TBD` implementation notes remain                                                                                    | WARN     |
-| 20  | Code branches are legal and deterministic; human-only tasks use the explicit N/A discriminator and human owner | FAIL |
+| 20  | Code branches are legal and deterministic; human-only tasks use the explicit N/A discriminator and human owner                   | FAIL     |
 
 ## Result Handling
 
@@ -133,7 +133,7 @@ Run all 20 checks against the original snapshot and Stage 2 plan. Check 3 reads 
 Resolve `<VALIDATION_IDENTITY_LINE>` and `<CHILD_COVERAGE_LABEL>` from the active playbook:
 
 ```markdown
----
+***
 
 ## Validation Report
 

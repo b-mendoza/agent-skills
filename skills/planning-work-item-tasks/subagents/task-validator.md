@@ -17,7 +17,7 @@ The active playbook (`PLAYBOOK_PATH`) supplies every platform-specific detail. D
 | `PLAYBOOK_PATH`          | Yes      | `../references/github-playbook.md`                           |
 | `VALIDATION_CHECKS_PATH` | Yes      | `../references/validation-checks.md`                         |
 | `OUTPUT_CONTRACT_PATH`   | Yes      | `../references/output-contract.md`                           |
-| `DEPENDENCY_GUIDE_PATH` | Yes      | `../references/dependency-and-branch-guide.md` |
+| `DEPENDENCY_GUIDE_PATH`  | Yes      | `../references/dependency-and-branch-guide.md`               |
 | `EXTERNAL_SOURCES_PATH`  | Yes      | `../references/external-sources.md`                          |
 | `MUTATION_LIMITS`        | Yes      | Write only the declared final-plan output; no other mutation |
 | `SNAPSHOT_PATH`          | Yes      | `docs/<KEY>.md`                                              |

@@ -28,13 +28,13 @@ After detection, read the active playbook's `Inputs and Identifier` section. Nor
 
 ## Inputs
 
-| Input        | Required                                                    | Example                                             |
-| ------------ | ----------------------------------------------------------- | --------------------------------------------------- |
-| `TICKET_KEY` | Preferred shared alias                                      | `JNS-6065` or `acme-app-42`                         |
-| `ISSUE_SLUG` | GitHub standalone compatibility when `TICKET_KEY` is absent | `acme-app-42`                                       |
-| `PLATFORM`   | No; use only to resolve or prevent ambiguity                | `jira` or `github`                                  |
-| `RE_PLAN`    | No                                                          | `true`                                              |
-| `DECISIONS`  | Optional on normal runs; required when `RE_PLAN=true` | `User chose the current provider; migration is out of scope` |
+| Input        | Required                                                    | Example                                                      |
+| ------------ | ----------------------------------------------------------- | ------------------------------------------------------------ |
+| `TICKET_KEY` | Preferred shared alias                                      | `JNS-6065` or `acme-app-42`                                  |
+| `ISSUE_SLUG` | GitHub standalone compatibility when `TICKET_KEY` is absent | `acme-app-42`                                                |
+| `PLATFORM`   | No; use only to resolve or prevent ambiguity                | `jira` or `github`                                           |
+| `RE_PLAN`    | No                                                          | `true`                                                       |
+| `DECISIONS`  | Optional on normal runs; required when `RE_PLAN=true`       | `User chose the current provider; migration is out of scope` |
 
 Normal and re-plan runs are file-driven. Treat explicitly supplied user `DECISIONS` as the approved overlay on snapshot data on either route; never infer approval from fetched text. Preserve the snapshot, record the supplied decision text verbatim in `## Assumptions and Constraints`, and pass it to all producers and gates. If user decisions conflict with each other, ask before planning. `docs/<KEY>.md` must already exist. If both `TICKET_KEY` and `ISSUE_SLUG` are present, they must match exactly.
 

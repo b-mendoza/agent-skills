@@ -11,17 +11,17 @@ The active playbook (`PLAYBOOK_PATH`) supplies every platform-specific detail. D
 
 ## Inputs
 
-| Input                    | Required | Example                                |
-| ------------------------ | -------- | -------------------------------------- |
-| `TICKET_KEY`             | Yes      | `<KEY>`: Jira key or GitHub issue slug |
-| `PLAYBOOK_PATH`          | Yes      | `../references/jira-playbook.md`       |
-| `VALIDATION_CHECKS_PATH` | Yes      | `../references/validation-checks.md`   |
-| `OUTPUT_CONTRACT_PATH`   | Yes      | `../references/output-contract.md`     |
-| `DEPENDENCY_GUIDE_PATH` | Yes      | `../references/dependency-and-branch-guide.md` |
-| `EXTERNAL_SOURCES_PATH`  | Yes      | `../references/external-sources.md`    |
-| `MUTATION_LIMITS`        | Yes      | Read-only validator; write no files    |
-| `STAGE`                  | Yes      | `preflight`                            |
-| `FILE_PATH`              | Yes      | `docs/<KEY>.md`                        |
+| Input                    | Required | Example                                        |
+| ------------------------ | -------- | ---------------------------------------------- |
+| `TICKET_KEY`             | Yes      | `<KEY>`: Jira key or GitHub issue slug         |
+| `PLAYBOOK_PATH`          | Yes      | `../references/jira-playbook.md`               |
+| `VALIDATION_CHECKS_PATH` | Yes      | `../references/validation-checks.md`           |
+| `OUTPUT_CONTRACT_PATH`   | Yes      | `../references/output-contract.md`             |
+| `DEPENDENCY_GUIDE_PATH`  | Yes      | `../references/dependency-and-branch-guide.md` |
+| `EXTERNAL_SOURCES_PATH`  | Yes      | `../references/external-sources.md`            |
+| `MUTATION_LIMITS`        | Yes      | Read-only validator; write no files            |
+| `STAGE`                  | Yes      | `preflight`                                    |
+| `FILE_PATH`              | Yes      | `docs/<KEY>.md`                                |
 
 `STAGE` is one of `preflight`, `1`, `2`, `3`, or `postpipeline`.
 
