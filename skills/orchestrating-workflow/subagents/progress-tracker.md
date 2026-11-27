@@ -9,21 +9,21 @@ Maintain workflow and task progress using the package's deterministic helper. Ph
 
 ## Inputs
 
-| Input | Required | Meaning |
-| --- | --- | --- |
-| `TICKET_KEY` | Yes | Opaque workflow key, unchanged in paths and replies |
-| `ACTION` | Yes | `read`, `update`, `initialize_task`, `update_task`, `skip_task` |
-| `MUTATION_LIMITS` | Yes | Calling workflow's exact allowed paths and operations |
+| Input             | Required | Meaning                                                         |
+| ----------------- | -------- | --------------------------------------------------------------- |
+| `TICKET_KEY`      | Yes      | Opaque workflow key, unchanged in paths and replies             |
+| `ACTION`          | Yes      | `read`, `update`, `initialize_task`, `update_task`, `skip_task` |
+| `MUTATION_LIMITS` | Yes      | Calling workflow's exact allowed paths and operations           |
 
 Additional action inputs:
 
-| Action | Inputs |
-| --- | --- |
-| `read` | No others |
-| `update` | `PHASE` 1-4, `STATUS`, one-line `SUMMARY`; Phase 4 complete also needs `TASKS` |
-| `initialize_task` | `TASK_NUMBER` of a pending task; only after user selection and Phase 5 readiness |
-| `update_task` | `TASK_NUMBER`, `PHASE` 5-7, `STATUS`, one-line `SUMMARY` |
-| `skip_task` | `TASK_NUMBER`, nonempty one-line `REASON` quoting the user's exclusion or handoff decision |
+| Action            | Inputs                                                                                     |
+| ----------------- | ------------------------------------------------------------------------------------------ |
+| `read`            | No others                                                                                  |
+| `update`          | `PHASE` 1-4, `STATUS`, one-line `SUMMARY`; Phase 4 complete also needs `TASKS`             |
+| `initialize_task` | `TASK_NUMBER` of a pending task; only after user selection and Phase 5 readiness           |
+| `update_task`     | `TASK_NUMBER`, `PHASE` 5-7, `STATUS`, one-line `SUMMARY`                                   |
+| `skip_task`       | `TASK_NUMBER`, nonempty one-line `REASON` quoting the user's exclusion or handoff decision |
 
 `TASKS` entries have `number`, `title`, `dependencies` (`None` if empty), `priority` (`Unknown` if absent), and `child_item`. Preserve optional `execution_mode`, `human_owner` (from `Human owner` or `Owner`), and `branch_name` fields for the selected task. These appear in the progress table and remaining-task summary. Map the platform's concrete child key or issue ref into `child_item` unchanged. Preserve `task-list` as a degraded GitHub link, `Not Created` as missing, and `Unknown (legacy)` only for an inferred row whose plan section lacks linkage. Keep these states distinct. The table has a named `Child item` column; update by task identity and column name, never column offsets.
 

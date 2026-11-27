@@ -13,28 +13,29 @@ Path: `docs/<KEY>-progress.md`
 ```markdown
 # <KEY> — Workflow Progress
 
-| Phase | Name | Status | Completed at | Notes |
-| --- | --- | --- | --- | --- |
-| 1 | Fetch work item | ✅ Complete | <timestamp> | <summary> |
-| 2 | Plan tasks | ⬜ Pending | — | — |
-| 3 | Clarify and critique | ⬜ Pending | — | — |
-| 4 | Create child items | ⬜ Pending | — | — |
+| Phase | Name                 | Status      | Completed at | Notes     |
+| ----- | -------------------- | ----------- | ------------ | --------- |
+| 1     | Fetch work item      | ✅ Complete | <timestamp>  | <summary> |
+| 2     | Plan tasks           | ⬜ Pending  | —            | —         |
+| 3     | Clarify and critique | ⬜ Pending  | —            | —         |
+| 4     | Create child items   | ⬜ Pending  | —            | —         |
 
 ## Task Execution (Phases 5–7)
 
 _No tasks yet_
 
 ## Execution Log
+
 <timestamp> — Phase 1: complete — <summary>
 ```
 
 The `Name` column is static. Phase 4 completion writes one row per `TASKS` entry. Over an existing table it is a rerun, allowed only while Phase 4 is not complete and only with the same task numbers: it refreshes `Title`, `Dependencies`, `Priority`, `Child item`, `Execution mode`, `Human owner`, and `Branch name` and keeps each row's `Current Phase`, `Status`, and `Outcome`. Otherwise it fails with `Phase 4 task table already exists; reconcile explicitly, never reset progress`. Inferred progress shows Phase 4 complete whenever it has task rows, so it cannot be rerun before Phase 4 is recorded as not complete. Inference builds task rows only when the plan shows Phase 4 complete (`## GitHub Task Issues` or `## Jira Subtasks`).
 
 ```markdown
-| Task | Title | Dependencies | Priority | Child item | Current Phase | Status | Outcome | Execution mode | Human owner | Branch name |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | Implement validation | None | High | acme/app#101 | 6/7 Critique | 🔄 Active | — | code | Not specified | task/acme-1 |
-| 2 | Manual verification | 1 | Low | OPS-202 | — | ⏭️ Skipped | <user's reason> | human-only | Operations | N/A (human-only) |
+| Task | Title                | Dependencies | Priority | Child item   | Current Phase | Status     | Outcome         | Execution mode | Human owner   | Branch name      |
+| ---- | -------------------- | ------------ | -------- | ------------ | ------------- | ---------- | --------------- | -------------- | ------------- | ---------------- |
+| 1    | Implement validation | None         | High     | acme/app#101 | 6/7 Critique  | 🔄 Active  | —               | code           | Not specified | task/acme-1      |
+| 2    | Manual verification  | 1            | Low      | OPS-202      | —             | ⏭️ Skipped | <user's reason> | human-only     | Operations    | N/A (human-only) |
 ```
 
 `Child item` preserves a concrete platform identifier, `task-list`, or `Not Created`. `Unknown (legacy)` means an inferred row's plan section lacked linkage evidence; it is not a missing-child verdict. Rows are matched by `Task` and named columns, never by column offset.
@@ -43,14 +44,14 @@ The `Name` column is static. Phase 4 completion writes one row per `TASKS` entry
 
 The task row holds all task phase state. Phase labels are `5/7 Plan`, `6/7 Critique`, and `7/7 Execute`. `initialize_task` turns a pending row active at `5/7 Plan` and rejects any other row. `update_task` rejects a pending row and a phase past the row's `Current Phase`; an earlier phase is allowed and moves the row back. Only successful Phase 7 yields a completed task, and a `Complete` row must sit at `7/7 Execute`:
 
-| Update | Task row | Next resume |
-| --- | --- | --- |
-| Phase 5 complete | Active, `6/7 Critique` | Phase 6, same task |
-| Phase 6 complete | Active, `7/7 Execute` | Phase 7, same task |
-| Phase 7 complete | Complete, `7/7 Execute` | Task selection or terminal |
-| Any phase active | Active, same phase | Same phase |
-| Any phase failed | Failed, same phase | Same phase |
-| `skip_task` | Skipped, explicit reason in Outcome and log | Excluded from resume |
+| Update           | Task row                                    | Next resume                |
+| ---------------- | ------------------------------------------- | -------------------------- |
+| Phase 5 complete | Active, `6/7 Critique`                      | Phase 6, same task         |
+| Phase 6 complete | Active, `7/7 Execute`                       | Phase 7, same task         |
+| Phase 7 complete | Complete, `7/7 Execute`                     | Task selection or terminal |
+| Any phase active | Active, same phase                          | Same phase                 |
+| Any phase failed | Failed, same phase                          | Same phase                 |
+| `skip_task`      | Skipped, explicit reason in Outcome and log | Excluded from resume       |
 
 Without a progress file, an inferred task is pending unless all four Phase 5 artifacts exist (`brief`, `execution-plan`, `test-spec`, `refactoring-plan`), which infer it active at `6/7 Critique`; the Phase 6 `critique` and `decisions` pair advances that to `7/7 Execute`. A persisted pending row never fast-forwards from artifacts; it still needs `initialize_task`.
 
