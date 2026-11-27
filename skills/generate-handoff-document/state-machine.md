@@ -97,15 +97,15 @@ Producer states (`ExtractContext`, `DocumentInsights`, `ValidateClaims`, `Assemb
 | `PlanRepair`             | `SkipClaims`             | Earliest rerun target is claims ∧ tracking absent                                                          |
 | `PlanRepair`             | `AssembleHandoff`        | Earliest is assembly, or no parseable target (default)                                                     |
 | `PlanRepair`             | `ReviewHandoff`          | Earliest rerun target is review only                                                                       |
-| `CompletedReviewPass`    | `[*]`                    | Emit `The handoff passed review.`                                                                              |
-| `CompletedReviewWarn`    | `[*]`                    | Emit `The handoff passed review with warnings.`                                                                |
-| `CompletedDeclinedEmpty` | `[*]`                    | Emit `No handoff was written because the empty-session handoff was declined.`                                                         |
-| `BlockedUnclearTarget`   | `[*]`                    | Emit `A clear target path is needed before writing the handoff.`                                                                        |
-| `BlockedNoSource`        | `[*]`                    | Emit `A usable source transcript is needed before writing the handoff.`                                                                |
-| `BlockedUnsafePath`      | `[*]`                    | Emit `The handoff was not written because the path is unsafe or inaccessible.`                                            |
-| `BlockedExternal`        | `[*]`                    | Emit `The handoff cannot proceed because a required external dependency is unavailable.`                                                   |
-| `BlockedStage`           | `[*]`                    | Emit `The handoff cannot proceed because a stage failed or was unexpectedly skipped.`                                                |
-| `BlockedArtifact`        | `[*]`                    | Emit `The handoff cannot proceed because an artifact failed its contract.`                                                                |
-| `BlockedRepairExhausted` | `[*]`                    | Emit `The handoff still fails review after the repair limit.`                                                                     |
+| `CompletedReviewPass`    | `[*]`                    | Emit `The handoff passed review.`                                                                          |
+| `CompletedReviewWarn`    | `[*]`                    | Emit `The handoff passed review with warnings.`                                                            |
+| `CompletedDeclinedEmpty` | `[*]`                    | Emit `No handoff was written because the empty-session handoff was declined.`                              |
+| `BlockedUnclearTarget`   | `[*]`                    | Emit `A clear target path is needed before writing the handoff.`                                           |
+| `BlockedNoSource`        | `[*]`                    | Emit `A usable source transcript is needed before writing the handoff.`                                    |
+| `BlockedUnsafePath`      | `[*]`                    | Emit `The handoff was not written because the path is unsafe or inaccessible.`                             |
+| `BlockedExternal`        | `[*]`                    | Emit `The handoff cannot proceed because a required external dependency is unavailable.`                   |
+| `BlockedStage`           | `[*]`                    | Emit `The handoff cannot proceed because a stage failed or was unexpectedly skipped.`                      |
+| `BlockedArtifact`        | `[*]`                    | Emit `The handoff cannot proceed because an artifact failed its contract.`                                 |
+| `BlockedRepairExhausted` | `[*]`                    | Emit `The handoff still fails review after the repair limit.`                                              |
 
 Readiness rule: the run is complete only at one of the three success terminals; every other exit emits the blocked outcome on its terminal transition above.

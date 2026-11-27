@@ -92,11 +92,11 @@ Dispatch-verify mechanics (retries, mechanical checks, upstream rerun) live in `
 
 ## Output Contract
 
-| Terminal      | Outcome in prose                                                                                                                                                                 |
-| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Review pass   | `The handoff passed review.`                                                                                                                                                     |
-| Review warn   | `The handoff passed review with warnings.`                                                                                                                                       |
-| Empty decline | `No handoff was written because the empty-session handoff was declined.`                                                                                                                                |
+| Terminal      | Outcome in prose                                                                                                                                                   |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Review pass   | `The handoff passed review.`                                                                                                                                       |
+| Review warn   | `The handoff passed review with warnings.`                                                                                                                         |
+| Empty decline | `No handoff was written because the empty-session handoff was declined.`                                                                                           |
 | Stops         | The seven blocked outcomes tabulated in `state-machine.md` (unclear target, no usable source transcript, unsafe path, external, stage, artifact, repair exhausted) |
 
 Public replies use plain prose, not `Completed:`, `Blocked:`, stage verdict lines, or a routing envelope. Internal producer/reviewer handoffs and written-document fields stay unchanged. Success reports include handoff path, sibling artifacts (transcript, `.prev.md` when present), external status, stage verdicts, counts, warnings, whether claims validation was skipped, open-question count, and repair cycles used.
