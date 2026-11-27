@@ -9,20 +9,20 @@ Own the only canonical review package. Check candidates independently and write 
 
 ## Inputs
 
-| Input | Required | Value |
-| --- | --- | --- |
-| `SKILL_DIR` | Yes | Absolute loaded package directory |
-| `SCRATCH_FILE` | No | Exact run-local path assigned by the orchestrator, otherwise no scratch writes |
-| `MUTATION_LIMITS` | Yes | Identical intake envelope |
-| `PAYLOAD_FILE` | Yes | Absolute path to this run's `author.txt` |
-| `PR_URL` | Yes | One canonical GitHub PR URL |
-| `REVIEWED_BASE_SHA`, `REVIEWED_HEAD_SHA` | Yes | Full fixed comparison and reviewed head SHAs |
-| `CONTEXT_FILE` | Yes | Accepted `context.txt`, including history and paired thread targets |
-| `CHUNK_FILES` | Yes | Accepted chunk payloads in declared dimension order, including empty findings |
-| `LANGUAGE_STYLE` | No | Natural, direct English by default |
-| `PRIOR_AUTHOR_FILE` | Revision | Previous accepted package supplied as evidence before replacing its payload |
-| `VERIFIER_ISSUES` | Repair | Exact issues from independent verification |
-| `REVISION_REQUEST` | Revision | User's REVISE text, never transferable approval |
+| Input                                    | Required | Value                                                                          |
+| ---------------------------------------- | -------- | ------------------------------------------------------------------------------ |
+| `SKILL_DIR`                              | Yes      | Absolute loaded package directory                                              |
+| `SCRATCH_FILE`                           | No       | Exact run-local path assigned by the orchestrator, otherwise no scratch writes |
+| `MUTATION_LIMITS`                        | Yes      | Identical intake envelope                                                      |
+| `PAYLOAD_FILE`                           | Yes      | Absolute path to this run's `author.txt`                                       |
+| `PR_URL`                                 | Yes      | One canonical GitHub PR URL                                                    |
+| `REVIEWED_BASE_SHA`, `REVIEWED_HEAD_SHA` | Yes      | Full fixed comparison and reviewed head SHAs                                   |
+| `CONTEXT_FILE`                           | Yes      | Accepted `context.txt`, including history and paired thread targets            |
+| `CHUNK_FILES`                            | Yes      | Accepted chunk payloads in declared dimension order, including empty findings  |
+| `LANGUAGE_STYLE`                         | No       | Natural, direct English by default                                             |
+| `PRIOR_AUTHOR_FILE`                      | Revision | Previous accepted package supplied as evidence before replacing its payload    |
+| `VERIFIER_ISSUES`                        | Repair   | Exact issues from independent verification                                     |
+| `REVISION_REQUEST`                       | Revision | User's REVISE text, never transferable approval                                |
 
 ## Instructions
 
@@ -63,12 +63,12 @@ AUTHOR: PASS
 
 Every finding has exactly the common keys shown through `sources`, plus `placement` and only the permitted additions below. `anchor` is null or `{"path":str,"line":positive_integer,"side":"RIGHT"|"LEFT"}`, optionally with positive `start_line < line` on that side. Sources/references list only actually fetched URLs.
 
-| Placement | Additional keys and constraints |
-| --- | --- |
-| `inline` | `body`: nonempty exact Markdown; anchor must be non-null |
-| `reply` | `root_comment_id`: positive integer copied from context, unique among replies; `body`: nonempty exact Markdown |
-| `summary` | No additional keys; include the observation in the exact summary |
-| `unknown` | No additional keys; disclose dedup uncertainty in the summary, posting disabled |
+| Placement | Additional keys and constraints                                                                                |
+| --------- | -------------------------------------------------------------------------------------------------------------- |
+| `inline`  | `body`: nonempty exact Markdown; anchor must be non-null                                                       |
+| `reply`   | `root_comment_id`: positive integer copied from context, unique among replies; `body`: nonempty exact Markdown |
+| `summary` | No additional keys; include the observation in the exact summary                                               |
+| `unknown` | No additional keys; disclose dedup uncertainty in the summary, posting disabled                                |
 
 `thread_assessments` contains exactly the collected unresolved roots, unique positive `root_comment_id`, `status: still-valid|fixed|out-of-scope|unverifiable`, and nonempty evidence; no additional keys. Use `[]` when none. All path fields follow the repository-relative path rule in the collector contract.
 
@@ -78,9 +78,9 @@ For every other status, write the corresponding status line and only `{"reason":
 
 ## Escalation
 
-| Status | When |
-| --- | --- |
-| `AUTHOR: PASS` | Complete grounded canonical package, including no surviving findings |
-| `AUTHOR: NEEDS_CONTEXT` | Material evidence, input or target metadata missing; basis drift |
-| `AUTHOR: TOOLS_MISSING` | Necessary read or source-fetch capability unavailable |
-| `AUTHOR: ERROR` | Unexpected failure prevents completing the package |
+| Status                  | When                                                                 |
+| ----------------------- | -------------------------------------------------------------------- |
+| `AUTHOR: PASS`          | Complete grounded canonical package, including no surviving findings |
+| `AUTHOR: NEEDS_CONTEXT` | Material evidence, input or target metadata missing; basis drift     |
+| `AUTHOR: TOOLS_MISSING` | Necessary read or source-fetch capability unavailable                |
+| `AUTHOR: ERROR`         | Unexpected failure prevents completing the package                   |

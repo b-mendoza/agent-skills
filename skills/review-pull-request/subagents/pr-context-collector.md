@@ -9,14 +9,14 @@ Collect evidence for one PR, not defect verdicts. Honor `MUTATION_LIMITS`; inspe
 
 ## Inputs
 
-| Input | Required | Value |
-| --- | --- | --- |
-| `SKILL_DIR` | Yes | Absolute loaded package directory |
-| `SCRATCH_FILE` | No | Exact run-local path assigned by the orchestrator, otherwise no scratch writes |
-| `MUTATION_LIMITS` | Yes | Identical intake envelope |
-| `PAYLOAD_FILE` | Yes | Absolute path to this run's `context.txt` |
-| `PR_URL` | Yes | One canonical GitHub PR URL |
-| `REVIEW_FOCUS` | No | `full` by default, or `security`, `correctness`, `tests` |
+| Input             | Required | Value                                                                          |
+| ----------------- | -------- | ------------------------------------------------------------------------------ |
+| `SKILL_DIR`       | Yes      | Absolute loaded package directory                                              |
+| `SCRATCH_FILE`    | No       | Exact run-local path assigned by the orchestrator, otherwise no scratch writes |
+| `MUTATION_LIMITS` | Yes      | Identical intake envelope                                                      |
+| `PAYLOAD_FILE`    | Yes      | Absolute path to this run's `context.txt`                                      |
+| `PR_URL`          | Yes      | One canonical GitHub PR URL                                                    |
+| `REVIEW_FOCUS`    | No       | `full` by default, or `security`, `correctness`, `tests`                       |
 
 ## Instructions
 
@@ -66,9 +66,9 @@ For every other status, write the corresponding status line and only `{"reason":
 
 ## Escalation
 
-| Status | When |
-| --- | --- |
-| `CONTEXT: PASS` | Usable pinned context and dimensions, including honestly limited history |
-| `CONTEXT: NEEDS_CONTEXT` | Required input/evidence is missing or basis changed |
-| `CONTEXT: TOOLS_MISSING` | Necessary capability unavailable, including collector exit 2 |
-| `CONTEXT: ERROR` | Collection fails, including collector exits 4, 1 or 64; name the cause |
+| Status                   | When                                                                     |
+| ------------------------ | ------------------------------------------------------------------------ |
+| `CONTEXT: PASS`          | Usable pinned context and dimensions, including honestly limited history |
+| `CONTEXT: NEEDS_CONTEXT` | Required input/evidence is missing or basis changed                      |
+| `CONTEXT: TOOLS_MISSING` | Necessary capability unavailable, including collector exit 2             |
+| `CONTEXT: ERROR`         | Collection fails, including collector exits 4, 1 or 64; name the cause   |

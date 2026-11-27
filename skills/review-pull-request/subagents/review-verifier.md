@@ -9,16 +9,16 @@ Return a verdict and observed checks, not rewritten review text. Honor `MUTATION
 
 ## Inputs
 
-| Input | Required | Value |
-| --- | --- | --- |
-| `SKILL_DIR` | Yes | Absolute loaded package directory |
-| `SCRATCH_FILE` | No | Exact run-local path assigned by the orchestrator, otherwise no scratch writes |
-| `MUTATION_LIMITS` | Yes | Identical intake envelope |
-| `PAYLOAD_FILE` | Yes | Absolute path to this run's `verify.txt` |
-| `PR_URL` | Yes | One canonical GitHub PR URL |
-| `REVIEWED_BASE_SHA`, `REVIEWED_HEAD_SHA` | Yes | Full fixed comparison and reviewed head SHAs |
-| `CONTEXT_FILE`, `CHUNK_FILES`, `AUTHOR_FILE` | Yes | Accepted payloads; chunks in declared dimension order |
-| `LANGUAGE_STYLE` | No | Natural, direct English by default |
+| Input                                        | Required | Value                                                                          |
+| -------------------------------------------- | -------- | ------------------------------------------------------------------------------ |
+| `SKILL_DIR`                                  | Yes      | Absolute loaded package directory                                              |
+| `SCRATCH_FILE`                               | No       | Exact run-local path assigned by the orchestrator, otherwise no scratch writes |
+| `MUTATION_LIMITS`                            | Yes      | Identical intake envelope                                                      |
+| `PAYLOAD_FILE`                               | Yes      | Absolute path to this run's `verify.txt`                                       |
+| `PR_URL`                                     | Yes      | One canonical GitHub PR URL                                                    |
+| `REVIEWED_BASE_SHA`, `REVIEWED_HEAD_SHA`     | Yes      | Full fixed comparison and reviewed head SHAs                                   |
+| `CONTEXT_FILE`, `CHUNK_FILES`, `AUTHOR_FILE` | Yes      | Accepted payloads; chunks in declared dimension order                          |
+| `LANGUAGE_STYLE`                             | No       | Natural, direct English by default                                             |
 
 ## Instructions
 
@@ -50,10 +50,10 @@ For every other status, write the corresponding status line and only `{"reason":
 
 ## Escalation
 
-| Status | When |
-| --- | --- |
-| `VERIFY: PASS` | Final package supported within disclosed scope, no issues |
-| `VERIFY: FAIL` | Specific package defects review-author can repair at unchanged pins |
-| `VERIFY: NEEDS_CONTEXT` | Evidence/context missing or reviewed basis changed |
-| `VERIFY: TOOLS_MISSING` | Necessary read, shell or source-fetch capability unavailable |
-| `VERIFY: ERROR` | Unexpected failure prevents verification |
+| Status                  | When                                                                |
+| ----------------------- | ------------------------------------------------------------------- |
+| `VERIFY: PASS`          | Final package supported within disclosed scope, no issues           |
+| `VERIFY: FAIL`          | Specific package defects review-author can repair at unchanged pins |
+| `VERIFY: NEEDS_CONTEXT` | Evidence/context missing or reviewed basis changed                  |
+| `VERIFY: TOOLS_MISSING` | Necessary read, shell or source-fetch capability unavailable        |
+| `VERIFY: ERROR`         | Unexpected failure prevents verification                            |

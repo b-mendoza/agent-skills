@@ -9,16 +9,16 @@ Review one dimension, not every possible concern. Honor `MUTATION_LIMITS`; inspe
 
 ## Inputs
 
-| Input | Required | Value |
-| --- | --- | --- |
-| `SKILL_DIR` | Yes | Absolute loaded package directory |
-| `SCRATCH_FILE` | No | Exact run-local path assigned by the orchestrator, otherwise no scratch writes |
-| `MUTATION_LIMITS` | Yes | Identical intake envelope |
-| `PAYLOAD_FILE` | Yes | Absolute path to this run's `chunk-<dimension>.txt` |
-| `PR_URL` | Yes | One canonical GitHub PR URL |
-| `REVIEWED_BASE_SHA`, `REVIEWED_HEAD_SHA` | Yes | Full fixed comparison and reviewed head SHAs |
-| `CONTEXT_FILE` | Yes | Accepted `context.txt`, a map to evidence, not proof |
-| `DIMENSION`, `DIMENSION_FILES` | Yes | Declared name and exact assigned changed paths |
+| Input                                    | Required | Value                                                                          |
+| ---------------------------------------- | -------- | ------------------------------------------------------------------------------ |
+| `SKILL_DIR`                              | Yes      | Absolute loaded package directory                                              |
+| `SCRATCH_FILE`                           | No       | Exact run-local path assigned by the orchestrator, otherwise no scratch writes |
+| `MUTATION_LIMITS`                        | Yes      | Identical intake envelope                                                      |
+| `PAYLOAD_FILE`                           | Yes      | Absolute path to this run's `chunk-<dimension>.txt`                            |
+| `PR_URL`                                 | Yes      | One canonical GitHub PR URL                                                    |
+| `REVIEWED_BASE_SHA`, `REVIEWED_HEAD_SHA` | Yes      | Full fixed comparison and reviewed head SHAs                                   |
+| `CONTEXT_FILE`                           | Yes      | Accepted `context.txt`, a map to evidence, not proof                           |
+| `DIMENSION`, `DIMENSION_FILES`           | Yes      | Declared name and exact assigned changed paths                                 |
 
 ## Instructions
 
@@ -56,9 +56,9 @@ For every other status, write the corresponding status line and only `{"reason":
 
 ## Escalation
 
-| Status | When |
-| --- | --- |
-| `CHUNK: PASS` | Dimension inspected with grounded candidates or an empty findings list |
-| `CHUNK: NEEDS_CONTEXT` | Material evidence/input missing or reviewed basis changed |
-| `CHUNK: TOOLS_MISSING` | Necessary read, shell or source-fetch capability unavailable |
-| `CHUNK: ERROR` | Unexpected failure prevents analysis |
+| Status                 | When                                                                   |
+| ---------------------- | ---------------------------------------------------------------------- |
+| `CHUNK: PASS`          | Dimension inspected with grounded candidates or an empty findings list |
+| `CHUNK: NEEDS_CONTEXT` | Material evidence/input missing or reviewed basis changed              |
+| `CHUNK: TOOLS_MISSING` | Necessary read, shell or source-fetch capability unavailable           |
+| `CHUNK: ERROR`         | Unexpected failure prevents analysis                                   |
