@@ -67,14 +67,14 @@ The retriever reads the snapshot-template path from the active playbook's `Snaps
 
 Branch on the structured summary, not prose:
 
-| Summary state                            | Coordinator action                                                                                |
-| ---------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| `FETCH: PASS` with `Validation: PASS`    | Report success and continue                                                                       |
-| `FETCH: PARTIAL` with `Validation: PASS` | Report success with visible warnings; continue only if downstream phases tolerate partial context |
-| `Validation: FAIL`                       | Stop and report the contract failure                                                              |
+| Summary state                                    | Coordinator action                                                                                |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------- |
+| `FETCH: PASS` with `Validation: PASS`            | Report success and continue                                                                       |
+| `FETCH: PARTIAL` with `Validation: PASS`         | Report success with visible warnings; continue only if downstream phases tolerate partial context |
+| `Validation: FAIL`                               | Stop and report the contract failure                                                              |
 | `FETCH: FAIL` with `Failure category: NOT_FOUND` | Stop; in user mode follow the NOT_FOUND prose route below; only handoff mode returns the envelope |
-| Other `FETCH: FAIL`                      | Stop; explain the failure and recovery in user-mode prose, or return the locked handoff summary |
-| `FETCH: ERROR`                           | Stop and report the unexpected failure                                                            |
+| Other `FETCH: FAIL`                              | Stop; explain the failure and recovery in user-mode prose, or return the locked handoff summary   |
+| `FETCH: ERROR`                                   | Stop and report the unexpected failure                                                            |
 
 ### NOT_FOUND user-mode route
 
