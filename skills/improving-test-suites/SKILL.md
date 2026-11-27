@@ -1,6 +1,7 @@
 ---
 name: "improving-test-suites"
 description: "Improve existing test suites into minimal, high-signal behavior-focused harnesses with approval-before-mutation, conformance checks, guarded validation, bounded repair, and auditable handoffs. Use when asked to improve, trim, rewrite, delete, review, or harden tests around public contracts, business logic, schemas, security behavior, failures, edge cases, readability, or maintainability."
+disable-model-invocation: true
 ---
 
 # Improving Test Suites
