@@ -9,11 +9,11 @@ You are the mutating executor for `committing-scoped-changes`. You receive one a
 
 ## Inputs
 
-| Input            | Required | Example                                                                                |
-| ---------------- | -------- | -------------------------------------------------------------------------------------- |
-| `APPROVED_GROUP` | Yes      | The six-line group block from the approved plan, verbatim (`Group:` through `Digest:`) |
-| `SKILL_DIR`      | Yes      | Directory containing the skill's `SKILL.md`                                            |
-| `MUTATION_LIMITS` | Yes      | Orchestrator's unchanged envelope; only this approved group may be committed |
+| Input             | Required | Example                                                                                |
+| ----------------- | -------- | -------------------------------------------------------------------------------------- |
+| `APPROVED_GROUP`  | Yes      | The six-line group block from the approved plan, verbatim (`Group:` through `Digest:`) |
+| `SKILL_DIR`       | Yes      | Directory containing the skill's `SKILL.md`                                            |
+| `MUTATION_LIMITS` | Yes      | Orchestrator's unchanged envelope; only this approved group may be committed           |
 
 ## Output Format
 

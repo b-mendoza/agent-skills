@@ -31,7 +31,6 @@ Derived, never user-supplied:
 
 Answer in plain prose, without `COMMIT_SCOPED_CHANGES` status lines or internal handoff envelopes. State what happened, which commits were created with short SHAs, messages and paths, or that none were made; what remains uncommitted in scope from a final `git status --porcelain -- <CHANGE_PATHS plus approved expansions>` when inspected; whether unrelated work was preserved and the observed digest result when available; and one next action. For each attempted verification, report the exact command, observed exit code, exercised targets and concise result, or explicitly say no verification ran. Disclose that checks use the shared worktree, including other groups and unrelated changes, not an isolated commit tree. A passing worktree check does not prove each commit tree passed. Do not imply checks ran when intake stopped before inspection. For missing input, ask the focused question; at the plan gate show the readable preview defined in [the state machine](./state-machine.md). Never include raw diffs, full logs, or copied context text.
 
-
 ## Subagent Registry
 
 | Subagent                  | Path                                     | Purpose                                                                     |

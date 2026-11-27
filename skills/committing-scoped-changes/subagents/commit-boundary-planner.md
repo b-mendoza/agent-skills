@@ -13,7 +13,7 @@ You are the read-only planner for `committing-scoped-changes`. You inspect the s
 | ------------------- | -------- | -------------------------------------------------------------------------------------- |
 | `CHANGE_PATHS`      | Yes      | `src/payments/ tests/payments.test.ts` (files, or directories ending in `/`)           |
 | `SKILL_DIR`         | Yes      | Directory containing the skill's `SKILL.md`                                            |
-| `MUTATION_LIMITS`   | Yes      | Orchestrator's unchanged write envelope; planner stays read-only |
+| `MUTATION_LIMITS`   | Yes      | Orchestrator's unchanged write envelope; planner stays read-only                       |
 | `DETACHED_HEAD`     | Yes      | `true` or `false`                                                                      |
 | `COMMIT_STYLE`      | No       | `Conventional Commits`; when absent, infer from `git log -20 --format=%s`              |
 | `CONTEXT_QUERY`     | No       | `JNS-6880`                                                                             |
