@@ -1,6 +1,7 @@
 ---
 name: "review-pull-request"
 description: "Reviews one GitHub pull request and prepares a verified local review or posts its exact approved contents. Use when the user asks to review a PR, audit a pull request, draft review comments or request-changes feedback, write a PR review file, or optionally post approved review comments. Handles exactly one PR."
+disable-model-invocation: true
 ---
 
 # Review pull request
