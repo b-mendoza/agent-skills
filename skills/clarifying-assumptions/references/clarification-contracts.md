@@ -40,10 +40,10 @@ This skill updates orchestration artifacts only. It does not produce implementat
 | `## Decisions Log` rows                                               | Durable audit trail for plan-wide and task-level clarification decisions                                                       |
 | Deferred question tags                                                | Later critique-mode runs can identify which questions must be revisited later                                                  |
 | `docs/<KEY>-task-<N>-decisions.md`                                    | Critique-mode record of task-level decisions for re-planning and execution                                                     |
-| `RE_PLAN_NEEDED` in the `handoff` result                                 | Signals whether planning should be re-run before execution                                                                     |
-| `BLOCKERS_PRESENT` in the `handoff` result                               | Signals that clarification ended with unresolved items and execution must stop                                                 |
-| `Accepted decisions summary` in upfront-mode `handoff` results          | Parent orchestrators pass accepted decisions back into plan rework                                                             |
-| `Decisions file` in critique-mode `handoff` results                     | Parent orchestrators pass the per-task decisions artifact into task rework                                                     |
+| `RE_PLAN_NEEDED` in the `handoff` result                              | Signals whether planning should be re-run before execution                                                                     |
+| `BLOCKERS_PRESENT` in the `handoff` result                            | Signals that clarification ended with unresolved items and execution must stop                                                 |
+| `Accepted decisions summary` in upfront-mode `handoff` results        | Parent orchestrators pass accepted decisions back into plan rework                                                             |
+| `Decisions file` in critique-mode `handoff` results                   | Parent orchestrators pass the per-task decisions artifact into task rework                                                     |
 
 These are orchestration artifacts. Preserve them for resumability and keep them out of version control unless a parent workflow explicitly defines a different artifact lifecycle.
 

@@ -29,14 +29,14 @@ This package is standalone. Bundled files are authoritative for execution; publi
 
 Load only the file needed for the current stage. Paths are relative to the file that contains them.
 
-| Need                                               | Load                                                                     |
-| -------------------------------------------------- | ------------------------------------------------------------------------ |
-| Shared clarification posture                       | `./references/design-thinking-mindset.md`                                |
-| Plan-wide execution                                | `./references/upfront-mode.md`                                           |
-| Task-level execution                               | `./references/critique-mode.md`                                          |
-| Stage 4 turns and final summary                    | `./references/conversation-protocol.md`                                  |
-| Input preconditions or output artifacts            | `./references/clarification-contracts.md`                                |
-| Public rationale or current-source policy          | `./references/external-sources.md`, then fetch the smallest relevant URL |
+| Need                                      | Load                                                                     |
+| ----------------------------------------- | ------------------------------------------------------------------------ |
+| Shared clarification posture              | `./references/design-thinking-mindset.md`                                |
+| Plan-wide execution                       | `./references/upfront-mode.md`                                           |
+| Task-level execution                      | `./references/critique-mode.md`                                          |
+| Stage 4 turns and final summary           | `./references/conversation-protocol.md`                                  |
+| Input preconditions or output artifacts   | `./references/clarification-contracts.md`                                |
+| Public rationale or current-source policy | `./references/external-sources.md`, then fetch the smallest relevant URL |
 
 Read subagent definitions only when dispatching that specific subagent.
 
@@ -128,16 +128,16 @@ After the four required fields, add only the active mode's line: `- Accepted dec
 
 Both flags start `false` at run entry. `BLOCKERS_PRESENT` stays true once set. Revisions require re-planning by default. The only exception is the validated local-copy-edit route below; structural or blocked decisions can never be cleared by that route.
 
-| Event                                                 | `RE_PLAN_NEEDED` | `BLOCKERS_PRESENT` |
-| ----------------------------------------------------- | ---------------- | ------------------ |
-| Run entry                                             | `false`          | `false`            |
-| Invalid top-level inputs                              | unchanged        | `true`             |
-| Subagent `BLOCKED`, `FAIL`, or `ERROR` before Stage 4 | unchanged        | `true`             |
-| Developer response `revised`                          | `true`           | unchanged          |
-| Developer response `blocked`                          | `true`           | `true`             |
-| `decision-recorder` failure after Stage 4             | unchanged        | `true`             |
-| All revisions certified as local copy edits, no structural revision or blocker, validator exit 0 | `false` | unchanged |
-| Normal completion                                     | unchanged        | unchanged          |
+| Event                                                                                            | `RE_PLAN_NEEDED` | `BLOCKERS_PRESENT` |
+| ------------------------------------------------------------------------------------------------ | ---------------- | ------------------ |
+| Run entry                                                                                        | `false`          | `false`            |
+| Invalid top-level inputs                                                                         | unchanged        | `true`             |
+| Subagent `BLOCKED`, `FAIL`, or `ERROR` before Stage 4                                            | unchanged        | `true`             |
+| Developer response `revised`                                                                     | `true`           | unchanged          |
+| Developer response `blocked`                                                                     | `true`           | `true`             |
+| `decision-recorder` failure after Stage 4                                                        | unchanged        | `true`             |
+| All revisions certified as local copy edits, no structural revision or blocker, validator exit 0 | `false`          | unchanged          |
+| Normal completion                                                                                | unchanged        | unchanged          |
 
 A blocked run that never reached the developer therefore reports `RE_PLAN_NEEDED: false` with `BLOCKERS_PRESENT: true`. That pair is correct: nothing in the plan has been revised.
 
@@ -172,7 +172,6 @@ Input: `TICKET_KEY=JNS-6065`, `MODE=upfront`, `ITERATION=1`
 The bounded wording-only exception is defined in `references/conversation-protocol.md` and `references/local-revision-contract.md`. Resolve the loaded skill directory before dispatch, pass it and `MUTATION_LIMITS` to each subagent, and run `python3 -I <skill-dir>/scripts/validate-local-revision.py ROOT KEY MODE TASK` with the recorder evidence on stdin before clearing a provisional re-plan flag. Exit 1 leaves re-planning required. No new public status field is introduced.
 
 `MUTATION_LIMITS`: analyzer writes only its mode's critique file; manifest builder is read-only; recorder writes only the main tasks file and, in critique mode, the per-task decisions file. For an explicitly approved local copy edit, the recorder may additionally apply only those exact prose replacements to the mode's artifact set. No source, tracker, git, or unrelated-file writes. Pass these limits on every dispatch. Preserve written artifacts unstaged.
-
 
 ## Runtime path resolution
 

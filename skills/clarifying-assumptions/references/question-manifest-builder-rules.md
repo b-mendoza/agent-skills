@@ -94,7 +94,7 @@ A row is a **hard gate** when all three hold: `MODE=upfront`, the category is `P
 | Row                            | `Model` | `Skippable` |
 | ------------------------------ | ------- | ----------- |
 | Hard gate                      | `A`     | `No`        |
-| Imminent-publication concern | `B` | `No` |
+| Imminent-publication concern   | `B`     | `No`        |
 | Any other surfaced upfront row | `B`     | `Yes`       |
 | Any critique-mode row          | `B`     | `Yes`       |
 

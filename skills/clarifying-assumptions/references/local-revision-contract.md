@@ -26,7 +26,9 @@ Pass JSON on stdin to `python3 -I <loaded-skill-dir>/scripts/validate-local-revi
     "docs/<KEY>-stage-1-detailed.md": "Full before text for this file",
     "docs/<KEY>-stage-2-prioritized.md": "Full before text for this file"
   },
-  "replacements": [{"old": "recieve the audit download", "new": "receive the audit download"}]
+  "replacements": [
+    { "old": "recieve the audit download", "new": "receive the audit download" }
+  ]
 }
 ```
 
