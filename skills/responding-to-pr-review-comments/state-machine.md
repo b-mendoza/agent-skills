@@ -84,7 +84,7 @@ Six specialists stay separate: each owns a distinct status prefix (`COLLECT`, `A
 | `SyncReport`          | `TerminalCancelled`         | sync ok; cancelled                                          |
 | `SyncReport`          | `TerminalAuth`              | sync ok; auth                                               |
 | `SyncReport`          | `TerminalWriteError`        | sync write/read-back fails                                  |
-| each terminal         | `[*]`                       | explain outcome and next action in prose                      |
+| each terminal         | `[*]`                       | explain outcome and next action in prose                    |
 
 ## Cycle ledgers
 
